@@ -70,53 +70,18 @@
 //         self.move_list.pop_group();
 //     }
 // }
+pub use castling_rights::CastlingRights;
 pub mod board;
 use board::*;
 use board::bitboard::*;
 
 use crate::table_generation::*;
-use bitflags::bitflags;  // This dependency is a pure utility. It may be removed if needed.
 use std::error::Error;
 use std::fmt::Display;
 use std::mem::size_of;
 use std::ops::Rem;
 
-bitflags! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-    pub struct CastlingRights: u8 {
-        const WHITE_KING = 1 << 0;
-        const WHITE_QUEEN = 1 << 1;
-        const BLACK_KING = 1 << 2;
-        const BLACK_QUEEN = 1 << 3;
-    }
-}
-
-impl CastlingRights {
-    #[inline(always)]
-    pub fn kingside(color: Color) -> CastlingRights {
-        return if color == Color::White {
-            CastlingRights::WHITE_KING
-        } else {
-            CastlingRights::BLACK_KING
-        };
-    }
-    #[inline(always)]
-    pub fn queenside(color: Color) -> CastlingRights {
-        return if color == Color::White {
-            CastlingRights::WHITE_QUEEN
-        } else {
-            CastlingRights::BLACK_QUEEN
-        };
-    }
-    #[inline(always)]
-    pub fn both_sides(color: Color) -> CastlingRights {
-        return if color == Color::White {
-            CastlingRights::WHITE_QUEEN | CastlingRights::WHITE_KING
-        } else {
-            CastlingRights::BLACK_QUEEN | CastlingRights::BLACK_KING
-        };
-    }
-}
+mod castling_rights;
 
 #[inline(always)]
 fn get_square_zobrist(color: Color, piece: Piece, sq: Square) -> u64 {
