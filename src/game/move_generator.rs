@@ -337,7 +337,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         },
         MoveHint::DoublePawn => {
             return piece == Piece::Pawn 
-                && from.into_rank() == Rank::pawn_row(color)
+                && from.into_rank() == color.pawn_rank()
                 && BitBoard::pawn_pushes(
                     BitBoard::pawn_pushes(BitBoard::from(from), empty, color), empty, color
                 ) == BitBoard::from(to);
@@ -366,7 +366,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         MoveHint::RookPromotion |
         MoveHint::QueenPromotion => {
             return piece == Piece::Pawn
-                && to.into_rank() == Rank::promotion_row(color)
+                && to.into_rank() == color.promotion_rank()
                 && BitBoard::pawn_pushes(BitBoard::from(from), BitBoard::FULL, color) == BitBoard::from(to);
         },
         MoveHint::KnightPromotionCapture |
@@ -374,7 +374,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         MoveHint::RookPromotionCapture |
         MoveHint::QueenPromotionCapture => {
             return piece == Piece::Pawn
-                && to.into_rank() == Rank::promotion_row(color)
+                && to.into_rank() == color.promotion_rank()
                 && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none();
         },
     };

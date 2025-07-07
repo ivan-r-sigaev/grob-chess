@@ -5,15 +5,6 @@ use super::Color;
 
 mod indexing;
 
-impl Rank {
-    pub fn promotion_row(color: Color) -> Rank {
-        return if color == Color::White { Rank::R8 } else { Rank::R1 };
-    }
-    pub fn pawn_row(color: Color) -> Rank {
-        return if color == Color::White { Rank::R2 } else { Rank::R7 };
-    }
-}
-
 impl Square {
     #[inline(always)]
     pub fn after_en_passant(file: File, turn: Color) -> Square {
