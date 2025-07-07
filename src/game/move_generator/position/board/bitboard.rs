@@ -136,6 +136,7 @@ impl BitBoard {
         BitBoard(KING_ATTACKS[sq as usize])
     }
     #[inline(always)]
+    #[must_use]
     fn fill_up_attacks(mask_ex: &[u64; 64], occ: BitBoard, sq: Square) -> BitBoard {
         const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
         const B_FILE: u64 = 0x0202020202020202;
