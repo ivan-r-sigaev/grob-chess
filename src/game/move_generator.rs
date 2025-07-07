@@ -240,7 +240,7 @@ impl MoveGenerator {
         }
         
         if pos.en_passant().is_some() {
-            let to = Square::after_en_passant(pos.en_passant().unwrap(), pos.turn());
+            let to = Square::new(pos.en_passant().unwrap(), pos.turn().en_passant_dest_rank());
             for from in (pawns & BitBoard::pawn_attacks(to, !pos.turn())).serialize() {
                 self.push_move(MoveConcept::new(from, to, MoveHint::EnPassantCapture));
             }
@@ -356,7 +356,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
                 None => return false,
             };
             let target_sq = Square::new(to.into_file(), from.into_rank());
-            return Square::after_en_passant(file, color) == to
+            return Square::new(file, color.en_passant_dest_rank()) == to
                 && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
                 && pos.board().get_piece_at(target_sq) == Some(Piece::Pawn)
                 && pos.board().get_color_at(target_sq) == Some(!color);

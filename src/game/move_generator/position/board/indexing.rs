@@ -14,6 +14,9 @@ impl Color {
     pub fn pawn_rank(self) -> Rank {
         return if self == Color::White { Rank::R2 } else { Rank::R7 };
     }
+    pub fn en_passant_dest_rank(self) -> Rank {
+        return if self == Color::White { Rank::R6 } else { Rank::R3 };
+    }
 }
 
 impl Not for Color {

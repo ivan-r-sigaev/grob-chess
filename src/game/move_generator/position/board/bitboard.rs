@@ -5,16 +5,6 @@ use super::Color;
 
 mod indexing;
 
-impl Square {
-    #[inline(always)]
-    pub fn after_en_passant(file: File, turn: Color) -> Square {
-        return Square::new(
-            file, 
-            if turn == Color::White { Rank::R6 } else { Rank::R3 }
-        );
-    }
-}
-
 #[derive(Clone, Copy,  PartialEq, Eq)]
 pub struct BitBoard(u64);
 
