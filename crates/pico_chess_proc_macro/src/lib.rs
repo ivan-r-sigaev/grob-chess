@@ -1,6 +1,3 @@
-use proc_macro::TokenStream;
-use std::fmt::Write;
-
 const EMPTY_SET: u64 = 0;
 const UNIVERSE_SET: u64 = !EMPTY_SET;
 
@@ -33,21 +30,7 @@ const fn west_one(bb: u64) -> u64 { return (bb >> 1) & NOT_H_FILE; }
 const fn sowe_one(bb: u64) -> u64 { return (bb >> 9) & NOT_H_FILE; }
 const fn nowe_one(bb: u64) -> u64 { return (bb << 7) & NOT_H_FILE; }
 
-
-#[proc_macro]
-pub fn make_pawn_attack_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut white = String::new();
-    let mut black = String::new();
-    for i in 0..64 {
-        let bb: u64 = 1 << i;
-        write!(white, "{},", nowe_one(bb) | noea_one(bb)).unwrap();
-        write!(black, "{},", sowe_one(bb) | soea_one(bb)).unwrap();
-    }
-    return format!("[[{}],[{}]]", white, black).parse().unwrap();
-}
-
-const fn _make_pawn_attack_table() -> [[u64; 64]; 2] {
+pub const fn make_pawn_attack_table() -> [[u64; 64]; 2] {
     let mut result = [[0; 64]; 2];
     let mut i = 0;
     while i < 64 {
@@ -59,20 +42,7 @@ const fn _make_pawn_attack_table() -> [[u64; 64]; 2] {
     return result;
 }
 
-#[proc_macro]
-pub fn make_knight_attack_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for i in 0..64 {
-        let bb: u64 = 1 << i;
-        let h1: u64 = ((bb >> 1) & 0x7f7f7f7f7f7f7f7f) | ((bb << 1) & 0xfefefefefefefefe);
-        let h2: u64 = ((bb >> 2) & 0x3f3f3f3f3f3f3f3f) | ((bb << 2) & 0xfcfcfcfcfcfcfcfc);
-        write!(table, "{},", (h1 << 16) | (h1 >> 16) | (h2 << 8) | (h2 >> 8)).unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_knight_attack_table() -> [u64; 64] {
+pub const fn make_knight_attack_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
     while i < 64 {
@@ -85,21 +55,7 @@ const fn _make_knight_attack_table() -> [u64; 64] {
     return result;
 }
 
-#[proc_macro]
-pub fn make_king_attack_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for i in 0..64 {
-        let mut bb: u64 = 1 << i;
-        let mut attacks: u64 = east_one(bb) | west_one(bb);
-        bb |= attacks;
-        attacks |= nort_one(bb) | sout_one(bb);
-        write!(table, "{},", attacks).unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_king_attack_table() -> [u64; 64] {
+pub const fn make_king_attack_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
     while i < 64 {
@@ -133,18 +89,7 @@ const fn antidiag_mask(sq: i32) -> u64 {
 	return (DIA_H1_A8 >> sout) << nort;
 }
 
-#[proc_macro]
-pub fn make_rank_mask_ex_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for i in 0..64 {
-        let bb: u64 = 1 << i;
-        write!(table, "{},", rank_mask(i) ^ bb).unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_rank_mask_ex_table() -> [u64; 64] {
+pub const fn make_rank_mask_ex_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
     while i < 64 {
@@ -155,18 +100,7 @@ const fn _make_rank_mask_ex_table() -> [u64; 64] {
     return result;
 }
 
-#[proc_macro]
-pub fn make_diagonal_mask_ex_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for i in 0..64 {
-        let bb: u64 = 1 << i;
-        write!(table, "{},", diagonal_mask(i) ^ bb).unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_diagonal_mask_ex_table() -> [u64; 64] {
+pub const fn make_diagonal_mask_ex_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
     while i < 64 {
@@ -177,18 +111,7 @@ const fn _make_diagonal_mask_ex_table() -> [u64; 64] {
     return result;
 }
 
-#[proc_macro]
-pub fn make_antidiag_mask_ex_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for i in 0..64 {
-        let bb: u64 = 1 << i;
-        write!(table, "{},", antidiag_mask(i) ^ bb).unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_antidiag_mask_ex_table() -> [u64; 64] {
+pub const fn make_antidiag_mask_ex_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
     while i < 64 {
@@ -255,25 +178,7 @@ const fn nort_occluded(mut rooks: u64, mut empty: u64) -> u64 {
 	return rooks;
 }
 
-#[proc_macro]
-pub fn make_kindergarten_fill_up_attacks_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for sq in 0..8 as usize {
-        write!(table, "[").unwrap();
-        for six_bit_occ in 0..64 as usize {
-            let rooks: u64 = 1 << sq;
-            let empty: u64 = !((six_bit_occ as u64) << 1);
-            let first_rank_attacks: u64 = east_attacks(rooks, empty) | west_attacks(rooks, empty);
-
-            write!(table, "{},", nort_occluded(first_rank_attacks, UNIVERSE_SET)).unwrap();
-        }
-        write!(table, "],").unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {
+pub const fn make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {
     let mut result = [[0; 64]; 8];
     let mut sq = 0;
     while sq < 8 {
@@ -290,26 +195,7 @@ const fn _make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {
     return result;
 }
 
-#[proc_macro]
-pub fn make_kindergarten_a_file_attacks_table(_item: TokenStream) -> TokenStream {
-    assert!(_item.is_empty());
-    let mut table = String::new();
-    for sq in 0..8 as usize {
-        write!(table, "[").unwrap();
-        for six_bit_occ in 0..64 as usize {
-            let rooks: u64 = 1u64 << (7 - sq);
-            let empty: u64 = !((six_bit_occ as u64) << 1);
-            let first_rank_attacks: u64 = east_attacks(rooks, empty) | west_attacks(rooks, empty);
-
-            let a_file_attack = ((first_rank_attacks.wrapping_mul(DIA_A1_H8)) >> 7) & A_FILE;
-            write!(table, "{},", a_file_attack).unwrap();
-        }
-        write!(table, "],").unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
-const fn _make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
+pub const fn make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
     let mut result = [[0; 64]; 8];
     let mut sq = 0;
     while sq < 8 {
@@ -327,34 +213,9 @@ const fn _make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
     return result;
 }
 
-use rand_chacha::rand_core::SeedableRng;
-use rand_core::RngCore;
-use rand_chacha; // 0.3.0
-
-#[proc_macro]
-pub fn make_random_u64_table(_item: TokenStream) -> TokenStream {
-    let s = _item.to_string();
-    let items = s.split(",").collect::<Vec<&str>>();
-    let size;
-    let seed;
-    if items.len() == 2 {
-        size = items[0].chars().filter(|c| !c.is_whitespace()).collect::<String>().parse::<usize>().unwrap();
-        seed = items[1].chars().filter(|c| !c.is_whitespace()).collect::<String>().parse::<u64>().unwrap();
-    }
-    else {
-        panic!("expected arguments are (size: usize, seed: u64)");
-    }
-    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(seed);
-    let mut table = String::new();
-    for _ in 0..size as usize {
-        write!(table, "{},", rng.next_u64()).unwrap();
-    }
-    return format!("[{}]", table).parse().unwrap();
-}
-
 use const_random::const_random;
 
-const fn _make_random_u64_table<const SIZE: usize>() -> [u64; SIZE] {
+pub const fn make_random_u64_table<const SIZE: usize>() -> [u64; SIZE] {
     let mut result = [0; SIZE];
     let mut i = 0;
     while i < SIZE {

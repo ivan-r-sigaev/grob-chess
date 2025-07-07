@@ -217,44 +217,44 @@ impl BitBoard {
 impl BitBoard {
     #[inline(always)]
     pub fn pawn_attacks(sq: Square, color: Color) -> BitBoard {
-        const PAWN_ATTACKS: [[u64; 64]; 2] = make_pawn_attack_table!();
+        const PAWN_ATTACKS: [[u64; 64]; 2] = make_pawn_attack_table();
         return BitBoard(PAWN_ATTACKS[color as usize][sq as usize]);
     }
     #[inline(always)]
     pub fn knight_attacks(sq: Square) -> BitBoard {
-        const KNIGHT_ATTACKS: [u64; 64] = make_knight_attack_table!();
+        const KNIGHT_ATTACKS: [u64; 64] = make_knight_attack_table();
         return BitBoard(KNIGHT_ATTACKS[sq as usize]);
     }
     #[inline(always)]
     pub fn king_attacks(sq: Square) -> BitBoard {
-        const KING_ATTACKS: [u64; 64] = make_king_attack_table!();
+        const KING_ATTACKS: [u64; 64] = make_king_attack_table();
         return BitBoard(KING_ATTACKS[sq as usize]);
     }
     #[inline(always)]
     fn fill_up_attacks(mask_ex: &[u64; 64], occ: BitBoard, sq: Square) -> BitBoard {
-        const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table!();
+        const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
         const B_FILE: u64 = 0x0202020202020202;
         let occupance_index = (B_FILE.wrapping_mul(mask_ex[sq as usize] & occ.0) >> 58) as usize;
         return BitBoard(mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index]);
     }
     #[inline(always)]
     pub fn diagonal_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table!();
+        const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table();
         return BitBoard::fill_up_attacks(&DIAGONAL_MASK_EX, occ, sq);
     }
     #[inline(always)]
     pub fn antidiag_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table!();
+        const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table();
         return BitBoard::fill_up_attacks(&ANTIDIAG_MASK_EX, occ, sq);
     }
     #[inline(always)]
     pub fn rank_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table!();
+        const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table();
         return BitBoard::fill_up_attacks(&RANK_MASK_EX, occ, sq);
     }
     #[inline(always)]
     pub fn file_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table!();
+        const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table();
         const A_FILE: u64 = 0x101010101010101;
         const DIA_C2_H7: u64 = 0x0080402010080400;
         let occupance_index = ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
