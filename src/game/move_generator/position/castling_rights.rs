@@ -13,27 +13,30 @@ bitflags! {
 
 impl CastlingRights {
     #[inline(always)]
+    #[must_use]
     pub fn kingside(color: Color) -> CastlingRights {
-        return if color == Color::White {
+        if color == Color::White {
             CastlingRights::WHITE_KING
         } else {
             CastlingRights::BLACK_KING
-        };
+        }
     }
     #[inline(always)]
+    #[must_use]
     pub fn queenside(color: Color) -> CastlingRights {
-        return if color == Color::White {
+        if color == Color::White {
             CastlingRights::WHITE_QUEEN
         } else {
             CastlingRights::BLACK_QUEEN
-        };
+        }
     }
     #[inline(always)]
+    #[must_use]
     pub fn both_sides(color: Color) -> CastlingRights {
-        return if color == Color::White {
+        if color == Color::White {
             CastlingRights::WHITE_QUEEN | CastlingRights::WHITE_KING
         } else {
             CastlingRights::BLACK_QUEEN | CastlingRights::BLACK_KING
-        };
+        }
     }
 }

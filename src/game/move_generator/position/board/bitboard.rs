@@ -1,5 +1,10 @@
 use super::Color;
-use crate::table_generation::*;
+use crate::table_generation::{
+    make_antidiag_mask_ex_table, make_diagonal_mask_ex_table,
+    make_kindergarten_a_file_attacks_table, make_kindergarten_fill_up_attacks_table,
+    make_king_attack_table, make_knight_attack_table, make_pawn_attack_table,
+    make_rank_mask_ex_table,
+};
 pub use indexing::{File, Rank, Square};
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
@@ -11,7 +16,7 @@ pub struct BitBoard(u64);
 impl From<Square> for BitBoard {
     #[inline(always)]
     fn from(value: Square) -> Self {
-        return BitBoard(1u64 << (value as u8));
+        BitBoard(1u64 << (value as u8))
     }
 }
 
@@ -20,7 +25,7 @@ impl BitAnd<BitBoard> for BitBoard {
 
     #[inline(always)]
     fn bitand(self, rhs: BitBoard) -> Self::Output {
-        return BitBoard(self.0 & rhs.0);
+        BitBoard(self.0 & rhs.0)
     }
 }
 
@@ -36,7 +41,7 @@ impl BitOr<BitBoard> for BitBoard {
 
     #[inline(always)]
     fn bitor(self, rhs: BitBoard) -> Self::Output {
-        return BitBoard(self.0 | rhs.0);
+        BitBoard(self.0 | rhs.0)
     }
 }
 
@@ -52,7 +57,7 @@ impl BitXor<BitBoard> for BitBoard {
 
     #[inline(always)]
     fn bitxor(self, rhs: BitBoard) -> Self::Output {
-        return BitBoard(self.0 ^ rhs.0);
+        BitBoard(self.0 ^ rhs.0)
     }
 }
 
@@ -68,7 +73,7 @@ impl Not for BitBoard {
 
     #[inline(always)]
     fn not(self) -> Self::Output {
-        return BitBoard(!self.0);
+        BitBoard(!self.0)
     }
 }
 
@@ -85,14 +90,15 @@ impl Iterator for Serialized {
 
         let next = unsafe { self.0.isolated_ls1b().bit_scan_forward_unchecked() };
         self.0 = self.0.reset_ls1b();
-        return Some(next);
+        Some(next)
     }
 }
 
 impl BitBoard {
     #[inline(always)]
+    #[must_use]
     pub fn serialize(self) -> Serialized {
-        return Serialized(self);
+        Serialized(self)
     }
 }
 
@@ -112,95 +118,113 @@ impl BitBoard {
 
 impl BitBoard {
     #[inline(always)]
+    #[must_use]
     pub fn pawn_attacks(sq: Square, color: Color) -> BitBoard {
         const PAWN_ATTACKS: [[u64; 64]; 2] = make_pawn_attack_table();
-        return BitBoard(PAWN_ATTACKS[color as usize][sq as usize]);
+        BitBoard(PAWN_ATTACKS[color as usize][sq as usize])
     }
     #[inline(always)]
+    #[must_use]
     pub fn knight_attacks(sq: Square) -> BitBoard {
         const KNIGHT_ATTACKS: [u64; 64] = make_knight_attack_table();
-        return BitBoard(KNIGHT_ATTACKS[sq as usize]);
+        BitBoard(KNIGHT_ATTACKS[sq as usize])
     }
     #[inline(always)]
+    #[must_use]
     pub fn king_attacks(sq: Square) -> BitBoard {
         const KING_ATTACKS: [u64; 64] = make_king_attack_table();
-        return BitBoard(KING_ATTACKS[sq as usize]);
+        BitBoard(KING_ATTACKS[sq as usize])
     }
     #[inline(always)]
     fn fill_up_attacks(mask_ex: &[u64; 64], occ: BitBoard, sq: Square) -> BitBoard {
         const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
         const B_FILE: u64 = 0x0202020202020202;
         let occupance_index = (B_FILE.wrapping_mul(mask_ex[sq as usize] & occ.0) >> 58) as usize;
-        return BitBoard(
-            mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index],
-        );
+        BitBoard(mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index])
     }
     #[inline(always)]
+    #[must_use]
     pub fn diagonal_attacks(occ: BitBoard, sq: Square) -> BitBoard {
         const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table();
-        return BitBoard::fill_up_attacks(&DIAGONAL_MASK_EX, occ, sq);
+        BitBoard::fill_up_attacks(&DIAGONAL_MASK_EX, occ, sq)
     }
     #[inline(always)]
+    #[must_use]
     pub fn antidiag_attacks(occ: BitBoard, sq: Square) -> BitBoard {
         const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table();
-        return BitBoard::fill_up_attacks(&ANTIDIAG_MASK_EX, occ, sq);
+        BitBoard::fill_up_attacks(&ANTIDIAG_MASK_EX, occ, sq)
     }
     #[inline(always)]
+    #[must_use]
     pub fn rank_attacks(occ: BitBoard, sq: Square) -> BitBoard {
         const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table();
-        return BitBoard::fill_up_attacks(&RANK_MASK_EX, occ, sq);
+        BitBoard::fill_up_attacks(&RANK_MASK_EX, occ, sq)
     }
     #[inline(always)]
+    #[must_use]
     pub fn file_attacks(occ: BitBoard, sq: Square) -> BitBoard {
         const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table();
         const A_FILE: u64 = 0x101010101010101;
         const DIA_C2_H7: u64 = 0x0080402010080400;
         let occupance_index =
             ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
-        return BitBoard(
-            A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8),
-        );
+        BitBoard(A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8))
     }
     #[inline(always)]
+    #[must_use]
     pub fn bishop_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        return BitBoard::diagonal_attacks(occ, sq) | BitBoard::antidiag_attacks(occ, sq);
+        BitBoard::diagonal_attacks(occ, sq) | BitBoard::antidiag_attacks(occ, sq)
     }
     #[inline(always)]
+    #[must_use]
     pub fn rook_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        return BitBoard::file_attacks(occ, sq) | BitBoard::rank_attacks(occ, sq);
+        BitBoard::file_attacks(occ, sq) | BitBoard::rank_attacks(occ, sq)
     }
     #[inline(always)]
+    #[must_use]
     pub fn queen_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        return BitBoard::bishop_attacks(occ, sq) | BitBoard::rook_attacks(occ, sq);
+        BitBoard::bishop_attacks(occ, sq) | BitBoard::rook_attacks(occ, sq)
     }
     #[inline(always)]
+    #[must_use]
     pub fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
-        return BitBoard(((pawns.0 << 8) >> ((color as u8) << 4)) & empty.0);
+        BitBoard(((pawns.0 << 8) >> ((color as u8) << 4)) & empty.0)
     }
 }
 
 impl BitBoard {
     #[inline(always)]
+    #[must_use]
     pub fn none(self) -> bool {
-        return self.0 == 0;
+        self.0 == 0
     }
     #[inline(always)]
+    #[must_use]
     pub fn has_square(self, sq: Square) -> bool {
-        return !(self & BitBoard::from(sq)).none();
+        !(self & BitBoard::from(sq)).none()
     }
     #[inline(always)]
+    #[must_use]
     pub fn isolated_ls1b(self) -> BitBoard {
-        return BitBoard(self.0 & self.0.wrapping_neg());
+        BitBoard(self.0 & self.0.wrapping_neg())
     }
     #[inline(always)]
+    #[must_use]
     pub fn separated_ls1b(self) -> BitBoard {
-        return BitBoard(self.0 ^ self.0.wrapping_sub(1));
+        BitBoard(self.0 ^ self.0.wrapping_sub(1))
     }
     #[inline(always)]
+    #[must_use]
     pub fn reset_ls1b(self) -> BitBoard {
-        return BitBoard(self.0 & self.0.wrapping_sub(1));
+        BitBoard(self.0 & self.0.wrapping_sub(1))
     }
+    /// # Safety
+    /// Do not call if:
+    /// ```
+    /// self.none() == true
+    /// ```
     #[inline(always)]
+    #[must_use]
     pub unsafe fn bit_scan_forward_unchecked(self) -> Square {
         debug_assert!(!self.none());
         // const INDEX64: [u8; 64] = [
@@ -220,16 +244,15 @@ impl BitBoard {
         //     ));
         // }
 
-        return std::mem::transmute(self.isolated_ls1b().0.trailing_zeros() as u8);
+        std::mem::transmute(self.isolated_ls1b().0.trailing_zeros() as u8)
     }
     #[inline(always)]
+    #[must_use]
     pub fn bit_scan_forward(self) -> Option<Square> {
         if self.none() {
             return None;
         }
-        unsafe {
-            return Some(self.bit_scan_forward_unchecked());
-        }
+        unsafe { Some(self.bit_scan_forward_unchecked()) }
     }
 }
 
@@ -249,7 +272,7 @@ impl std::fmt::Debug for BitBoard {
             }
             ret = row + "\n" + &ret;
         }
-        return f.write_str(&ret);
+        f.write_str(&ret)
     }
 }
 

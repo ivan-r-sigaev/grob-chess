@@ -72,8 +72,8 @@
 // }
 pub use castling_rights::CastlingRights;
 pub mod board;
-use board::bitboard::*;
-use board::*;
+use board::bitboard::{BitBoard, File, Square};
+use board::{Board, Color, Piece};
 
 use std::error::Error;
 use std::fmt::Display;
@@ -108,11 +108,11 @@ pub struct Position {
 impl PartialEq for Position {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
-        return self.zobrist_hash == other.zobrist_hash  // Compare hash to maybe get a faster comparison on average.
+        self.zobrist_hash == other.zobrist_hash  // Compare hash to maybe get a faster comparison on average.
         && self.board == other.board
         && self.turn == other.turn
         && self.castling_rights == other.castling_rights
-        && self.en_passant == other.en_passant;
+        && self.en_passant == other.en_passant
     }
 }
 
@@ -132,7 +132,7 @@ pub enum ParseFenError {
 
 impl Display for ParseFenError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "{:?}", self);
+        write!(f, "{self:?}")
     }
 }
 
@@ -145,7 +145,7 @@ impl Position {
             return Err(ParseFenError::BadFenSize);
         }
 
-        let position_parts: Vec<&str> = fen_parts[0].split("/").collect();
+        let position_parts: Vec<&str> = fen_parts[0].split('/').collect();
         if position_parts.len() != 8 {
             return Err(ParseFenError::BadRowCount);
         }
@@ -155,8 +155,8 @@ impl Position {
         let mut sq: Square = Square::A1;
         for y in (0..8).rev() {
             let mut x = 0;
-            for ch in position_parts[y].chars().into_iter() {
-                if ch >= '1' && ch <= '8' {
+            for ch in position_parts[y].chars() {
+                if ('1'..='8').contains(&ch) {
                     let increment = u8::try_from(ch).unwrap() - u8::try_from('1').unwrap();
                     x += increment;
                     sq = sq.shifted(increment as i8);
@@ -213,19 +213,19 @@ impl Position {
         let mut castling_rights = CastlingRights::empty();
         if fen_parts[2] != "-" {
             let mut remaining_len = fen_parts[2].len();
-            if fen_parts[2].find("K").is_some() {
+            if fen_parts[2].contains('K') {
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::WHITE_KING;
             }
-            if fen_parts[2].find("Q").is_some() {
+            if fen_parts[2].contains('Q') {
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::WHITE_QUEEN;
             }
-            if fen_parts[2].find("k").is_some() {
+            if fen_parts[2].contains('k') {
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::BLACK_KING;
             }
-            if fen_parts[2].find("q").is_some() {
+            if fen_parts[2].contains('q') {
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::BLACK_QUEEN;
             }
@@ -236,7 +236,9 @@ impl Position {
         zobrist_hash ^= get_castling_zobrist(castling_rights);
 
         let en_passant;
-        if fen_parts[3] != "-" {
+        if fen_parts[3] == "-" {
+            en_passant = None;
+        } else {
             if fen_parts[3].chars().count() != 2 {
                 return Err(ParseFenError::BadEnPassant);
             }
@@ -247,26 +249,24 @@ impl Position {
             }
 
             if col == 'a' {
-                en_passant = Some(File::A)
+                en_passant = Some(File::A);
             } else if col == 'b' {
-                en_passant = Some(File::B)
+                en_passant = Some(File::B);
             } else if col == 'c' {
-                en_passant = Some(File::C)
+                en_passant = Some(File::C);
             } else if col == 'd' {
-                en_passant = Some(File::D)
+                en_passant = Some(File::D);
             } else if col == 'e' {
-                en_passant = Some(File::E)
+                en_passant = Some(File::E);
             } else if col == 'f' {
-                en_passant = Some(File::F)
+                en_passant = Some(File::F);
             } else if col == 'g' {
-                en_passant = Some(File::G)
+                en_passant = Some(File::G);
             } else if col == 'h' {
-                en_passant = Some(File::H)
+                en_passant = Some(File::H);
             } else {
                 return Err(ParseFenError::BadEnPassant);
             }
-        } else {
-            en_passant = None;
         }
         zobrist_hash ^= get_en_passant_zobrist(en_passant);
 
@@ -286,7 +286,7 @@ impl Position {
         //     board.get_piece_score(Color::Black)
         // ];
 
-        return Ok(Position {
+        Ok(Position {
             board: bitboard,
             turn,
             castling_rights,
@@ -294,7 +294,7 @@ impl Position {
             halfmove_clock,
             zobrist_hash,
             //piece_scores,
-        });
+        })
     }
 }
 
@@ -310,34 +310,40 @@ impl Rem<usize> for PositionHash {
         } else {
             u64::MAX
         };
-        return (self.0 & MAX) as usize % rhs;
+        (self.0 & MAX) as usize % rhs
     }
 }
 
 impl Position {
     #[inline(always)]
+    #[must_use]
     pub fn position_hash(&self) -> PositionHash {
-        return PositionHash(self.zobrist_hash);
+        PositionHash(self.zobrist_hash)
     }
     #[inline(always)]
+    #[must_use]
     pub fn en_passant(&self) -> Option<File> {
-        return self.en_passant;
+        self.en_passant
     }
     #[inline(always)]
+    #[must_use]
     pub fn castling_rights(&self) -> CastlingRights {
-        return self.castling_rights;
+        self.castling_rights
     }
     #[inline(always)]
+    #[must_use]
     pub fn board(&self) -> &Board {
-        return &self.board;
+        &self.board
     }
     #[inline(always)]
+    #[must_use]
     pub fn turn(&self) -> Color {
-        return self.turn;
+        self.turn
     }
     #[inline(always)]
+    #[must_use]
     pub fn halfmove_clock(&self) -> u32 {
-        return self.halfmove_clock;
+        self.halfmove_clock
     }
 }
 
@@ -395,11 +401,12 @@ impl Position {
 
 impl Position {
     #[inline(always)]
+    #[must_use]
     pub fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
         // TODO: remove crights when rook is taken instead of checking for it's existence
         let w_empty = BitBoard::from(Square::F1) | BitBoard::from(Square::G1);
         let b_empty = BitBoard::from(Square::F8) | BitBoard::from(Square::G8);
-        return !self
+        !self
             .castling_rights
             .contains(CastlingRights::kingside(self.turn))
             || (self.board.get_color_piece(color, Piece::Rook)
@@ -433,16 +440,17 @@ impl Position {
                 },
                 !color,
             ))
-            .none();
+            .none()
     }
     #[inline(always)]
+    #[must_use]
     pub fn is_queenside_castling_prohibited(&self, color: Color) -> bool {
         // TODO: remove crights when rook is taken instead of checking for it's existence
         let w_empty =
             BitBoard::from(Square::B1) | BitBoard::from(Square::C1) | BitBoard::from(Square::D1);
         let b_empty =
             BitBoard::from(Square::B8) | BitBoard::from(Square::C8) | BitBoard::from(Square::D8);
-        return !self
+        !self
             .castling_rights
             .contains(CastlingRights::queenside(self.turn))
             || (self.board.get_color_piece(color, Piece::Rook)
@@ -476,6 +484,6 @@ impl Position {
                 },
                 !color,
             ))
-            .none();
+            .none()
     }
 }

@@ -1,7 +1,9 @@
 pub mod move_generator;
 
-use move_generator::position::*;
-use move_generator::*;
+use move_generator::position::{ParseFenError, Position};
+use move_generator::{
+    can_make_move, make_move, position, unmake_move, MoveConcept, MoveGenerator, UnmoveConcept,
+};
 
 #[derive(Debug, Clone)]
 pub struct Game {
@@ -24,15 +26,16 @@ pub enum GameEnding {
 impl Game {
     #[inline(always)]
     pub fn try_from_fen(fen: &str) -> Result<Game, ParseFenError> {
-        return Ok(Game {
+        Ok(Game {
             pos: Position::try_from_fen(fen)?,
             move_list: MoveGenerator::empty(),
             history: Vec::new(),
-        });
+        })
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_position(&self) -> &Position {
-        return &self.pos;
+        &self.pos
     }
     #[inline(always)]
     pub fn map_move_if_legal<F>(&mut self, move_concept: MoveConcept, mut op: F) -> bool
@@ -50,7 +53,7 @@ impl Game {
         }
         unmake_move(&mut self.pos, unmove);
 
-        return is_legal;
+        is_legal
     }
     #[inline(always)]
     pub fn for_each_legal_child_node<F>(&mut self, mut op: F) -> Option<GameEnding>
@@ -73,13 +76,13 @@ impl Game {
 
         self.move_list.pop_group();
 
-        return if has_moves {
+        if has_moves {
             None
         } else if self.pos.board().is_king_in_check(self.pos.turn()) {
             Some(GameEnding::Checkmate)
         } else {
             Some(GameEnding::Stalemate)
-        };
+        }
     }
     #[inline(always)]
     pub fn exhaust_moves(&mut self) {
@@ -89,6 +92,7 @@ impl Game {
             }
         }
     }
+    #[must_use]
     pub fn try_make_move(mut self, move_concept: MoveConcept) -> (Self, bool) {
         if !can_make_move(&self.pos, move_concept) {
             return (self, false);
@@ -104,13 +108,14 @@ impl Game {
 
         self.history.push(PlyHistory { unmove });
 
-        return (self, true);
+        (self, true)
     }
+    #[must_use]
     pub fn try_unmake_move(mut self) -> (Self, bool) {
         if let Some(ply_history) = self.history.pop() {
             unmake_move(&mut self.pos, ply_history.unmove);
             return (self, true);
         }
-        return (self, false);
+        (self, false)
     }
 }

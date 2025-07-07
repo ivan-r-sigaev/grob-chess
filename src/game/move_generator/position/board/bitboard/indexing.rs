@@ -94,27 +94,23 @@ pub enum Square {
 
 impl Square {
     #[inline(always)]
+    #[must_use]
     pub fn new(file: File, rank: Rank) -> Square {
-        unsafe {
-            return transmute((rank as u8) * 8 + (file as u8));
-        }
+        unsafe { transmute((rank as u8) * 8 + (file as u8)) }
     }
     #[inline(always)]
+    #[must_use]
     pub fn into_file(self) -> File {
-        unsafe {
-            return transmute(self as u8 & 7);
-        }
+        unsafe { transmute(self as u8 & 7) }
     }
     #[inline(always)]
+    #[must_use]
     pub fn into_rank(self) -> Rank {
-        unsafe {
-            return transmute(self as u8 >> 3);
-        }
+        unsafe { transmute(self as u8 >> 3) }
     }
     #[inline(always)]
+    #[must_use]
     pub fn shifted(self, delta: i8) -> Square {
-        unsafe {
-            return transmute(((self as i8).wrapping_add(delta)) & 63);
-        }
+        unsafe { transmute(((self as i8).wrapping_add(delta)) & 63) }
     }
 }

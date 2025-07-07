@@ -8,26 +8,29 @@ pub enum Color {
 }
 
 impl Color {
+    #[must_use]
     pub fn promotion_rank(self) -> Rank {
-        return if self == Color::White {
+        if self == Color::White {
             Rank::R8
         } else {
             Rank::R1
-        };
+        }
     }
+    #[must_use]
     pub fn pawn_rank(self) -> Rank {
-        return if self == Color::White {
+        if self == Color::White {
             Rank::R2
         } else {
             Rank::R7
-        };
+        }
     }
+    #[must_use]
     pub fn en_passant_dest_rank(self) -> Rank {
-        return if self == Color::White {
+        if self == Color::White {
             Rank::R6
         } else {
             Rank::R3
-        };
+        }
     }
 }
 
@@ -36,9 +39,7 @@ impl Not for Color {
 
     #[inline(always)]
     fn not(self) -> Self::Output {
-        unsafe {
-            return transmute((self as u8) ^ 0x01);
-        }
+        unsafe { transmute((self as u8) ^ 0x01) }
     }
 }
 

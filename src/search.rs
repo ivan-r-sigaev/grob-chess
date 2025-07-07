@@ -1,10 +1,10 @@
-use crate::game::move_generator::*;
-use crate::game::*;
-use crate::transposition_table::*;
+use crate::game::move_generator::MoveConcept;
+use crate::game::{Game, GameEnding};
+use crate::transposition_table::TranspositionTable;
 
 pub fn evaluate<const TT_SIZE: usize>(game: &mut Game, depth: u8) -> i32 {
     let mut tt = TranspositionTable::<TT_SIZE, MoveConcept>::new();
-    return negamax(&mut tt, game, -100, 100, depth);
+    negamax(&mut tt, game, -100, 100, depth)
 }
 
 fn negamax<const TT_SIZE: usize>(
@@ -26,7 +26,7 @@ fn negamax<const TT_SIZE: usize>(
         }
     }
     let mut best_move: Option<MoveConcept> = None;
-    return match game.for_each_legal_child_node(|node, move_concept| {
+    match game.for_each_legal_child_node(|node, move_concept| {
         let score = -negamax(tt, node, -beta, -alpha, depth - 1);
         if score >= alpha {
             best_move = Some(move_concept);
@@ -45,7 +45,7 @@ fn negamax<const TT_SIZE: usize>(
         }
         Some(GameEnding::Checkmate) => -100,
         Some(GameEnding::Stalemate) => 0,
-    };
+    }
 }
 
 // use crate::hash_table::*;

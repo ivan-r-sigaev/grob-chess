@@ -1,6 +1,6 @@
 pub use indexing::{Color, Piece};
 pub mod bitboard;
-use bitboard::*;
+use bitboard::{BitBoard, Square};
 
 mod indexing;
 
@@ -22,35 +22,42 @@ pub struct Board {
 impl Board {
     // TODO: it may be better to add a constructor from FEN.
     #[inline(always)]
+    #[must_use]
     pub fn empty() -> Board {
-        return Board {
+        Board {
             boards: [BitBoard::EMPTY; 8],
-        };
+        }
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_color(&self, color: Color) -> BitBoard {
-        return self.boards[color as usize];
+        self.boards[color as usize]
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_occupance(&self) -> BitBoard {
-        return self.get_color(Color::White) | self.get_color(Color::Black);
+        self.get_color(Color::White) | self.get_color(Color::Black)
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_empty(&self) -> BitBoard {
-        return !self.get_occupance();
+        !self.get_occupance()
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_piece(&self, piece: Piece) -> BitBoard {
-        return self.boards[piece as usize + 2];
+        self.boards[piece as usize + 2]
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_color_piece(&self, color: Color, piece: Piece) -> BitBoard {
-        return self.get_color(color) & self.get_piece(piece);
+        self.get_color(color) & self.get_piece(piece)
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_piece_at(&self, sq: Square) -> Option<Piece> {
         let bb = BitBoard::from(sq);
-        return if !(bb & self.get_piece(Piece::Pawn)).none() {
+        if !(bb & self.get_piece(Piece::Pawn)).none() {
             Some(Piece::Pawn)
         } else if !(bb & self.get_piece(Piece::Bishop)).none() {
             Some(Piece::Bishop)
@@ -64,9 +71,10 @@ impl Board {
             Some(Piece::King)
         } else {
             None
-        };
+        }
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_color_at(&self, sq: Square) -> Option<Color> {
         let bb = BitBoard::from(sq);
         if !(bb & self.get_color(Color::White)).none() {
@@ -78,28 +86,29 @@ impl Board {
         }
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
         let occ = self.get_occupance();
 
-        return BitBoard::pawn_attacks(sq, Color::White)
-            & self.get_color_piece(Color::Black, Piece::Pawn)
+        BitBoard::pawn_attacks(sq, Color::White) & self.get_color_piece(Color::Black, Piece::Pawn)
             | BitBoard::pawn_attacks(sq, Color::Black)
                 & self.get_color_piece(Color::White, Piece::Pawn)
             | BitBoard::knight_attacks(sq) & self.get_piece(Piece::Knight)
             | BitBoard::king_attacks(sq) & self.get_piece(Piece::King)
             | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
-            | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders();
+            | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_color_attackers_to(&self, sq: Square, color: Color) -> BitBoard {
         let occ = self.get_occupance();
 
-        return self.get_color(color)
+        self.get_color(color)
             & (BitBoard::pawn_attacks(sq, !color) & self.get_piece(Piece::Pawn)
                 | BitBoard::knight_attacks(sq) & self.get_piece(Piece::Knight)
                 | BitBoard::king_attacks(sq) & self.get_piece(Piece::King)
                 | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
-                | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders());
+                | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders())
     }
     // #[inline(always)]
     // pub fn get_piece_score(&self, color: Color) -> PieceScore {
@@ -115,31 +124,36 @@ impl Board {
 
 impl Board {
     #[inline(always)]
+    #[must_use]
     pub fn get_bishop_sliders(&self) -> BitBoard {
-        return self.get_piece(Piece::Queen) | self.get_piece(Piece::Bishop);
+        self.get_piece(Piece::Queen) | self.get_piece(Piece::Bishop)
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_color_bishop_sliders(&self, color: Color) -> BitBoard {
-        return self.get_color(color) & self.get_bishop_sliders();
+        self.get_color(color) & self.get_bishop_sliders()
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_rook_sliders(&self) -> BitBoard {
-        return self.get_piece(Piece::Queen) | self.get_piece(Piece::Rook);
+        self.get_piece(Piece::Queen) | self.get_piece(Piece::Rook)
     }
     #[inline(always)]
+    #[must_use]
     pub fn get_color_rook_sliders(&self, color: Color) -> BitBoard {
-        return self.get_color(color) & self.get_rook_sliders();
+        self.get_color(color) & self.get_rook_sliders()
     }
     // TODO: This function relies on a failable assumtion that the king exists.
     #[inline(always)]
+    #[must_use]
     pub fn is_king_in_check(&self, color: Color) -> bool {
-        return !self
+        !self
             .get_color_attackers_to(
                 BitBoard::bit_scan_forward(self.get_color_piece(color, Piece::King))
                     .expect("king does not exist"),
                 !color,
             )
-            .none();
+            .none()
     }
 }
 

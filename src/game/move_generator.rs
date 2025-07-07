@@ -1,8 +1,8 @@
 pub mod position;
 
-use crate::game::position::board::bitboard::*;
+use crate::game::position::board::bitboard::{BitBoard, File, Square};
 use crate::game::position::board::{Color, Piece};
-use crate::game::position::*;
+use crate::game::position::{CastlingRights, Position};
 
 #[cfg_attr(test, derive(enum_iterator::Sequence))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -25,12 +25,14 @@ pub enum MoveHint {
 
 impl MoveHint {
     #[inline(always)]
+    #[must_use]
     pub fn is_capture(self) -> bool {
-        return self as u8 & 0b100 != 0;
+        self as u8 & 0b100 != 0
     }
     #[inline(always)]
+    #[must_use]
     pub fn is_promotion(self) -> bool {
-        return self as u8 & 0b1000 != 0;
+        self as u8 & 0b1000 != 0
     }
 }
 
@@ -42,29 +44,26 @@ pub struct MoveConcept {
 impl MoveConcept {
     #[inline(always)]
     fn new(from: Square, to: Square, hint: MoveHint) -> MoveConcept {
-        return MoveConcept {
+        MoveConcept {
             data: (((hint as u16) & 0xf) << 12)
                 | (((from as u16) & 0x3f) << 6)
                 | ((to as u16) & 0x3f),
-        };
+        }
     }
     #[inline(always)]
+    #[must_use]
     pub fn to(self) -> Square {
-        unsafe {
-            return std::mem::transmute((self.data & 0x3f) as u8);
-        }
+        unsafe { std::mem::transmute((self.data & 0x3f) as u8) }
     }
     #[inline(always)]
+    #[must_use]
     pub fn from(self) -> Square {
-        unsafe {
-            return std::mem::transmute(((self.data >> 6) & 0x3f) as u8);
-        }
+        unsafe { std::mem::transmute(((self.data >> 6) & 0x3f) as u8) }
     }
     #[inline(always)]
+    #[must_use]
     pub fn hint(self) -> MoveHint {
-        unsafe {
-            return std::mem::transmute(((self.data >> 12) & 0x0f) as u8);
-        }
+        unsafe { std::mem::transmute(((self.data >> 12) & 0x0f) as u8) }
     }
 }
 
@@ -100,12 +99,13 @@ pub struct MoveGenerator {
 
 impl MoveGenerator {
     #[inline(always)]
+    #[must_use]
     pub fn empty() -> MoveGenerator {
-        return MoveGenerator {
+        MoveGenerator {
             moves: Vec::new(),
             lens: Vec::new(),
             len: 0,
-        };
+        }
     }
     #[inline(always)]
     fn push_move(&mut self, move_concept: MoveConcept) {
@@ -118,7 +118,7 @@ impl MoveGenerator {
             return None;
         }
         self.len -= 1;
-        return self.moves.pop();
+        self.moves.pop()
     }
     #[inline(always)]
     fn push_group(&mut self) {
@@ -333,6 +333,7 @@ impl MoveGenerator {
     }
 }
 
+#[must_use]
 pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
     let from = move_concept.from();
     let to = move_concept.to();
@@ -373,37 +374,31 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
                     return false;
                 }
                 if hint.is_capture() {
-                    return !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none();
+                    !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
                 } else {
-                    return !(BitBoard::pawn_pushes(BitBoard::from(from), empty, color)
+                    !(BitBoard::pawn_pushes(BitBoard::from(from), empty, color)
                         & BitBoard::from(to))
-                    .none();
+                    .none()
                 }
             }
-            Piece::Bishop => {
-                return !(BitBoard::bishop_attacks(occ, from) & BitBoard::from(to)).none()
-            }
-            Piece::Knight => return !(BitBoard::knight_attacks(from) & BitBoard::from(to)).none(),
-            Piece::Rook => return !(BitBoard::rook_attacks(occ, from) & BitBoard::from(to)).none(),
-            Piece::Queen => {
-                return !(BitBoard::queen_attacks(occ, from) & BitBoard::from(to)).none()
-            }
-            Piece::King => return !(BitBoard::king_attacks(from) & BitBoard::from(to)).none(),
+            Piece::Bishop => !(BitBoard::bishop_attacks(occ, from) & BitBoard::from(to)).none(),
+            Piece::Knight => !(BitBoard::knight_attacks(from) & BitBoard::from(to)).none(),
+            Piece::Rook => !(BitBoard::rook_attacks(occ, from) & BitBoard::from(to)).none(),
+            Piece::Queen => !(BitBoard::queen_attacks(occ, from) & BitBoard::from(to)).none(),
+            Piece::King => !(BitBoard::king_attacks(from) & BitBoard::from(to)).none(),
         },
         MoveHint::DoublePawn => {
-            return piece == Piece::Pawn
+            piece == Piece::Pawn
                 && from.into_rank() == color.pawn_rank()
                 && BitBoard::pawn_pushes(
                     BitBoard::pawn_pushes(BitBoard::from(from), empty, color),
                     empty,
                     color,
-                ) == BitBoard::from(to);
+                ) == BitBoard::from(to)
         }
-        MoveHint::KingCastle => {
-            return piece == Piece::King && !pos.is_kingside_castling_prohibited(color);
-        }
+        MoveHint::KingCastle => piece == Piece::King && !pos.is_kingside_castling_prohibited(color),
         MoveHint::QueenCastle => {
-            return piece == Piece::King && !pos.is_queenside_castling_prohibited(color);
+            piece == Piece::King && !pos.is_queenside_castling_prohibited(color)
         }
         MoveHint::EnPassantCapture => {
             let file = match pos.en_passant() {
@@ -411,36 +406,35 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
                 None => return false,
             };
             let target_sq = Square::new(to.into_file(), from.into_rank());
-            return Square::new(file, color.en_passant_dest_rank()) == to
+            Square::new(file, color.en_passant_dest_rank()) == to
                 && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
                 && pos.board().get_piece_at(target_sq) == Some(Piece::Pawn)
-                && pos.board().get_color_at(target_sq) == Some(!color);
+                && pos.board().get_color_at(target_sq) == Some(!color)
         }
         MoveHint::KnightPromotion
         | MoveHint::BishopPromotion
         | MoveHint::RookPromotion
         | MoveHint::QueenPromotion => {
-            return piece == Piece::Pawn
+            piece == Piece::Pawn
                 && to.into_rank() == color.promotion_rank()
                 && BitBoard::pawn_pushes(BitBoard::from(from), BitBoard::FULL, color)
-                    == BitBoard::from(to);
+                    == BitBoard::from(to)
         }
         MoveHint::KnightPromotionCapture
         | MoveHint::BishopPromotionCapture
         | MoveHint::RookPromotionCapture
         | MoveHint::QueenPromotionCapture => {
-            return piece == Piece::Pawn
+            piece == Piece::Pawn
                 && to.into_rank() == color.promotion_rank()
-                && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none();
+                && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
         }
-    };
+    }
 }
 
 pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept {
     debug_assert!(
         can_make_move(pos, move_concept),
-        "buerak -> {:?}",
-        move_concept
+        "buerak -> {move_concept:?}"
     );
     let from = move_concept.from();
     let to = move_concept.to();
@@ -460,10 +454,10 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(if piece != Piece::Pawn {
-                pos.halfmove_clock() + 1
-            } else {
+            pos.set_halfmove_clock(if piece == Piece::Pawn {
                 0
+            } else {
+                pos.halfmove_clock() + 1
             });
 
             if piece == Piece::King {
@@ -712,17 +706,17 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
                 },
             );
         }
-    };
+    }
 
     pos.set_turn(!pos.turn());
 
-    return UnmoveConcept {
+    UnmoveConcept {
         move_concept,
         capture,
         en_passant,
         castling_rights,
         halfmove_clock,
-    };
+    }
 }
 
 pub fn unmake_move(board: &mut Position, unmove_concept: UnmoveConcept) {

@@ -22,30 +22,31 @@ const RANK7: u64 = 0xff000000000000;
 const RANK8: u64 = 0xff00000000000000;*/
 
 const fn sout_one(bb: u64) -> u64 {
-    return bb >> 8;
+    bb >> 8
 }
 const fn nort_one(bb: u64) -> u64 {
-    return bb << 8;
+    bb << 8
 }
 const fn east_one(bb: u64) -> u64 {
-    return (bb << 1) & NOT_A_FILE;
+    (bb << 1) & NOT_A_FILE
 }
 const fn noea_one(bb: u64) -> u64 {
-    return (bb << 9) & NOT_A_FILE;
+    (bb << 9) & NOT_A_FILE
 }
 const fn soea_one(bb: u64) -> u64 {
-    return (bb >> 7) & NOT_A_FILE;
+    (bb >> 7) & NOT_A_FILE
 }
 const fn west_one(bb: u64) -> u64 {
-    return (bb >> 1) & NOT_H_FILE;
+    (bb >> 1) & NOT_H_FILE
 }
 const fn sowe_one(bb: u64) -> u64 {
-    return (bb >> 9) & NOT_H_FILE;
+    (bb >> 9) & NOT_H_FILE
 }
 const fn nowe_one(bb: u64) -> u64 {
-    return (bb << 7) & NOT_H_FILE;
+    (bb << 7) & NOT_H_FILE
 }
 
+#[must_use]
 pub const fn make_pawn_attack_table() -> [[u64; 64]; 2] {
     let mut result = [[0; 64]; 2];
     let mut i = 0;
@@ -55,9 +56,10 @@ pub const fn make_pawn_attack_table() -> [[u64; 64]; 2] {
         result[1][i] = sowe_one(bb) | soea_one(bb);
         i += 1;
     }
-    return result;
+    result
 }
 
+#[must_use]
 pub const fn make_knight_attack_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
@@ -68,9 +70,10 @@ pub const fn make_knight_attack_table() -> [u64; 64] {
         result[i] = (h1 << 16) | (h1 >> 16) | (h2 << 8) | (h2 >> 8);
         i += 1;
     }
-    return result;
+    result
 }
 
+#[must_use]
 pub const fn make_king_attack_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
@@ -82,11 +85,11 @@ pub const fn make_king_attack_table() -> [u64; 64] {
         result[i] = attacks;
         i += 1;
     }
-    return result;
+    result
 }
 
 const fn rank_mask(sq: i32) -> u64 {
-    return RANK1 << ((sq as u64) & 56);
+    RANK1 << ((sq as u64) & 56)
 }
 
 /*fn file_mask(sq: i32) -> u64 {
@@ -96,15 +99,16 @@ const fn diagonal_mask(sq: i32) -> u64 {
     let diag: i32 = 8 * (sq & 7) - (sq & 56);
     let nort: i32 = -diag & (diag >> 31);
     let sout: i32 = diag & (-diag >> 31);
-    return (DIA_A1_H8 >> sout) << nort;
+    (DIA_A1_H8 >> sout) << nort
 }
 const fn antidiag_mask(sq: i32) -> u64 {
     let diag: i32 = 56 - 8 * (sq & 7) - (sq & 56);
     let nort: i32 = -diag & (diag >> 31);
     let sout: i32 = diag & (-diag >> 31);
-    return (DIA_H1_A8 >> sout) << nort;
+    (DIA_H1_A8 >> sout) << nort
 }
 
+#[must_use]
 pub const fn make_rank_mask_ex_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
@@ -113,9 +117,10 @@ pub const fn make_rank_mask_ex_table() -> [u64; 64] {
         result[i] = rank_mask(i as i32) ^ bb;
         i += 1;
     }
-    return result;
+    result
 }
 
+#[must_use]
 pub const fn make_diagonal_mask_ex_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
@@ -124,9 +129,10 @@ pub const fn make_diagonal_mask_ex_table() -> [u64; 64] {
         result[i] = diagonal_mask(i as i32) ^ bb;
         i += 1;
     }
-    return result;
+    result
 }
 
+#[must_use]
 pub const fn make_antidiag_mask_ex_table() -> [u64; 64] {
     let mut result = [0; 64];
     let mut i = 0;
@@ -135,7 +141,7 @@ pub const fn make_antidiag_mask_ex_table() -> [u64; 64] {
         result[i] = antidiag_mask(i as i32) ^ bb;
         i += 1;
     }
-    return result;
+    result
 }
 
 const fn east_attacks(mut rooks: u64, mut empty: u64) -> u64 {
@@ -146,7 +152,7 @@ const fn east_attacks(mut rooks: u64, mut empty: u64) -> u64 {
     rooks |= empty & (rooks << 1); // 4. fill
     rooks |= empty & (rooks << 1); // 5. fill
     rooks |= empty & (rooks << 1); // 6. fill
-    return NOT_A_FILE & (rooks << 1);
+    NOT_A_FILE & (rooks << 1)
 }
 const fn west_attacks(mut rooks: u64, mut empty: u64) -> u64 {
     empty = empty & NOT_H_FILE;
@@ -156,7 +162,7 @@ const fn west_attacks(mut rooks: u64, mut empty: u64) -> u64 {
     rooks |= empty & (rooks >> 1);
     rooks |= empty & (rooks >> 1);
     rooks |= empty & (rooks >> 1);
-    return NOT_H_FILE & (rooks >> 1);
+    NOT_H_FILE & (rooks >> 1)
 }
 /*fn nort_attacks(mut rooks: u64, empty: u64) -> u64 {
     rooks |= empty & (rooks << 8);
@@ -191,9 +197,10 @@ const fn nort_occluded(mut rooks: u64, mut empty: u64) -> u64 {
     rooks |= empty & (rooks << 16);
     empty = empty & (empty << 16);
     rooks |= empty & (rooks << 32);
-    return rooks;
+    rooks
 }
 
+#[must_use]
 pub const fn make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {
     let mut result = [[0; 64]; 8];
     let mut sq = 0;
@@ -208,9 +215,10 @@ pub const fn make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {
         }
         sq += 1;
     }
-    return result;
+    result
 }
 
+#[must_use]
 pub const fn make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
     let mut result = [[0; 64]; 8];
     let mut sq = 0;
@@ -226,11 +234,12 @@ pub const fn make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
         }
         sq += 1;
     }
-    return result;
+    result
 }
 
 use const_random::const_random;
 
+#[must_use]
 pub const fn make_random_u64_table<const SIZE: usize>() -> [u64; SIZE] {
     let mut result = [0; SIZE];
     let mut i = 0;
@@ -238,5 +247,5 @@ pub const fn make_random_u64_table<const SIZE: usize>() -> [u64; SIZE] {
         result[i] = const_random!(u64);
         i += 1;
     }
-    return result;
+    result
 }
