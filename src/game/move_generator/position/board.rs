@@ -1,5 +1,8 @@
+pub use indexing::{Color, Piece};
 pub mod bitboard;
 use bitboard::*;
+
+mod indexing;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Board {

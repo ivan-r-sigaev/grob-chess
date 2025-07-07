@@ -1,6 +1,7 @@
 pub mod position;
 
 use crate::game::position::*;
+use crate::game::position::board::{Color, Piece};
 use crate::game::position::board::bitboard::*;
 
 #[cfg_attr(test, derive(enum_iterator::Sequence))]

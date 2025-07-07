@@ -1,6 +1,7 @@
 pub use indexing::{Rank, File, Square};
-use std::{ops::{Not, BitAnd, BitOr, BitXor, BitAndAssign, BitOrAssign, BitXorAssign}, mem::transmute};
+use std::ops::{Not, BitAnd, BitOr, BitXor, BitAndAssign, BitOrAssign, BitXorAssign};
 use crate::table_generation::*;
+use super::Color;
 
 mod indexing;
 
@@ -21,33 +22,6 @@ impl Square {
             if turn == Color::White { Rank::R6 } else { Rank::R3 }
         );
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Color {
-    White,
-    Black
-}
-
-impl Not for Color {
-    type Output = Self;
-
-    #[inline(always)]
-    fn not(self) -> Self::Output {
-        unsafe {
-            return transmute((self as u8) ^ 0x01);
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Piece {
-    Pawn,
-    Bishop,
-    Knight,
-    Rook,
-    Queen,
-    King
 }
 
 #[derive(Clone, Copy,  PartialEq, Eq)]
