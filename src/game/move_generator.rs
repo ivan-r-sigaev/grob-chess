@@ -43,6 +43,7 @@ pub struct MoveConcept {
 
 impl MoveConcept {
     #[inline(always)]
+    #[must_use]
     fn new(from: Square, to: Square, hint: MoveHint) -> MoveConcept {
         MoveConcept {
             data: (((hint as u16) & 0xf) << 12)
@@ -113,6 +114,7 @@ impl MoveGenerator {
         self.len += 1;
     }
     #[inline(always)]
+    #[must_use]
     pub fn pop_move(&mut self) -> Option<MoveConcept> {
         if self.len == 0 {
             return None;
@@ -431,6 +433,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
     }
 }
 
+#[must_use]
 pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept {
     debug_assert!(
         can_make_move(pos, move_concept),
