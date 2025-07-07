@@ -1,7 +1,7 @@
 mod data {
+    use super::PerftValues;
     use crate::game::move_generator::*;
     use enum_iterator::all;
-    use super::PerftValues;
 
     #[derive(Default)]
     pub struct PerftData {
@@ -9,13 +9,13 @@ mod data {
         check_count: u128,
         checkmate_count: u128,
     }
-    
+
     impl PerftData {
         pub fn new() -> PerftData {
-            return PerftData { 
-                move_count: [0; 16], 
-                check_count: 0, 
-                checkmate_count: 0 
+            return PerftData {
+                move_count: [0; 16],
+                check_count: 0,
+                checkmate_count: 0,
             };
         }
         pub fn get_move_count(&self, hint: MoveHint) -> u128 {
@@ -33,7 +33,9 @@ mod data {
         pub fn count_moves(&self, p: fn(MoveHint) -> bool) -> u128 {
             let mut total = 0;
             for hint in all::<MoveHint>() {
-                if p(hint) { total += self.get_move_count(hint); }
+                if p(hint) {
+                    total += self.get_move_count(hint);
+                }
             }
             return total;
         }
@@ -44,25 +46,24 @@ mod data {
             return self.checkmate_count;
         }
         pub fn to_perft_values(&self) -> PerftValues {
-            let nodes = self.count_moves(|_| { true });
-            let captures = self.count_moves(|h| { h.is_capture() });
-            let ep = self.count_moves(|h| { h == MoveHint::EnPassantCapture });
-            let castles = self.count_moves(|h| { 
-                h == MoveHint::KingCastle || h == MoveHint::QueenCastle
-            });
-            let promotions = self.count_moves(|h| { h.is_promotion() });
+            let nodes = self.count_moves(|_| true);
+            let captures = self.count_moves(|h| h.is_capture());
+            let ep = self.count_moves(|h| h == MoveHint::EnPassantCapture);
+            let castles =
+                self.count_moves(|h| h == MoveHint::KingCastle || h == MoveHint::QueenCastle);
+            let promotions = self.count_moves(|h| h.is_promotion());
             let checks = self.get_check_count();
             let checkmates = self.get_checkmate_count();
 
-            return PerftValues { 
-                nodes, 
-                captures, 
-                ep, 
-                castles, 
-                promotions, 
-                checks, 
-                checkmates 
-            }
+            return PerftValues {
+                nodes,
+                captures,
+                ep,
+                castles,
+                promotions,
+                checks,
+                checkmates,
+            };
         }
     }
 
@@ -77,16 +78,13 @@ mod data {
                 }
             }
             write!(
-                f, 
+                f,
                 "PerftData {{ move_count: {{ {}}}, check_count: {}, mate_count: {} }}",
-                s,
-                self.check_count,
-                self.checkmate_count
+                s, self.check_count, self.checkmate_count
             )
         }
     }
 }
-
 
 use crate::game::move_generator::*;
 
@@ -96,13 +94,18 @@ use data::PerftData;
 
 pub fn perft_leaves(mut position: Position, depth: u8) -> PerftData {
     let mut data = PerftData::new();
-    collect_perft(&mut position, &mut MoveGenerator::empty(), &mut data, depth - 1);
+    collect_perft(
+        &mut position,
+        &mut MoveGenerator::empty(),
+        &mut data,
+        depth - 1,
+    );
     return data;
 }
 
 pub fn count_leaves(mut position: Position, depth: u8) -> u128 {
     //return count_legal_moves(&mut position, &mut MoveGenerator::new(), depth - 1)
-    return count_legal_moves(&mut position, &mut MoveGenerator::empty(), depth - 1)
+    return count_legal_moves(&mut position, &mut MoveGenerator::empty(), depth - 1);
     //return count_legal_moves_game(&mut Game::from_position(position), depth - 1);
 }
 
@@ -129,13 +132,13 @@ pub struct PerftValues {
 //         )?;
 //         writeln!(
 //             f,
-//             "={:^30}={:^20}={:^20}={:^20}={:^20}={:^20}={:^20}=", 
-//             self.nodes, 
-//             self.captures, 
-//             self.ep, 
-//             self.castles, 
-//             self.promotions, 
-//             self.checks, 
+//             "={:^30}={:^20}={:^20}={:^20}={:^20}={:^20}={:^20}=",
+//             self.nodes,
+//             self.captures,
+//             self.ep,
+//             self.castles,
+//             self.promotions,
+//             self.checks,
 //             self.checkmates
 //         )?;
 //         writeln!(f, "{:=^169}", "")?;
@@ -149,15 +152,15 @@ fn can_move(game_state: &mut Position, move_list: &mut MoveGenerator) -> bool {
     while let Some(next_move) = move_list.pop_move() {
         let unmove = make_move(game_state, next_move);
 
-        if !game_state.board().is_king_in_check(!game_state.turn()) { 
+        if !game_state.board().is_king_in_check(!game_state.turn()) {
             unmake_move(game_state, unmove);
             move_list.pop_group();
-            return true; 
+            return true;
         }
 
         unmake_move(game_state, unmove);
     }
-    
+
     move_list.pop_group();
     return false;
 }
@@ -169,11 +172,14 @@ fn count_legal_moves(game_state: &mut Position, move_list: &mut MoveGenerator, d
     while let Some(next_move) = move_list.pop_move() {
         let unmove = make_move(game_state, next_move);
 
-        if !game_state.board().is_king_in_check(!game_state.turn()) { 
-            if depth == 0 { count += 1; }
-            else { count += count_legal_moves(game_state, move_list, depth - 1); }
+        if !game_state.board().is_king_in_check(!game_state.turn()) {
+            if depth == 0 {
+                count += 1;
+            } else {
+                count += count_legal_moves(game_state, move_list, depth - 1);
+            }
         }
-        
+
         unmake_move(game_state, unmove);
     }
 
@@ -190,7 +196,7 @@ fn count_legal_moves(game_state: &mut Position, move_list: &mut MoveGenerator, d
 //             else { count += count_legal_moves_game(node, depth - 1); }
 //         }
 //     );
-    
+
 //     return count;
 // }
 
@@ -199,8 +205,8 @@ fn count_legal_moves(game_state: &mut Position, move_list: &mut MoveGenerator, d
 //     if move_generator.inspect_child_nodes() != NodeStatus::Internal {
 //         return 0;
 //     }
-    
-//     if depth == 0 { 
+
+//     if depth == 0 {
 //         loop {
 //             count += 1;
 //             if !move_generator.to_next_child_node() { break; }
@@ -216,25 +222,31 @@ fn count_legal_moves(game_state: &mut Position, move_list: &mut MoveGenerator, d
 //     return count;
 // }
 
-fn collect_perft(game_state: &mut Position, move_list: &mut MoveGenerator, data: &mut PerftData, depth: u8) {
+fn collect_perft(
+    game_state: &mut Position,
+    move_list: &mut MoveGenerator,
+    data: &mut PerftData,
+    depth: u8,
+) {
     move_list.generate_moves(game_state);
 
     while let Some(next_move) = move_list.pop_move() {
         let unmove = make_move(game_state, next_move);
 
-        if !game_state.board().is_king_in_check(!game_state.turn()) { 
+        if !game_state.board().is_king_in_check(!game_state.turn()) {
             if depth == 0 {
                 data.add_move(next_move.hint());
                 if game_state.board().is_king_in_check(game_state.turn()) {
                     data.add_check();
-                    if !can_move(game_state, move_list) { data.add_checkmate(); }
+                    if !can_move(game_state, move_list) {
+                        data.add_checkmate();
+                    }
                 }
-            }
-            else {
+            } else {
                 collect_perft(game_state, move_list, data, depth - 1);
             }
         }
-        
+
         unmake_move(game_state, unmove);
     }
 

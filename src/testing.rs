@@ -56,14 +56,14 @@ fn cpw_mirror_w_perft_depth_1() {
         CPW_MIRROR_W_FEN,
         1,
         PerftValues {
-            nodes: 6, 
-            captures: 0, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 0, 
-            checkmates: 0
-        }
+            nodes: 6,
+            captures: 0,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 0,
+            checkmates: 0,
+        },
     )
 }
 
@@ -73,14 +73,14 @@ fn cpw_mirror_b_perft_depth_1() {
         CPW_MIRROR_B_FEN,
         1,
         PerftValues {
-            nodes: 6, 
-            captures: 0, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 0, 
-            checkmates: 0
-        }
+            nodes: 6,
+            captures: 0,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 0,
+            checkmates: 0,
+        },
     )
 }
 
@@ -90,14 +90,14 @@ fn cpw_mirror_w_perft_depth_2() {
         CPW_MIRROR_W_FEN,
         2,
         PerftValues {
-            nodes: 264, 
-            captures: 87, 
-            ep: 0, 
-            castles: 6, 
-            promotions: 48, 
-            checks: 10, 
-            checkmates: 0
-        }
+            nodes: 264,
+            captures: 87,
+            ep: 0,
+            castles: 6,
+            promotions: 48,
+            checks: 10,
+            checkmates: 0,
+        },
     )
 }
 
@@ -107,14 +107,14 @@ fn cpw_mirror_b_perft_depth_2() {
         CPW_MIRROR_B_FEN,
         2,
         PerftValues {
-            nodes: 264, 
-            captures: 87, 
-            ep: 0, 
-            castles: 6, 
-            promotions: 48, 
-            checks: 10, 
-            checkmates: 0
-        }
+            nodes: 264,
+            captures: 87,
+            ep: 0,
+            castles: 6,
+            promotions: 48,
+            checks: 10,
+            checkmates: 0,
+        },
     )
 }
 
@@ -124,14 +124,14 @@ fn cpw_mirror_w_perft_depth_3() {
         CPW_MIRROR_W_FEN,
         3,
         PerftValues {
-            nodes: 9467, 
-            captures: 1021, 
-            ep: 4, 
-            castles: 0, 
-            promotions: 120, 
-            checks: 38, 
-            checkmates: 22
-        }
+            nodes: 9467,
+            captures: 1021,
+            ep: 4,
+            castles: 0,
+            promotions: 120,
+            checks: 38,
+            checkmates: 22,
+        },
     )
 }
 
@@ -141,14 +141,14 @@ fn cpw_mirror_b_perft_depth_3() {
         CPW_MIRROR_B_FEN,
         3,
         PerftValues {
-            nodes: 9467, 
-            captures: 1021, 
-            ep: 4, 
-            castles: 0, 
-            promotions: 120, 
-            checks: 38, 
-            checkmates: 22
-        }
+            nodes: 9467,
+            captures: 1021,
+            ep: 4,
+            castles: 0,
+            promotions: 120,
+            checks: 38,
+            checkmates: 22,
+        },
     )
 }
 
@@ -158,14 +158,14 @@ fn cpw_mirror_w_perft_depth_4() {
         CPW_MIRROR_W_FEN,
         4,
         PerftValues {
-            nodes: 422333, 
-            captures: 131393, 
-            ep: 0, 
-            castles: 7795, 
-            promotions: 60032, 
-            checks: 15492, 
-            checkmates: 5
-        }
+            nodes: 422333,
+            captures: 131393,
+            ep: 0,
+            castles: 7795,
+            promotions: 60032,
+            checks: 15492,
+            checkmates: 5,
+        },
     )
 }
 
@@ -175,14 +175,14 @@ fn cpw_mirror_b_perft_depth_4() {
         CPW_MIRROR_B_FEN,
         4,
         PerftValues {
-            nodes: 422333, 
-            captures: 131393, 
-            ep: 0, 
-            castles: 7795, 
-            promotions: 60032, 
-            checks: 15492, 
-            checkmates: 5
-        }
+            nodes: 422333,
+            captures: 131393,
+            ep: 0,
+            castles: 7795,
+            promotions: 60032,
+            checks: 15492,
+            checkmates: 5,
+        },
     )
 }
 
@@ -192,14 +192,14 @@ fn cpw_debug_3_perft_depth_1() {
         CPW_DEBUG_3_FEN,
         1,
         PerftValues {
-            nodes: 14, 
-            captures: 1, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 2, 
-            checkmates: 0
-        }
+            nodes: 14,
+            captures: 1,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 2,
+            checkmates: 0,
+        },
     )
 }
 
@@ -209,14 +209,14 @@ fn cpw_debug_3_perft_depth_2() {
         CPW_DEBUG_3_FEN,
         2,
         PerftValues {
-            nodes: 191, 
-            captures: 14, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 10, 
-            checkmates: 0
-        }
+            nodes: 191,
+            captures: 14,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 10,
+            checkmates: 0,
+        },
     )
 }
 
@@ -226,14 +226,14 @@ fn cpw_debug_3_perft_depth_3() {
         CPW_DEBUG_3_FEN,
         3,
         PerftValues {
-            nodes: 2812, 
-            captures: 209, 
-            ep: 2, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 267, 
-            checkmates: 0
-        }
+            nodes: 2812,
+            captures: 209,
+            ep: 2,
+            castles: 0,
+            promotions: 0,
+            checks: 267,
+            checkmates: 0,
+        },
     )
 }
 
@@ -243,14 +243,14 @@ fn cpw_debug_3_perft_depth_4() {
         CPW_DEBUG_3_FEN,
         4,
         PerftValues {
-            nodes: 43238, 
-            captures: 3348, 
-            ep: 123, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 1680, 
-            checkmates: 17
-        }
+            nodes: 43238,
+            captures: 3348,
+            ep: 123,
+            castles: 0,
+            promotions: 0,
+            checks: 1680,
+            checkmates: 17,
+        },
     )
 }
 
@@ -260,14 +260,14 @@ fn cpw_debug_3_perft_depth_5() {
         CPW_DEBUG_3_FEN,
         5,
         PerftValues {
-            nodes: 674624, 
-            captures: 52051, 
-            ep: 1165, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 52950, 
-            checkmates: 0
-        }
+            nodes: 674624,
+            captures: 52051,
+            ep: 1165,
+            castles: 0,
+            promotions: 0,
+            checks: 52950,
+            checkmates: 0,
+        },
     )
 }
 
@@ -277,14 +277,14 @@ fn cpw_debug_3_perft_depth_6() {
         CPW_DEBUG_3_FEN,
         6,
         PerftValues {
-            nodes: 11030083, 
-            captures: 940350, 
-            ep: 33325, 
-            castles: 0, 
-            promotions: 7552, 
-            checks: 452473, 
-            checkmates: 2733
-        }
+            nodes: 11030083,
+            captures: 940350,
+            ep: 33325,
+            castles: 0,
+            promotions: 7552,
+            checks: 452473,
+            checkmates: 2733,
+        },
     )
 }
 
@@ -294,14 +294,14 @@ fn kiwipete_perft_depth_1() {
         KIWIPETE_FEN,
         1,
         PerftValues {
-            nodes: 48, 
-            captures: 8, 
-            ep: 0, 
-            castles: 2, 
-            promotions: 0, 
-            checks: 0, 
-            checkmates: 0
-        }
+            nodes: 48,
+            captures: 8,
+            ep: 0,
+            castles: 2,
+            promotions: 0,
+            checks: 0,
+            checkmates: 0,
+        },
     )
 }
 
@@ -311,14 +311,14 @@ fn kiwipete_perft_depth_2() {
         KIWIPETE_FEN,
         2,
         PerftValues {
-            nodes: 2039, 
-            captures: 351, 
-            ep: 1, 
-            castles: 91, 
-            promotions: 0, 
-            checks: 3, 
-            checkmates: 0
-        }
+            nodes: 2039,
+            captures: 351,
+            ep: 1,
+            castles: 91,
+            promotions: 0,
+            checks: 3,
+            checkmates: 0,
+        },
     )
 }
 
@@ -328,14 +328,14 @@ fn kiwipete_perft_depth_3() {
         KIWIPETE_FEN,
         3,
         PerftValues {
-            nodes: 97862, 
-            captures: 17102, 
-            ep: 45, 
-            castles: 3162, 
-            promotions: 0, 
-            checks: 993, 
-            checkmates: 1
-        }
+            nodes: 97862,
+            captures: 17102,
+            ep: 45,
+            castles: 3162,
+            promotions: 0,
+            checks: 993,
+            checkmates: 1,
+        },
     )
 }
 
@@ -345,14 +345,14 @@ fn kiwipete_perft_depth_4() {
         KIWIPETE_FEN,
         4,
         PerftValues {
-            nodes: 4085603, 
-            captures: 757163, 
-            ep: 1929, 
-            castles: 128013, 
-            promotions: 15172, 
-            checks: 25523, 
-            checkmates: 43
-        }
+            nodes: 4085603,
+            captures: 757163,
+            ep: 1929,
+            castles: 128013,
+            promotions: 15172,
+            checks: 25523,
+            checkmates: 43,
+        },
     )
 }
 
@@ -362,14 +362,14 @@ fn initial_position_perft_depth_1() {
         INITIAL_FEN,
         1,
         PerftValues {
-            nodes: 20, 
-            captures: 0, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 0, 
-            checkmates: 0
-        }
+            nodes: 20,
+            captures: 0,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 0,
+            checkmates: 0,
+        },
     )
 }
 
@@ -379,14 +379,14 @@ fn initial_position_perft_depth_2() {
         INITIAL_FEN,
         2,
         PerftValues {
-            nodes: 400, 
-            captures: 0, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 0, 
-            checkmates: 0
-        }
+            nodes: 400,
+            captures: 0,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 0,
+            checkmates: 0,
+        },
     )
 }
 
@@ -397,13 +397,13 @@ fn initial_position_perft_depth_3() {
         3,
         PerftValues {
             nodes: 8_902,
-            captures: 34, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 12, 
-            checkmates: 0
-        }
+            captures: 34,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 12,
+            checkmates: 0,
+        },
     )
 }
 
@@ -414,13 +414,13 @@ fn initial_position_perft_depth_4() {
         4,
         PerftValues {
             nodes: 197_281,
-            captures: 1_576, 
-            ep: 0, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 469, 
-            checkmates: 8
-        }
+            captures: 1_576,
+            ep: 0,
+            castles: 0,
+            promotions: 0,
+            checks: 469,
+            checkmates: 8,
+        },
     )
 }
 
@@ -431,13 +431,13 @@ fn initial_position_perft_depth_5() {
         5,
         PerftValues {
             nodes: 4_865_609,
-            captures: 82_719, 
-            ep: 258, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 27_351, 
-            checkmates: 347
-        }
+            captures: 82_719,
+            ep: 258,
+            castles: 0,
+            promotions: 0,
+            checks: 27_351,
+            checkmates: 347,
+        },
     )
 }
 
@@ -448,12 +448,12 @@ fn initial_position_perft_depth_6() {
         6,
         PerftValues {
             nodes: 119_060_324,
-            captures: 2_812_008, 
-            ep: 5248, 
-            castles: 0, 
-            promotions: 0, 
-            checks: 809_099, 
-            checkmates: 10_828
-        }
+            captures: 2_812_008,
+            ep: 5248,
+            castles: 0,
+            promotions: 0,
+            checks: 809_099,
+            checkmates: 10_828,
+        },
     )
 }

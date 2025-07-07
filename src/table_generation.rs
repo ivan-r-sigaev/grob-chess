@@ -21,14 +21,30 @@ const RANK6: u64 = 0xff0000000000;
 const RANK7: u64 = 0xff000000000000;
 const RANK8: u64 = 0xff00000000000000;*/
 
-const fn sout_one(bb: u64) -> u64 { return  bb >> 8; }
-const fn nort_one(bb: u64) -> u64 { return  bb << 8; }
-const fn east_one(bb: u64) -> u64 { return (bb << 1) & NOT_A_FILE; }
-const fn noea_one(bb: u64) -> u64 { return (bb << 9) & NOT_A_FILE; }
-const fn soea_one(bb: u64) -> u64 { return (bb >> 7) & NOT_A_FILE; }
-const fn west_one(bb: u64) -> u64 { return (bb >> 1) & NOT_H_FILE; }
-const fn sowe_one(bb: u64) -> u64 { return (bb >> 9) & NOT_H_FILE; }
-const fn nowe_one(bb: u64) -> u64 { return (bb << 7) & NOT_H_FILE; }
+const fn sout_one(bb: u64) -> u64 {
+    return bb >> 8;
+}
+const fn nort_one(bb: u64) -> u64 {
+    return bb << 8;
+}
+const fn east_one(bb: u64) -> u64 {
+    return (bb << 1) & NOT_A_FILE;
+}
+const fn noea_one(bb: u64) -> u64 {
+    return (bb << 9) & NOT_A_FILE;
+}
+const fn soea_one(bb: u64) -> u64 {
+    return (bb >> 7) & NOT_A_FILE;
+}
+const fn west_one(bb: u64) -> u64 {
+    return (bb >> 1) & NOT_H_FILE;
+}
+const fn sowe_one(bb: u64) -> u64 {
+    return (bb >> 9) & NOT_H_FILE;
+}
+const fn nowe_one(bb: u64) -> u64 {
+    return (bb << 7) & NOT_H_FILE;
+}
 
 pub const fn make_pawn_attack_table() -> [[u64; 64]; 2] {
     let mut result = [[0; 64]; 2];
@@ -70,23 +86,23 @@ pub const fn make_king_attack_table() -> [u64; 64] {
 }
 
 const fn rank_mask(sq: i32) -> u64 {
-	return RANK1 << ((sq as u64) & 56); 
+    return RANK1 << ((sq as u64) & 56);
 }
 
 /*fn file_mask(sq: i32) -> u64 {
-	return A_FILE << ((sq as u64) & 7);
+    return A_FILE << ((sq as u64) & 7);
 }*/
 const fn diagonal_mask(sq: i32) -> u64 {
-	let diag: i32 = 8 * (sq & 7) - (sq & 56);
-	let nort: i32 = -diag & (diag >> 31);
-	let sout: i32 = diag & (-diag >> 31);
-	return (DIA_A1_H8 >> sout) << nort;
+    let diag: i32 = 8 * (sq & 7) - (sq & 56);
+    let nort: i32 = -diag & (diag >> 31);
+    let sout: i32 = diag & (-diag >> 31);
+    return (DIA_A1_H8 >> sout) << nort;
 }
 const fn antidiag_mask(sq: i32) -> u64 {
-	let diag: i32 = 56 - 8 * (sq & 7) - (sq & 56);
-	let nort: i32 = -diag & (diag >> 31);
-	let sout: i32 = diag & (-diag >> 31);
-	return (DIA_H1_A8 >> sout) << nort;
+    let diag: i32 = 56 - 8 * (sq & 7) - (sq & 56);
+    let nort: i32 = -diag & (diag >> 31);
+    let sout: i32 = diag & (-diag >> 31);
+    return (DIA_H1_A8 >> sout) << nort;
 }
 
 pub const fn make_rank_mask_ex_table() -> [u64; 64] {
@@ -123,59 +139,59 @@ pub const fn make_antidiag_mask_ex_table() -> [u64; 64] {
 }
 
 const fn east_attacks(mut rooks: u64, mut empty: u64) -> u64 {
-	empty = empty & NOT_A_FILE; // make A-File all occupied, to consider H-A-wraps after shift
-	rooks |= empty & (rooks << 1); // 1. fill
-	rooks |= empty & (rooks << 1); // 2. fill
-	rooks |= empty & (rooks << 1); // 3. fill
-	rooks |= empty & (rooks << 1); // 4. fill
-	rooks |= empty & (rooks << 1); // 5. fill
-	rooks |= empty & (rooks << 1); // 6. fill
-	return NOT_A_FILE & (rooks << 1);
+    empty = empty & NOT_A_FILE; // make A-File all occupied, to consider H-A-wraps after shift
+    rooks |= empty & (rooks << 1); // 1. fill
+    rooks |= empty & (rooks << 1); // 2. fill
+    rooks |= empty & (rooks << 1); // 3. fill
+    rooks |= empty & (rooks << 1); // 4. fill
+    rooks |= empty & (rooks << 1); // 5. fill
+    rooks |= empty & (rooks << 1); // 6. fill
+    return NOT_A_FILE & (rooks << 1);
 }
 const fn west_attacks(mut rooks: u64, mut empty: u64) -> u64 {
-	empty = empty & NOT_H_FILE;
-	rooks |= empty & (rooks >> 1);
-	rooks |= empty & (rooks >> 1);
-	rooks |= empty & (rooks >> 1);
-	rooks |= empty & (rooks >> 1);
-	rooks |= empty & (rooks >> 1);
-	rooks |= empty & (rooks >> 1);
-	return NOT_H_FILE & (rooks >> 1);
+    empty = empty & NOT_H_FILE;
+    rooks |= empty & (rooks >> 1);
+    rooks |= empty & (rooks >> 1);
+    rooks |= empty & (rooks >> 1);
+    rooks |= empty & (rooks >> 1);
+    rooks |= empty & (rooks >> 1);
+    rooks |= empty & (rooks >> 1);
+    return NOT_H_FILE & (rooks >> 1);
 }
 /*fn nort_attacks(mut rooks: u64, empty: u64) -> u64 {
-	rooks |= empty & (rooks << 8);
-	rooks |= empty & (rooks << 8);
-	rooks |= empty & (rooks << 8);
-	rooks |= empty & (rooks << 8);
-	rooks |= empty & (rooks << 8);
-	rooks |= empty & (rooks << 8);
-	return rooks << 8;
+    rooks |= empty & (rooks << 8);
+    rooks |= empty & (rooks << 8);
+    rooks |= empty & (rooks << 8);
+    rooks |= empty & (rooks << 8);
+    rooks |= empty & (rooks << 8);
+    rooks |= empty & (rooks << 8);
+    return rooks << 8;
 }
 fn sout_attacks(mut rooks: u64, empty: u64) -> u64 {
-	rooks |= empty & (rooks >> 8);
-	rooks |= empty & (rooks >> 8);
-	rooks |= empty & (rooks >> 8);
-	rooks |= empty & (rooks >> 8);
-	rooks |= empty & (rooks >> 8);
-	rooks |= empty & (rooks >> 8);
-	return rooks >> 8;
+    rooks |= empty & (rooks >> 8);
+    rooks |= empty & (rooks >> 8);
+    rooks |= empty & (rooks >> 8);
+    rooks |= empty & (rooks >> 8);
+    rooks |= empty & (rooks >> 8);
+    rooks |= empty & (rooks >> 8);
+    return rooks >> 8;
 }
 fn east_occluded(mut rooks: u64, mut empty: u64) -> u64 {
-	empty = empty & NOT_A_FILE; // make A-File all occupied, to consider H-A-wraps after shift
-	rooks |= empty & (rooks << 1);
-	empty = empty & (empty << 1);
-	rooks |= empty & (rooks << 2);
-	empty = empty & (empty << 2);
-	rooks |= empty & (rooks << 4);
-	return rooks;
+    empty = empty & NOT_A_FILE; // make A-File all occupied, to consider H-A-wraps after shift
+    rooks |= empty & (rooks << 1);
+    empty = empty & (empty << 1);
+    rooks |= empty & (rooks << 2);
+    empty = empty & (empty << 2);
+    rooks |= empty & (rooks << 4);
+    return rooks;
 }*/
 const fn nort_occluded(mut rooks: u64, mut empty: u64) -> u64 {
-	rooks |= empty & (rooks << 8);
-	empty = empty & (empty << 8);
-	rooks |= empty & (rooks << 16);
-	empty = empty & (empty << 16);
-	rooks |= empty & (rooks << 32);
-	return rooks;
+    rooks |= empty & (rooks << 8);
+    empty = empty & (empty << 8);
+    rooks |= empty & (rooks << 16);
+    empty = empty & (empty << 16);
+    rooks |= empty & (rooks << 32);
+    return rooks;
 }
 
 pub const fn make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {

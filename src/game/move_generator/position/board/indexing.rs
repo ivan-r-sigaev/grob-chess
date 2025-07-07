@@ -1,21 +1,33 @@
-use std::{ops::Not, mem::transmute};
 use crate::game::position::board::bitboard::Rank;
+use std::{mem::transmute, ops::Not};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
     White,
-    Black
+    Black,
 }
 
 impl Color {
     pub fn promotion_rank(self) -> Rank {
-        return if self == Color::White { Rank::R8 } else { Rank::R1 };
+        return if self == Color::White {
+            Rank::R8
+        } else {
+            Rank::R1
+        };
     }
     pub fn pawn_rank(self) -> Rank {
-        return if self == Color::White { Rank::R2 } else { Rank::R7 };
+        return if self == Color::White {
+            Rank::R2
+        } else {
+            Rank::R7
+        };
     }
     pub fn en_passant_dest_rank(self) -> Rank {
-        return if self == Color::White { Rank::R6 } else { Rank::R3 };
+        return if self == Color::White {
+            Rank::R6
+        } else {
+            Rank::R3
+        };
     }
 }
 
@@ -37,5 +49,5 @@ pub enum Piece {
     Knight,
     Rook,
     Queen,
-    King
+    King,
 }

@@ -8,7 +8,7 @@
 
 //     while let Some(next_move) = move_list.pop_move() {
 //         let unmove = game_state.make_move(next_move);
-//         if game_state.get_board().is_king_in_check(!game_state.get_turn()) { 
+//         if game_state.get_board().is_king_in_check(!game_state.get_turn()) {
 //             game_state.unmake_move(unmove);
 //             continue;
 //         }

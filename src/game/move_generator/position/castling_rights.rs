@@ -1,5 +1,5 @@
-use bitflags::bitflags;  // This dependency is a pure utility. It may be removed if needed.
 use crate::game::position::board::Color;
+use bitflags::bitflags; // This dependency is a pure utility. It may be removed if needed.
 
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

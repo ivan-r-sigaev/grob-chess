@@ -23,8 +23,8 @@
 
 // impl MoveGenerator {
 //     pub fn new(initial_board: Position) -> MoveGenerator {
-//         return MoveGenerator { 
-//             board: initial_board, 
+//         return MoveGenerator {
+//             board: initial_board,
 //             move_list: MoveList::new(),
 //             unmove_list: Vec::new(),
 //         }
@@ -33,12 +33,12 @@
 //     fn next_node(&mut self) -> bool {
 //         while let Some(next_move) = self.move_list.pop_move() {
 //             let unmove = make_move(&mut self.board, next_move);
-    
-//             if !self.board.get_bitboard().is_king_in_check(!self.board.get_turn()) { 
+
+//             if !self.board.get_bitboard().is_king_in_check(!self.board.get_turn()) {
 //                 self.unmove_list.push(unmove);
 //                 return true;
 //             }
-            
+
 //             unmake_move(&mut self.board, unmove);
 //         }
 
@@ -72,20 +72,15 @@
 // }
 pub use castling_rights::CastlingRights;
 pub mod board;
-use board::*;
 use board::bitboard::*;
+use board::*;
 
 use std::error::Error;
 use std::fmt::Display;
 use std::mem::size_of;
 use std::ops::Rem;
 
-use zobrist::{
-    get_square_zobrist,
-    get_turn_zobrist,
-    get_en_passant_zobrist,
-    get_castling_zobrist
-};
+use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
 
 mod castling_rights;
 mod zobrist;
@@ -114,7 +109,7 @@ impl PartialEq for Position {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         return self.zobrist_hash == other.zobrist_hash  // Compare hash to maybe get a faster comparison on average.
-        && self.board == other.board 
+        && self.board == other.board
         && self.turn == other.turn
         && self.castling_rights == other.castling_rights
         && self.en_passant == other.en_passant;
@@ -146,10 +141,14 @@ impl Error for ParseFenError {}
 impl Position {
     pub fn try_from_fen(fen: &str) -> Result<Position, ParseFenError> {
         let fen_parts: Vec<&str> = fen.split_whitespace().collect();
-        if fen_parts.len() != 6 { return Err(ParseFenError::BadFenSize); }
+        if fen_parts.len() != 6 {
+            return Err(ParseFenError::BadFenSize);
+        }
 
         let position_parts: Vec<&str> = fen_parts[0].split("/").collect();
-        if position_parts.len() != 8 { return Err(ParseFenError::BadRowCount); }
+        if position_parts.len() != 8 {
+            return Err(ParseFenError::BadRowCount);
+        }
 
         let mut bitboard = Board::empty();
         let mut zobrist_hash = 0;
@@ -161,38 +160,58 @@ impl Position {
                     let increment = u8::try_from(ch).unwrap() - u8::try_from('1').unwrap();
                     x += increment;
                     sq = sq.shifted(increment as i8);
-                }
-                else if ch.is_ascii_alphabetic() {
+                } else if ch.is_ascii_alphabetic() {
                     let lower = ch.to_ascii_lowercase();
-                    let color = if ch.is_ascii_lowercase() {Color::Black} else {Color::White};
+                    let color = if ch.is_ascii_lowercase() {
+                        Color::Black
+                    } else {
+                        Color::White
+                    };
 
-                    let piece = if lower == 'k' { Piece::King }
-                    else if lower == 'q' { Piece::Queen }
-                    else if lower == 'r' { Piece::Rook }
-                    else if lower == 'b' { Piece::Bishop }
-                    else if lower == 'n' { Piece::Knight }
-                    else if lower == 'p' { Piece::Pawn }
-                    else { return Err(ParseFenError::UnknownCharacter); };
-                    
+                    let piece = if lower == 'k' {
+                        Piece::King
+                    } else if lower == 'q' {
+                        Piece::Queen
+                    } else if lower == 'r' {
+                        Piece::Rook
+                    } else if lower == 'b' {
+                        Piece::Bishop
+                    } else if lower == 'n' {
+                        Piece::Knight
+                    } else if lower == 'p' {
+                        Piece::Pawn
+                    } else {
+                        return Err(ParseFenError::UnknownCharacter);
+                    };
+
                     bitboard.mask_or(color, piece, BitBoard::from(sq));
                     zobrist_hash ^= get_square_zobrist(color, piece, sq);
+                } else {
+                    return Err(ParseFenError::UnknownCharacter);
                 }
-                else { return Err(ParseFenError::UnknownCharacter); }
                 sq = sq.shifted(1);
                 x += 1;
-                if x > 8 { return Err(ParseFenError::BadFenSize); }
+                if x > 8 {
+                    return Err(ParseFenError::BadFenSize);
+                }
             }
-            if x < 8 { return Err(ParseFenError::BadFenSize); }
+            if x < 8 {
+                return Err(ParseFenError::BadFenSize);
+            }
         }
 
-        let turn = if fen_parts[1] == "w" { Color::White }
-        else if fen_parts[1] == "b" { Color::Black }
-        else { return Err(ParseFenError::UnknownCharacter); };
+        let turn = if fen_parts[1] == "w" {
+            Color::White
+        } else if fen_parts[1] == "b" {
+            Color::Black
+        } else {
+            return Err(ParseFenError::UnknownCharacter);
+        };
 
         zobrist_hash ^= get_turn_zobrist(turn);
 
         let mut castling_rights = CastlingRights::empty();
-        if fen_parts[2] !=  "-" {
+        if fen_parts[2] != "-" {
             let mut remaining_len = fen_parts[2].len();
             if fen_parts[2].find("K").is_some() {
                 remaining_len -= 1;
@@ -210,51 +229,70 @@ impl Position {
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::BLACK_QUEEN;
             }
-            if remaining_len != 0 { return Err(ParseFenError::BadCastlingRights); }
+            if remaining_len != 0 {
+                return Err(ParseFenError::BadCastlingRights);
+            }
         }
         zobrist_hash ^= get_castling_zobrist(castling_rights);
 
         let en_passant;
         if fen_parts[3] != "-" {
-            if fen_parts[3].chars().count() != 2 { return Err(ParseFenError::BadEnPassant); }
+            if fen_parts[3].chars().count() != 2 {
+                return Err(ParseFenError::BadEnPassant);
+            }
             let col = fen_parts[3].chars().nth(0).unwrap();
             let row = fen_parts[3].chars().nth(1).unwrap();
-            if row != '6' || row != '3' { return Err(ParseFenError::BadEnPassant); }
+            if row != '6' || row != '3' {
+                return Err(ParseFenError::BadEnPassant);
+            }
 
-            if col == 'a' {en_passant = Some(File::A)}
-            else if col == 'b' {en_passant = Some(File::B)}
-            else if col == 'c' {en_passant = Some(File::C)}
-            else if col == 'd' {en_passant = Some(File::D)}
-            else if col == 'e' {en_passant = Some(File::E)}
-            else if col == 'f' {en_passant = Some(File::F)}
-            else if col == 'g' {en_passant = Some(File::G)}
-            else if col == 'h' {en_passant = Some(File::H)}
-            else { return Err(ParseFenError::BadEnPassant); }
-        }
-        else {
+            if col == 'a' {
+                en_passant = Some(File::A)
+            } else if col == 'b' {
+                en_passant = Some(File::B)
+            } else if col == 'c' {
+                en_passant = Some(File::C)
+            } else if col == 'd' {
+                en_passant = Some(File::D)
+            } else if col == 'e' {
+                en_passant = Some(File::E)
+            } else if col == 'f' {
+                en_passant = Some(File::F)
+            } else if col == 'g' {
+                en_passant = Some(File::G)
+            } else if col == 'h' {
+                en_passant = Some(File::H)
+            } else {
+                return Err(ParseFenError::BadEnPassant);
+            }
+        } else {
             en_passant = None;
         }
         zobrist_hash ^= get_en_passant_zobrist(en_passant);
 
         let hm = fen_parts[4].parse::<u32>();
-        if hm.is_err() { return Err(ParseFenError::BadHalfmoveClock); }
+        if hm.is_err() {
+            return Err(ParseFenError::BadHalfmoveClock);
+        }
         let halfmove_clock = hm.unwrap();
 
         let fm = fen_parts[5].parse::<u32>();
-        if fm.is_err() { return Err(ParseFenError::BadFullmoveClock); }
+        if fm.is_err() {
+            return Err(ParseFenError::BadFullmoveClock);
+        }
 
         // let piece_scores: [PieceScore; 2] = [
         //     board.get_piece_score(Color::try_from(0)),
         //     board.get_piece_score(Color::Black)
         // ];
 
-        return Ok(Position { 
-            board: bitboard, 
-            turn, 
-            castling_rights, 
-            en_passant, 
-            halfmove_clock, 
-            zobrist_hash, 
+        return Ok(Position {
+            board: bitboard,
+            turn,
+            castling_rights,
+            en_passant,
+            halfmove_clock,
+            zobrist_hash,
             //piece_scores,
         });
     }
@@ -267,7 +305,11 @@ impl Rem<usize> for PositionHash {
     type Output = usize;
 
     fn rem(self, rhs: usize) -> Self::Output {
-        const MAX: u64 = if size_of::<u64>() > size_of::<usize>() { usize::MAX as u64 } else { u64::MAX };
+        const MAX: u64 = if size_of::<u64>() > size_of::<usize>() {
+            usize::MAX as u64
+        } else {
+            u64::MAX
+        };
         return (self.0 & MAX) as usize % rhs;
     }
 }
@@ -320,17 +362,24 @@ impl Position {
     }
     #[inline(always)]
     pub fn remove_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
-        debug_assert!(self.board.get_piece(piece).has_square(sq) && self.board.get_color(color).has_square(sq));
+        debug_assert!(
+            self.board.get_piece(piece).has_square(sq)
+                && self.board.get_color(color).has_square(sq)
+        );
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_and(color, piece, !BitBoard::from(sq));
     }
     #[inline(always)]
     pub fn move_color_piece(&mut self, color: Color, piece: Piece, from: Square, to: Square) {
-        debug_assert!(self.board.get_piece(piece).has_square(from) && self.board.get_color(color).has_square(from));
+        debug_assert!(
+            self.board.get_piece(piece).has_square(from)
+                && self.board.get_color(color).has_square(from)
+        );
         debug_assert!(!self.board.get_occupance().has_square(to));
         self.zobrist_hash ^= get_square_zobrist(color, piece, from);
         self.zobrist_hash ^= get_square_zobrist(color, piece, to);
-        self.board.mask_xor(color, piece, BitBoard::from(from) | BitBoard::from(to));
+        self.board
+            .mask_xor(color, piece, BitBoard::from(from) | BitBoard::from(to));
     }
     #[inline(always)]
     pub fn set_turn(&mut self, turn: Color) {
@@ -347,24 +396,86 @@ impl Position {
 impl Position {
     #[inline(always)]
     pub fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
-	    // TODO: remove crights when rook is taken instead of checking for it's existence
+        // TODO: remove crights when rook is taken instead of checking for it's existence
         let w_empty = BitBoard::from(Square::F1) | BitBoard::from(Square::G1);
         let b_empty = BitBoard::from(Square::F8) | BitBoard::from(Square::G8);
-        return !self.castling_rights.contains(CastlingRights::kingside(self.turn))
-            || (self.board.get_color_piece(color, Piece::Rook) & BitBoard::from(if color == Color::White { Square::H1 } else { Square::H8 })).none()
-            || !(self.board.get_occupance() & if color == Color::White { w_empty } else { b_empty }).none()
-            || !(self.board.get_color_attackers_to(if color == Color::White { Square::F1 } else { Square::F8 }, !color)).none()
-            || !(self.board.get_color_attackers_to(if color == Color::White { Square::G1 } else { Square::G8 }, !color)).none();
+        return !self
+            .castling_rights
+            .contains(CastlingRights::kingside(self.turn))
+            || (self.board.get_color_piece(color, Piece::Rook)
+                & BitBoard::from(if color == Color::White {
+                    Square::H1
+                } else {
+                    Square::H8
+                }))
+            .none()
+            || !(self.board.get_occupance()
+                & if color == Color::White {
+                    w_empty
+                } else {
+                    b_empty
+                })
+            .none()
+            || !(self.board.get_color_attackers_to(
+                if color == Color::White {
+                    Square::F1
+                } else {
+                    Square::F8
+                },
+                !color,
+            ))
+            .none()
+            || !(self.board.get_color_attackers_to(
+                if color == Color::White {
+                    Square::G1
+                } else {
+                    Square::G8
+                },
+                !color,
+            ))
+            .none();
     }
     #[inline(always)]
     pub fn is_queenside_castling_prohibited(&self, color: Color) -> bool {
-	    // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty = BitBoard::from(Square::B1) | BitBoard::from(Square::C1) | BitBoard::from(Square::D1);
-        let b_empty = BitBoard::from(Square::B8) | BitBoard::from(Square::C8) | BitBoard::from(Square::D8);
-        return !self.castling_rights.contains(CastlingRights::queenside(self.turn))
-            || (self.board.get_color_piece(color, Piece::Rook) & BitBoard::from(if color == Color::White { Square::A1 } else { Square::A8 })).none()
-            || !(self.board.get_occupance() & if color == Color::White { w_empty } else { b_empty }).none()
-            || !(self.board.get_color_attackers_to(if color == Color::White { Square::C1 } else { Square::C8 }, !color)).none()
-            || !(self.board.get_color_attackers_to(if color == Color::White { Square::D1 } else { Square::D8 }, !color)).none();
+        // TODO: remove crights when rook is taken instead of checking for it's existence
+        let w_empty =
+            BitBoard::from(Square::B1) | BitBoard::from(Square::C1) | BitBoard::from(Square::D1);
+        let b_empty =
+            BitBoard::from(Square::B8) | BitBoard::from(Square::C8) | BitBoard::from(Square::D8);
+        return !self
+            .castling_rights
+            .contains(CastlingRights::queenside(self.turn))
+            || (self.board.get_color_piece(color, Piece::Rook)
+                & BitBoard::from(if color == Color::White {
+                    Square::A1
+                } else {
+                    Square::A8
+                }))
+            .none()
+            || !(self.board.get_occupance()
+                & if color == Color::White {
+                    w_empty
+                } else {
+                    b_empty
+                })
+            .none()
+            || !(self.board.get_color_attackers_to(
+                if color == Color::White {
+                    Square::C1
+                } else {
+                    Square::C8
+                },
+                !color,
+            ))
+            .none()
+            || !(self.board.get_color_attackers_to(
+                if color == Color::White {
+                    Square::D1
+                } else {
+                    Square::D8
+                },
+                !color,
+            ))
+            .none();
     }
 }

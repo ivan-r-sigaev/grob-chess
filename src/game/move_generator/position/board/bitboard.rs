@@ -1,11 +1,11 @@
-pub use indexing::{Rank, File, Square};
-use std::ops::{Not, BitAnd, BitOr, BitXor, BitAndAssign, BitOrAssign, BitXorAssign};
-use crate::table_generation::*;
 use super::Color;
+use crate::table_generation::*;
+pub use indexing::{File, Rank, Square};
+use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
 mod indexing;
 
-#[derive(Clone, Copy,  PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct BitBoard(u64);
 
 impl From<Square> for BitBoard {
@@ -83,9 +83,7 @@ impl Iterator for Serialized {
             return None;
         }
 
-        let next = unsafe {
-            self.0.isolated_ls1b().bit_scan_forward_unchecked()
-        };
+        let next = unsafe { self.0.isolated_ls1b().bit_scan_forward_unchecked() };
         self.0 = self.0.reset_ls1b();
         return Some(next);
     }
@@ -133,7 +131,9 @@ impl BitBoard {
         const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
         const B_FILE: u64 = 0x0202020202020202;
         let occupance_index = (B_FILE.wrapping_mul(mask_ex[sq as usize] & occ.0) >> 58) as usize;
-        return BitBoard(mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index]);
+        return BitBoard(
+            mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index],
+        );
     }
     #[inline(always)]
     pub fn diagonal_attacks(occ: BitBoard, sq: Square) -> BitBoard {
@@ -155,8 +155,11 @@ impl BitBoard {
         const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table();
         const A_FILE: u64 = 0x101010101010101;
         const DIA_C2_H7: u64 = 0x0080402010080400;
-        let occupance_index = ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
-        return BitBoard(A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8));
+        let occupance_index =
+            ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
+        return BitBoard(
+            A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8),
+        );
     }
     #[inline(always)]
     pub fn bishop_attacks(occ: BitBoard, sq: Square) -> BitBoard {
@@ -237,8 +240,11 @@ impl std::fmt::Debug for BitBoard {
         for _y in 0..8 {
             let mut row = String::new();
             for _x in 0..8 {
-                if bb & 1 != 0 { row += "1 "; }
-                else { row += "_ "; } 
+                if bb & 1 != 0 {
+                    row += "1 ";
+                } else {
+                    row += "_ ";
+                }
                 bb >>= 1;
             }
             ret = row + "\n" + &ret;
@@ -272,21 +278,21 @@ impl std::fmt::Debug for BitBoard {
 // pub fn get_diagonal_attacks(mut occ: u64, sq: Square) -> u64 {
 //     const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table!();
 //     occ = B_FILE.wrapping_mul(DIAGONAL_MASK_EX[sq as usize] & occ) >> 58;
-//     return DIAGONAL_MASK_EX[sq as usize] 
+//     return DIAGONAL_MASK_EX[sq as usize]
 //         & FILL_UP_ATTACKS[(sq as usize) & 7][occ as usize];
 // }
 // #[inline(always)]
 // pub fn get_antidiag_attacks(mut occ: u64, sq: Square) -> u64 {
 //     const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table!();
 //     occ = B_FILE.wrapping_mul(ANTIDIAG_MASK_EX[sq as usize] & occ) >> 58;
-//     return ANTIDIAG_MASK_EX[sq as usize] 
+//     return ANTIDIAG_MASK_EX[sq as usize]
 //         & FILL_UP_ATTACKS[(sq as usize) & 7][occ as usize];
 // }
 // #[inline(always)]
 // pub fn get_rank_attacks(mut occ: u64, sq: Square) -> u64 {
 //     const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table!();
 //     occ = B_FILE.wrapping_mul(RANK_MASK_EX[sq as usize] & occ) >> 58;
-//     return RANK_MASK_EX[sq as usize] 
+//     return RANK_MASK_EX[sq as usize]
 //         & FILL_UP_ATTACKS[(sq as usize) & 7][occ as usize];
 // }
 // #[inline(always)]
@@ -317,7 +323,7 @@ impl std::fmt::Debug for BitBoard {
 // #[inline(always)]
 // pub fn get_en_passant_square(en_passant: File, turn: Color) -> Square {
 //     return Square::new(
-//         en_passant, 
+//         en_passant,
 //         if turn == Color::White { Rank::R6 } else { Rank::R3 }
 //     );
 // }
@@ -328,7 +334,7 @@ impl std::fmt::Debug for BitBoard {
 // 		let mut row = String::new();
 // 		for _x in 0..8 {
 // 			if bb & 1 != 0 { row += "1 "; }
-// 			else { row += "_ "; } 
+// 			else { row += "_ "; }
 //             bb >>= 1;
 // 		}
 // 		ret = row + "\n" + &ret;
