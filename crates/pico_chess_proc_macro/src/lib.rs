@@ -276,7 +276,7 @@ pub fn make_kindergarten_fill_up_attacks_table(_item: TokenStream) -> TokenStrea
 const fn _make_kindergarten_fill_up_attacks_table() -> [[u64; 64]; 8] {
     let mut result = [[0; 64]; 8];
     let mut sq = 0;
-    while sq < 64 {
+    while sq < 8 {
         let mut six_bit_occ = 0;
         while six_bit_occ < 64 {
             let rooks: u64 = 1 << sq;
@@ -312,7 +312,7 @@ pub fn make_kindergarten_a_file_attacks_table(_item: TokenStream) -> TokenStream
 const fn _make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
     let mut result = [[0; 64]; 8];
     let mut sq = 0;
-    while sq < 64 {
+    while sq < 8 {
         let mut six_bit_occ = 0;
         while six_bit_occ < 64 {
             let rooks: u64 = 1u64 << (7 - sq);
