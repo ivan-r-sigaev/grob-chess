@@ -1,7 +1,0 @@
-[package]
-name = "pico_chess_proc_macro"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-const-random = "0.1.18"

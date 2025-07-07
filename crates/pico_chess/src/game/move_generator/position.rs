@@ -74,7 +74,7 @@ pub mod board;
 use board::*;
 use board::bitboard::*;
 
-use pico_chess_proc_macro::*;
+use crate::table_generation::*;
 use bitflags::bitflags;  // This dependency is a pure utility. It may be removed if needed.
 use std::error::Error;
 use std::fmt::Display;

@@ -88,15 +88,8 @@ name = "pico_chess"
 version = "0.1.0"
 dependencies = [
  "bitflags",
- "enum-iterator",
- "pico_chess_proc_macro",
-]
-
-[[package]]
-name = "pico_chess_proc_macro"
-version = "0.1.0"
-dependencies = [
  "const-random",
+ "enum-iterator",
 ]
 
 [[package]]

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 bitflags = "2.3.1"
-pico_chess_proc_macro = {path = "..\\pico_chess_proc_macro"}
+const-random = "0.1.18"
 
 [dev-dependencies]
 enum-iterator = "1.4.1"

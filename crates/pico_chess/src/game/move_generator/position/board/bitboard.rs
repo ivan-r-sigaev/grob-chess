@@ -1,5 +1,5 @@
 use std::{ops::{Not, BitAnd, BitOr, BitXor, BitAndAssign, BitOrAssign, BitXorAssign}, mem::transmute};
-use pico_chess_proc_macro::*;
+use crate::table_generation::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum File {
