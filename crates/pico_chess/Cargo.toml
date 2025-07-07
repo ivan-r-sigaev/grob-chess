@@ -1,0 +1,11 @@
+[package]
+name = "pico_chess"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitflags = "2.3.1"
+pico_chess_proc_macro = {path = "..\\pico_chess_proc_macro"}
+
+[dev-dependencies]
+enum-iterator = "1.4.1"
