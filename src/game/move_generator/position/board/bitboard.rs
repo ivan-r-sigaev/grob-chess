@@ -10,7 +10,7 @@ use crate::{
 };
 pub use indexing::{File, Rank, Square};
 use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, Not, Shl, ShlAssign, Shr,
     ShrAssign,
 };
 use strum::EnumCount;
@@ -99,6 +99,11 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
+    pub const fn mul(self, rhs: Self) -> Self {
+        Self(self.0.wrapping_mul(rhs.0))
+    }
+    #[inline(always)]
+    #[must_use]
     pub const fn shl(self, rhs: u8) -> Self {
         BitBoard(self.0 << rhs)
     }
@@ -124,6 +129,9 @@ impl BitBoard {
     }
     pub const fn bitxor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitxor(*self, rhs);
+    }
+    pub const fn mul_assign(&mut self, rhs: BitBoard) {
+        *self = Self::mul(*self, rhs);
     }
     pub const fn shl_assign(&mut self, rhs: u8) {
         *self = Self::shl(*self, rhs);
@@ -338,6 +346,14 @@ impl BitXorAssign<BitBoard> for BitBoard {
     #[inline(always)]
     fn bitxor_assign(&mut self, rhs: BitBoard) {
         Self::bitxor_assign(self, rhs);
+    }
+}
+
+impl Mul for BitBoard {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Self::mul(self, rhs)
     }
 }
 
