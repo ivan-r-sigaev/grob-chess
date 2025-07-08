@@ -362,6 +362,7 @@ impl BitXorAssign<BitBoard> for BitBoard {
 impl Mul for BitBoard {
     type Output = Self;
 
+    #[inline(always)]
     fn mul(self, rhs: Self) -> Self::Output {
         Self::mul(self, rhs)
     }
