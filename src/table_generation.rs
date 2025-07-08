@@ -236,16 +236,3 @@ pub const fn make_kindergarten_a_file_attacks_table() -> [[u64; 64]; 8] {
     }
     result
 }
-
-use const_random::const_random;
-
-#[must_use]
-pub const fn make_random_u64_table<const SIZE: usize>() -> [u64; SIZE] {
-    let mut result = [0; SIZE];
-    let mut i = 0;
-    while i < SIZE {
-        result[i] = const_random!(u64);
-        i += 1;
-    }
-    result
-}
