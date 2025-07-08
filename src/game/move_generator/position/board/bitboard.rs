@@ -286,67 +286,124 @@ impl BitBoard {
 impl BitBoard {
     #[inline(always)]
     #[must_use]
-    pub fn pawn_attacks(sq: Square, color: Color) -> BitBoard {
-        const PAWN_ATTACKS: [[u64; 64]; 2] = make_pawn_attack_table();
-        BitBoard(PAWN_ATTACKS[color as usize][sq as usize])
+    pub const fn pawn_quiet(from: Square, color: Color) -> BitBoard {
+        let bb = BitBoard::from_square(from);
+        match color {
+            Color::White => bb.up(),
+            Color::Black => bb.down(),
+        }
     }
     #[inline(always)]
     #[must_use]
-    pub fn knight_attacks(sq: Square) -> BitBoard {
-        const KNIGHT_ATTACKS: [u64; 64] = make_knight_attack_table();
-        BitBoard(KNIGHT_ATTACKS[sq as usize])
+    pub const fn pawn_attacks(from: Square, color: Color) -> BitBoard {
+        let bb = Self::pawn_quiet(from, color);
+        bb.left().bitor(bb.right())
     }
     #[inline(always)]
     #[must_use]
-    pub fn king_attacks(sq: Square) -> BitBoard {
-        const KING_ATTACKS: [u64; 64] = make_king_attack_table();
-        BitBoard(KING_ATTACKS[sq as usize])
+    pub const fn knight_attacks(from: Square) -> BitBoard {
+        const MAGIC_L: BitBoard = BitBoard::EMPTY.not().left();
+        const MAGIC_LL: BitBoard = MAGIC_L.left();
+        const MAGIC_R: BitBoard = BitBoard::EMPTY.not().right();
+        const MAGIC_RR: BitBoard = MAGIC_R.right();
+        let bb = BitBoard::from_square(from);
+        let l1 = bb.shr(1).bitand(MAGIC_L);
+        let l2 = bb.shr(2).bitand(MAGIC_LL);
+        let r1 = bb.shl(1).bitand(MAGIC_R);
+        let r2 = bb.shl(2).bitand(MAGIC_RR);
+        let h1 = l1.bitor(r1);
+        let h2 = l2.bitor(r2);
+        h1.shl(16)
+            .bitor(h1.shr(16))
+            .bitor(h2.shl(8))
+            .bitor(h2.shr(8))
     }
     #[inline(always)]
     #[must_use]
-    fn fill_up_attacks(mask_ex: &[u64; 64], occ: BitBoard, sq: Square) -> BitBoard {
-        const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
-        const B_FILE: u64 = 0x0202020202020202;
-        let occupance_index = (B_FILE.wrapping_mul(mask_ex[sq as usize] & occ.0) >> 58) as usize;
-        BitBoard(mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index])
+    pub const fn king_attacks(from: Square) -> BitBoard {
+        let bb = BitBoard::from_square(from);
+        let tmp = bb.left().bitor(bb.right());
+        tmp.bitor(tmp.up())
+            .bitor(tmp.down())
+            .bitor(bb.up())
+            .bitor(bb.down())
     }
     #[inline(always)]
     #[must_use]
-    pub fn diagonal_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table();
-        BitBoard::fill_up_attacks(&DIAGONAL_MASK_EX, occ, sq)
+    const fn pos_diag_attacks(from: Square, occ: BitBoard) -> BitBoard {
+        let mask =
+            BitBoard::from_pos_diag(from.into_pos_diag()).bitxor(BitBoard::from_square(from));
+        let occ_6bit = Self::inner_6bits(mask.bitand(occ).project_on_rank());
+        mask.bitand(Self::fill_up_attack(from.into_file(), occ_6bit))
     }
     #[inline(always)]
     #[must_use]
-    pub fn antidiag_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table();
-        BitBoard::fill_up_attacks(&ANTIDIAG_MASK_EX, occ, sq)
+    const fn neg_diag_attacks(from: Square, occ: BitBoard) -> BitBoard {
+        let mask =
+            BitBoard::from_neg_diag(from.into_neg_diag()).bitxor(BitBoard::from_square(from));
+        let occ_6bit = Self::inner_6bits(mask.bitand(occ).project_on_rank());
+        mask.bitand(Self::fill_up_attack(from.into_file(), occ_6bit))
     }
     #[inline(always)]
     #[must_use]
-    pub fn rank_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table();
-        BitBoard::fill_up_attacks(&RANK_MASK_EX, occ, sq)
+    const fn rank_attacks(from: Square, occ: BitBoard) -> BitBoard {
+        let mask = BitBoard::from_rank(from.into_rank()).bitxor(BitBoard::from_square(from));
+        let occ_6bit = Self::inner_6bits(mask.bitand(occ).project_on_rank());
+        mask.bitand(Self::fill_up_attack(from.into_file(), occ_6bit))
     }
     #[inline(always)]
     #[must_use]
-    pub fn file_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table();
-        const A_FILE: u64 = 0x101010101010101;
-        const DIA_C2_H7: u64 = 0x0080402010080400;
-        let occupance_index =
-            ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
-        BitBoard(A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8))
+    const fn file_attack(from: Square, occupance: BitBoard) -> BitBoard {
+        let rank = from.into_rank();
+        let file = from.into_file();
+        let file_occ = BitBoard::from_file(File::A).bitand(occupance.shr(file as u8));
+        let rev_occ = file_occ.file_to_reversed_rank();
+        let rev_occ_6bit = Self::inner_6bits(rev_occ);
+        Self::file_a_attack(rank, rev_occ_6bit)
+            .shl(file as u8)
+            .bitand(BitBoard::from_square(from).not())
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn fill_up_attack(file: File, occ_6bit: u8) -> BitBoard {
+        assert!(occ_6bit < 64);
+        let occ = BitBoard(occ_6bit as u64).shl(1);
+        let slider = BitBoard::from_square(Square::new(file, Rank::R1));
+        let result = slider
+            .attack_left(occ)
+            .bitor(slider.attack_right(occ))
+            .fill_up();
+        result
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn file_a_attack(rank: Rank, rev_occ_6bit: u8) -> BitBoard {
+        assert!(rev_occ_6bit < 64);
+        let rev_occ = BitBoard(rev_occ_6bit as u64).shl(1);
+        let occ = rev_occ.rank_to_reversed_file();
+        let slider = BitBoard::from_square(Square::new(File::A, rank));
+        slider.attack_up(occ).bitor(slider.attack_down(occ))
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn inner_6bits(bb_rank: BitBoard) -> u8 {
+        assert!(bb_rank
+            .bitand(BitBoard::from_rank(Rank::R1).not())
+            .is_empty());
+        bb_rank
+            .bitand(BitBoard::from_square(Square::H1).not())
+            .shr(1)
+            .0 as u8
     }
     #[inline(always)]
     #[must_use]
     pub fn bishop_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::diagonal_attacks(occ, sq) | BitBoard::antidiag_attacks(occ, sq)
+        BitBoard::pos_diag_attacks(sq, occ) | BitBoard::neg_diag_attacks(sq, occ)
     }
     #[inline(always)]
     #[must_use]
     pub fn rook_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::file_attacks(occ, sq) | BitBoard::rank_attacks(occ, sq)
+        BitBoard::rank_attacks(sq, occ) | BitBoard::file_attack(sq, occ)
     }
     #[inline(always)]
     #[must_use]
