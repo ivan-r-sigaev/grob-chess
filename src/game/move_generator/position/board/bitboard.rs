@@ -18,6 +18,8 @@ mod indexing;
 pub struct BitBoard(u64);
 
 impl BitBoard {
+    pub const EMPTY: BitBoard = BitBoard(0);
+    pub const FILLED: BitBoard = Self::EMPTY.not();
     #[inline(always)]
     #[must_use]
     pub const fn from_square(value: Square) -> Self {
@@ -226,20 +228,6 @@ impl BitBoard {
     pub fn serialize(self) -> Serialized {
         Serialized(self)
     }
-}
-
-impl BitBoard {
-    pub const EMPTY: BitBoard = BitBoard(0);
-    pub const FULL: BitBoard = BitBoard(!0);
-
-    pub const RANK_1: BitBoard = BitBoard(0xff);
-    pub const RANK_2: BitBoard = BitBoard(0xff00);
-    pub const RANK_3: BitBoard = BitBoard(0xff0000);
-    pub const RANK_4: BitBoard = BitBoard(0xff000000);
-    pub const RANK_5: BitBoard = BitBoard(0xff00000000);
-    pub const RANK_6: BitBoard = BitBoard(0xff0000000000);
-    pub const RANK_7: BitBoard = BitBoard(0xff000000000000);
-    pub const RANK_8: BitBoard = BitBoard(0xff00000000000000);
 }
 
 impl BitBoard {
