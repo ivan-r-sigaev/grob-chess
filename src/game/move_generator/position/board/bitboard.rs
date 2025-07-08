@@ -97,6 +97,125 @@ impl BitBoard {
     pub const fn shr_assign(&mut self, rhs: u8) {
         *self = Self::shr(*self, rhs);
     }
+    #[inline(always)]
+    #[must_use]
+    pub const fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn has_square(self, sq: Square) -> bool {
+        !self.bitand(BitBoard::from_square(sq)).is_empty()
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn with_isolated_lsb(self) -> BitBoard {
+        BitBoard(self.0 & self.0.wrapping_neg())
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn with_separated_lsb(self) -> BitBoard {
+        BitBoard(self.0 ^ self.0.wrapping_sub(1))
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn with_reset_lsb(self) -> BitBoard {
+        BitBoard(self.0 & self.0.wrapping_sub(1))
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn bit_scan_forward(self) -> Option<Square> {
+        if self.is_empty() {
+            return None;
+        }
+        unsafe {
+            Some(std::mem::transmute(
+                self.with_isolated_lsb().0.trailing_zeros() as u8,
+            ))
+        }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn serialize(self) -> Serialized {
+        Serialized(self)
+    }
+}
+
+impl BitBoard {
+    #[inline(always)]
+    #[must_use]
+    pub fn pawn_attacks(sq: Square, color: Color) -> BitBoard {
+        const PAWN_ATTACKS: [[u64; 64]; 2] = make_pawn_attack_table();
+        BitBoard(PAWN_ATTACKS[color as usize][sq as usize])
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn knight_attacks(sq: Square) -> BitBoard {
+        const KNIGHT_ATTACKS: [u64; 64] = make_knight_attack_table();
+        BitBoard(KNIGHT_ATTACKS[sq as usize])
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn king_attacks(sq: Square) -> BitBoard {
+        const KING_ATTACKS: [u64; 64] = make_king_attack_table();
+        BitBoard(KING_ATTACKS[sq as usize])
+    }
+    #[inline(always)]
+    #[must_use]
+    fn fill_up_attacks(mask_ex: &[u64; 64], occ: BitBoard, sq: Square) -> BitBoard {
+        const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
+        const B_FILE: u64 = 0x0202020202020202;
+        let occupance_index = (B_FILE.wrapping_mul(mask_ex[sq as usize] & occ.0) >> 58) as usize;
+        BitBoard(mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index])
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn diagonal_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table();
+        BitBoard::fill_up_attacks(&DIAGONAL_MASK_EX, occ, sq)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn antidiag_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table();
+        BitBoard::fill_up_attacks(&ANTIDIAG_MASK_EX, occ, sq)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn rank_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table();
+        BitBoard::fill_up_attacks(&RANK_MASK_EX, occ, sq)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn file_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table();
+        const A_FILE: u64 = 0x101010101010101;
+        const DIA_C2_H7: u64 = 0x0080402010080400;
+        let occupance_index =
+            ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
+        BitBoard(A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8))
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn bishop_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        BitBoard::diagonal_attacks(occ, sq) | BitBoard::antidiag_attacks(occ, sq)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn rook_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        BitBoard::file_attacks(occ, sq) | BitBoard::rank_attacks(occ, sq)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn queen_attacks(occ: BitBoard, sq: Square) -> BitBoard {
+        BitBoard::bishop_attacks(occ, sq) | BitBoard::rook_attacks(occ, sq)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
+        BitBoard(((pawns.0 << 8) >> ((color as u8) << 4)) & empty.0)
+    }
 }
 
 impl From<Square> for BitBoard {
@@ -205,169 +324,6 @@ impl Not for BitBoard {
     }
 }
 
-pub struct Serialized(BitBoard);
-
-impl Iterator for Serialized {
-    type Item = Square;
-
-    #[inline(always)]
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.0.none() {
-            return None;
-        }
-
-        let next = unsafe { self.0.isolated_ls1b().bit_scan_forward_unchecked() };
-        self.0 = self.0.reset_ls1b();
-        Some(next)
-    }
-}
-
-impl BitBoard {
-    #[inline(always)]
-    #[must_use]
-    pub fn serialize(self) -> Serialized {
-        Serialized(self)
-    }
-}
-
-impl BitBoard {
-    #[inline(always)]
-    #[must_use]
-    pub fn pawn_attacks(sq: Square, color: Color) -> BitBoard {
-        const PAWN_ATTACKS: [[u64; 64]; 2] = make_pawn_attack_table();
-        BitBoard(PAWN_ATTACKS[color as usize][sq as usize])
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn knight_attacks(sq: Square) -> BitBoard {
-        const KNIGHT_ATTACKS: [u64; 64] = make_knight_attack_table();
-        BitBoard(KNIGHT_ATTACKS[sq as usize])
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn king_attacks(sq: Square) -> BitBoard {
-        const KING_ATTACKS: [u64; 64] = make_king_attack_table();
-        BitBoard(KING_ATTACKS[sq as usize])
-    }
-    #[inline(always)]
-    #[must_use]
-    fn fill_up_attacks(mask_ex: &[u64; 64], occ: BitBoard, sq: Square) -> BitBoard {
-        const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table();
-        const B_FILE: u64 = 0x0202020202020202;
-        let occupance_index = (B_FILE.wrapping_mul(mask_ex[sq as usize] & occ.0) >> 58) as usize;
-        BitBoard(mask_ex[sq as usize] & FILL_UP_ATTACKS[sq.into_file() as usize][occupance_index])
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn diagonal_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table();
-        BitBoard::fill_up_attacks(&DIAGONAL_MASK_EX, occ, sq)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn antidiag_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table();
-        BitBoard::fill_up_attacks(&ANTIDIAG_MASK_EX, occ, sq)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn rank_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table();
-        BitBoard::fill_up_attacks(&RANK_MASK_EX, occ, sq)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn file_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table();
-        const A_FILE: u64 = 0x101010101010101;
-        const DIA_C2_H7: u64 = 0x0080402010080400;
-        let occupance_index =
-            ((DIA_C2_H7.wrapping_mul(A_FILE & (occ.0 >> (sq.into_file() as u8)))) >> 58) as usize;
-        BitBoard(A_FILE_ATTACKS[(sq as usize) >> 3][occupance_index] << (sq.into_file() as u8))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn bishop_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::diagonal_attacks(occ, sq) | BitBoard::antidiag_attacks(occ, sq)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn rook_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::file_attacks(occ, sq) | BitBoard::rank_attacks(occ, sq)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn queen_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::bishop_attacks(occ, sq) | BitBoard::rook_attacks(occ, sq)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
-        BitBoard(((pawns.0 << 8) >> ((color as u8) << 4)) & empty.0)
-    }
-}
-
-impl BitBoard {
-    #[inline(always)]
-    #[must_use]
-    pub fn none(self) -> bool {
-        self.0 == 0
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn has_square(self, sq: Square) -> bool {
-        !(self & BitBoard::from(sq)).none()
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn isolated_ls1b(self) -> BitBoard {
-        BitBoard(self.0 & self.0.wrapping_neg())
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn separated_ls1b(self) -> BitBoard {
-        BitBoard(self.0 ^ self.0.wrapping_sub(1))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn reset_ls1b(self) -> BitBoard {
-        BitBoard(self.0 & self.0.wrapping_sub(1))
-    }
-    /// # Safety
-    /// Call only if `self.none()` is `false`
-    #[inline(always)]
-    #[must_use]
-    pub unsafe fn bit_scan_forward_unchecked(self) -> Square {
-        debug_assert!(!self.none());
-        // const INDEX64: [u8; 64] = [
-        //     0, 47,  1, 56, 48, 27,  2, 60,
-        //     57, 49, 41, 37, 28, 16,  3, 61,
-        //     54, 58, 35, 52, 50, 42, 21, 44,
-        //     38, 32, 29, 23, 17, 11,  4, 62,
-        //     46, 55, 26, 59, 40, 36, 15, 53,
-        //     34, 51, 20, 43, 31, 22, 10, 45,
-        //     25, 39, 14, 33, 19, 30,  9, 24,
-        //     13, 18,  8, 12,  7,  6,  5, 63
-        // ];
-        // const DEBRUIJN64: u64 = 0x03f79d71b4cb0a89;
-        // unsafe {
-        //     return Some(std::mem::transmute(
-        //         INDEX64[((self.separated_ls1b().0.wrapping_mul(DEBRUIJN64)) >> 58) as usize]
-        //     ));
-        // }
-
-        std::mem::transmute(self.isolated_ls1b().0.trailing_zeros() as u8)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub fn bit_scan_forward(self) -> Option<Square> {
-        if self.none() {
-            return None;
-        }
-        unsafe { Some(self.bit_scan_forward_unchecked()) }
-    }
-}
-
 impl std::fmt::Debug for BitBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut bb = self.0;
@@ -388,91 +344,19 @@ impl std::fmt::Debug for BitBoard {
     }
 }
 
-// #[inline(always)]
-// pub fn get_pawn_attacks(sq: Square, color: Color) -> u64 {
-//     const TABLE: [[u64; 64]; 2] = make_pawn_attack_table!();
-//     return TABLE[color as usize][sq as usize];
-// }
+pub struct Serialized(BitBoard);
 
-// #[inline(always)]
-// pub fn get_knight_attacks(sq: Square) -> u64 {
-//     const TABLE: [u64; 64] = make_knight_attack_table!();
-//     return TABLE[sq as usize];
-// }
+impl Iterator for Serialized {
+    type Item = Square;
 
-// #[inline(always)]
-// pub fn get_king_attacks(sq: Square) -> u64 {
-//     const TABLE: [u64; 64] = make_king_attack_table!();
-//     return TABLE[sq as usize]
-// }
-
-// const FILL_UP_ATTACKS: [[u64; 64]; 8] = make_kindergarten_fill_up_attacks_table!();
-// const B_FILE: u64 = 0x0202020202020202;
-
-// #[inline(always)]
-// pub fn get_diagonal_attacks(mut occ: u64, sq: Square) -> u64 {
-//     const DIAGONAL_MASK_EX: [u64; 64] = make_diagonal_mask_ex_table!();
-//     occ = B_FILE.wrapping_mul(DIAGONAL_MASK_EX[sq as usize] & occ) >> 58;
-//     return DIAGONAL_MASK_EX[sq as usize]
-//         & FILL_UP_ATTACKS[(sq as usize) & 7][occ as usize];
-// }
-// #[inline(always)]
-// pub fn get_antidiag_attacks(mut occ: u64, sq: Square) -> u64 {
-//     const ANTIDIAG_MASK_EX: [u64; 64] = make_antidiag_mask_ex_table!();
-//     occ = B_FILE.wrapping_mul(ANTIDIAG_MASK_EX[sq as usize] & occ) >> 58;
-//     return ANTIDIAG_MASK_EX[sq as usize]
-//         & FILL_UP_ATTACKS[(sq as usize) & 7][occ as usize];
-// }
-// #[inline(always)]
-// pub fn get_rank_attacks(mut occ: u64, sq: Square) -> u64 {
-//     const RANK_MASK_EX: [u64; 64] = make_rank_mask_ex_table!();
-//     occ = B_FILE.wrapping_mul(RANK_MASK_EX[sq as usize] & occ) >> 58;
-//     return RANK_MASK_EX[sq as usize]
-//         & FILL_UP_ATTACKS[(sq as usize) & 7][occ as usize];
-// }
-// #[inline(always)]
-// pub fn get_file_attacks(mut occ: u64, sq: Square) -> u64 {
-//     const A_FILE_ATTACKS: [[u64; 64]; 8] = make_kindergarten_a_file_attacks_table!();
-//     const A_FILE: u64 = 0x101010101010101;
-//     const DIA_C2_H7: u64 = 0x0080402010080400;
-//     occ = A_FILE & (occ >> ((sq as u8) & 7));
-//     occ = (DIA_C2_H7.wrapping_mul(occ)) >> 58;
-//     return A_FILE_ATTACKS[(sq as usize) >> 3][occ as usize] << ((sq as u8) & 7);
-// }
-
-// #[inline(always)]
-// pub fn get_bishop_attacks(occ: u64, sq: Square) -> u64 {
-//     return get_diagonal_attacks(occ, sq) | get_antidiag_attacks(occ, sq);
-// }
-
-// #[inline(always)]
-// pub fn get_rook_attacks(occ: u64, sq: Square) -> u64 {
-//     return get_file_attacks(occ, sq) | get_rank_attacks(occ, sq);
-// }
-
-// #[inline(always)]
-// pub fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
-//     return BitBoard(((pawns.0 << 8) >> ((color as u8) << 4)) & empty.0);
-// }
-
-// #[inline(always)]
-// pub fn get_en_passant_square(en_passant: File, turn: Color) -> Square {
-//     return Square::new(
-//         en_passant,
-//         if turn == Color::White { Rank::R6 } else { Rank::R3 }
-//     );
-// }
-
-// pub fn format_bitboard(mut bb: u64) -> String {
-//     let mut ret = String::new();
-// 	for _y in 0..8 {
-// 		let mut row = String::new();
-// 		for _x in 0..8 {
-// 			if bb & 1 != 0 { row += "1 "; }
-// 			else { row += "_ "; }
-//             bb >>= 1;
-// 		}
-// 		ret = row + "\n" + &ret;
-// 	}
-// 	return ret;
-// }
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.0.bit_scan_forward() {
+            Some(sq) => {
+                self.0 = self.0.with_reset_lsb();
+                Some(sq)
+            }
+            None => None,
+        }
+    }
+}

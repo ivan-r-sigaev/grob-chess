@@ -57,17 +57,17 @@ impl Board {
     #[must_use]
     pub fn get_piece_at(&self, sq: Square) -> Option<Piece> {
         let bb = BitBoard::from(sq);
-        if !(bb & self.get_piece(Piece::Pawn)).none() {
+        if !(bb & self.get_piece(Piece::Pawn)).is_empty() {
             Some(Piece::Pawn)
-        } else if !(bb & self.get_piece(Piece::Bishop)).none() {
+        } else if !(bb & self.get_piece(Piece::Bishop)).is_empty() {
             Some(Piece::Bishop)
-        } else if !(bb & self.get_piece(Piece::Knight)).none() {
+        } else if !(bb & self.get_piece(Piece::Knight)).is_empty() {
             Some(Piece::Knight)
-        } else if !(bb & self.get_piece(Piece::Rook)).none() {
+        } else if !(bb & self.get_piece(Piece::Rook)).is_empty() {
             Some(Piece::Rook)
-        } else if !(bb & self.get_piece(Piece::Queen)).none() {
+        } else if !(bb & self.get_piece(Piece::Queen)).is_empty() {
             Some(Piece::Queen)
-        } else if !(bb & self.get_piece(Piece::King)).none() {
+        } else if !(bb & self.get_piece(Piece::King)).is_empty() {
             Some(Piece::King)
         } else {
             None
@@ -77,9 +77,9 @@ impl Board {
     #[must_use]
     pub fn get_color_at(&self, sq: Square) -> Option<Color> {
         let bb = BitBoard::from(sq);
-        if !(bb & self.get_color(Color::White)).none() {
+        if !(bb & self.get_color(Color::White)).is_empty() {
             Some(Color::White)
-        } else if !(bb & self.get_color(Color::Black)).none() {
+        } else if !(bb & self.get_color(Color::Black)).is_empty() {
             Some(Color::Black)
         } else {
             None
@@ -153,7 +153,7 @@ impl Board {
                     .expect("king does not exist"),
                 !color,
             )
-            .none()
+            .is_empty()
     }
 }
 
