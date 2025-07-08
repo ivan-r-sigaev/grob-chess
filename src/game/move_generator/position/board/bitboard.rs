@@ -20,13 +20,13 @@ pub struct BitBoard(u64);
 impl BitBoard {
     #[inline(always)]
     #[must_use]
-    const fn from_square(value: Square) -> Self {
+    pub const fn from_square(value: Square) -> Self {
         const SQUARE_A1: BitBoard = BitBoard(1);
         SQUARE_A1.shl(value as u8)
     }
     #[inline(always)]
     #[must_use]
-    const fn from_rank(value: Rank) -> Self {
+    pub const fn from_rank(value: Rank) -> Self {
         const RANK_ONE: BitBoard = BitBoard::from_square(Square::A1)
             .bitor(BitBoard::from_square(Square::B1))
             .bitor(BitBoard::from_square(Square::C1))
@@ -39,7 +39,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn from_file(value: File) -> Self {
+    pub const fn from_file(value: File) -> Self {
         const FILE_A: BitBoard = BitBoard::from_square(Square::A1)
             .bitor(BitBoard::from_square(Square::A2))
             .bitor(BitBoard::from_square(Square::A3))
@@ -52,47 +52,47 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn not(self) -> Self {
+    pub const fn not(self) -> Self {
         BitBoard(!self.0)
     }
     #[inline(always)]
     #[must_use]
-    const fn bitand(self, rhs: BitBoard) -> Self {
+    pub const fn bitand(self, rhs: BitBoard) -> Self {
         BitBoard(self.0 & rhs.0)
     }
     #[inline(always)]
     #[must_use]
-    const fn bitor(self, rhs: BitBoard) -> Self {
+    pub const fn bitor(self, rhs: BitBoard) -> Self {
         BitBoard(self.0 | rhs.0)
     }
     #[inline(always)]
     #[must_use]
-    const fn bitxor(self, rhs: BitBoard) -> Self {
+    pub const fn bitxor(self, rhs: BitBoard) -> Self {
         BitBoard(self.0 ^ rhs.0)
     }
     #[inline(always)]
     #[must_use]
-    const fn shl(self, rhs: u8) -> Self {
+    pub const fn shl(self, rhs: u8) -> Self {
         BitBoard(self.0 << rhs)
     }
     #[inline(always)]
     #[must_use]
-    const fn shr(self, rhs: u8) -> Self {
+    pub const fn shr(self, rhs: u8) -> Self {
         BitBoard(self.0 >> rhs)
     }
-    const fn bitand_assign(&mut self, rhs: BitBoard) {
+    pub const fn bitand_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitand(*self, rhs);
     }
-    const fn bitor_assign(&mut self, rhs: BitBoard) {
+    pub const fn bitor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitor(*self, rhs);
     }
-    const fn bitxor_assign(&mut self, rhs: BitBoard) {
+    pub const fn bitxor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitxor(*self, rhs);
     }
-    const fn shl_assign(&mut self, rhs: u8) {
+    pub const fn shl_assign(&mut self, rhs: u8) {
         *self = Self::shl(*self, rhs);
     }
-    const fn shr_assign(&mut self, rhs: u8) {
+    pub const fn shr_assign(&mut self, rhs: u8) {
         *self = Self::shr(*self, rhs);
     }
 }
