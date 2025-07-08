@@ -154,6 +154,16 @@ impl Square {
     }
     #[inline(always)]
     #[must_use]
+    pub fn into_pos_diag(self) -> PosDiag {
+        unsafe { transmute(self.into_rank() as i8 - self.into_file() as i8) }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub fn into_neg_diag(self) -> NegDiag {
+        unsafe { transmute(self.into_rank() as i8 + self.into_file() as i8 - 7) }
+    }
+    #[inline(always)]
+    #[must_use]
     pub fn shifted(self, delta: i8) -> Square {
         unsafe { transmute(((self as i8).wrapping_add(delta)) & 63) }
     }
