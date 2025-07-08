@@ -281,6 +281,35 @@ impl BitBoard {
     pub const fn project_on_rank(self) -> Self {
         self.fill_up().shr(56)
     }
+    #[inline(always)]
+    #[must_use]
+    pub const fn into_kindergarten_occupancy(self) -> u8 {
+        assert!(self.bitand(BitBoard::from_rank(Rank::R1).not()).is_empty());
+        self.bitand(BitBoard::from_square(Square::H1).not())
+            .shr(1)
+            .0 as u8
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn from_kindergarten_occupancy_as_rank(file: File, occ_6bit: u8) -> BitBoard {
+        assert!(occ_6bit < 64);
+        let occ = BitBoard(occ_6bit as u64).shl(1);
+        let slider = BitBoard::from_square(Square::new(file, Rank::R1));
+        let result = slider
+            .attack_left(occ)
+            .bitor(slider.attack_right(occ))
+            .fill_up();
+        result
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn from_kindergarten_occupancy_as_file(rank: Rank, rev_occ_6bit: u8) -> BitBoard {
+        assert!(rev_occ_6bit < 64);
+        let rev_occ = BitBoard(rev_occ_6bit as u64).shl(1);
+        let occ = rev_occ.rank_to_reversed_file();
+        let slider = BitBoard::from_square(Square::new(File::A, rank));
+        slider.attack_up(occ).bitor(slider.attack_down(occ))
+    }
 }
 
 impl BitBoard {
@@ -333,23 +362,32 @@ impl BitBoard {
     const fn pos_diag_attacks(from: Square, occ: BitBoard) -> BitBoard {
         let mask =
             BitBoard::from_pos_diag(from.into_pos_diag()).bitxor(BitBoard::from_square(from));
-        let occ_6bit = Self::inner_6bits(mask.bitand(occ).project_on_rank());
-        mask.bitand(Self::fill_up_attack(from.into_file(), occ_6bit))
+        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occ).project_on_rank());
+        mask.bitand(Self::from_kindergarten_occupancy_as_rank(
+            from.into_file(),
+            occ_6bit,
+        ))
     }
     #[inline(always)]
     #[must_use]
     const fn neg_diag_attacks(from: Square, occ: BitBoard) -> BitBoard {
         let mask =
             BitBoard::from_neg_diag(from.into_neg_diag()).bitxor(BitBoard::from_square(from));
-        let occ_6bit = Self::inner_6bits(mask.bitand(occ).project_on_rank());
-        mask.bitand(Self::fill_up_attack(from.into_file(), occ_6bit))
+        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occ).project_on_rank());
+        mask.bitand(Self::from_kindergarten_occupancy_as_rank(
+            from.into_file(),
+            occ_6bit,
+        ))
     }
     #[inline(always)]
     #[must_use]
     const fn rank_attacks(from: Square, occ: BitBoard) -> BitBoard {
         let mask = BitBoard::from_rank(from.into_rank()).bitxor(BitBoard::from_square(from));
-        let occ_6bit = Self::inner_6bits(mask.bitand(occ).project_on_rank());
-        mask.bitand(Self::fill_up_attack(from.into_file(), occ_6bit))
+        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occ).project_on_rank());
+        mask.bitand(Self::from_kindergarten_occupancy_as_rank(
+            from.into_file(),
+            occ_6bit,
+        ))
     }
     #[inline(always)]
     #[must_use]
@@ -358,42 +396,10 @@ impl BitBoard {
         let file = from.into_file();
         let file_occ = BitBoard::from_file(File::A).bitand(occupance.shr(file as u8));
         let rev_occ = file_occ.file_to_reversed_rank();
-        let rev_occ_6bit = Self::inner_6bits(rev_occ);
-        Self::file_a_attack(rank, rev_occ_6bit)
+        let rev_occ_6bit = Self::into_kindergarten_occupancy(rev_occ);
+        Self::from_kindergarten_occupancy_as_file(rank, rev_occ_6bit)
             .shl(file as u8)
             .bitand(BitBoard::from_square(from).not())
-    }
-    #[inline(always)]
-    #[must_use]
-    const fn fill_up_attack(file: File, occ_6bit: u8) -> BitBoard {
-        assert!(occ_6bit < 64);
-        let occ = BitBoard(occ_6bit as u64).shl(1);
-        let slider = BitBoard::from_square(Square::new(file, Rank::R1));
-        let result = slider
-            .attack_left(occ)
-            .bitor(slider.attack_right(occ))
-            .fill_up();
-        result
-    }
-    #[inline(always)]
-    #[must_use]
-    const fn file_a_attack(rank: Rank, rev_occ_6bit: u8) -> BitBoard {
-        assert!(rev_occ_6bit < 64);
-        let rev_occ = BitBoard(rev_occ_6bit as u64).shl(1);
-        let occ = rev_occ.rank_to_reversed_file();
-        let slider = BitBoard::from_square(Square::new(File::A, rank));
-        slider.attack_up(occ).bitor(slider.attack_down(occ))
-    }
-    #[inline(always)]
-    #[must_use]
-    const fn inner_6bits(bb_rank: BitBoard) -> u8 {
-        assert!(bb_rank
-            .bitand(BitBoard::from_rank(Rank::R1).not())
-            .is_empty());
-        bb_rank
-            .bitand(BitBoard::from_square(Square::H1).not())
-            .shr(1)
-            .0 as u8
     }
     #[inline(always)]
     #[must_use]
