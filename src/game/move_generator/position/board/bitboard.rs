@@ -211,6 +211,76 @@ impl BitBoard {
     pub const fn serialize(self) -> Serialized {
         Serialized(self)
     }
+    #[inline(always)]
+    #[must_use]
+    pub const fn fill_up(self) -> Self {
+        self.mul(Self::from_file(File::A))
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn attack_right(mut self, occupance: BitBoard) -> Self {
+        let empty = occupance.not();
+        self = self.right().bitand(empty); // 1
+        self = self.right().bitand(empty); // 2
+        self = self.right().bitand(empty); // 3
+        self = self.right().bitand(empty); // 4
+        self = self.right().bitand(empty); // 5
+        self = self.right().bitand(empty); // 6
+        self.right().bitand(empty) // 7
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn attack_left(mut self, occupance: BitBoard) -> Self {
+        let empty = occupance.not();
+        self = self.left().bitand(empty); // 1
+        self = self.left().bitand(empty); // 2
+        self = self.left().bitand(empty); // 3
+        self = self.left().bitand(empty); // 4
+        self = self.left().bitand(empty); // 5
+        self = self.left().bitand(empty); // 6
+        self.left().bitand(empty) // 7
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn attack_up(mut self, occupance: BitBoard) -> Self {
+        let empty = occupance.not();
+        self = self.up().bitand(empty); // 1
+        self = self.up().bitand(empty); // 2
+        self = self.up().bitand(empty); // 3
+        self = self.up().bitand(empty); // 4
+        self = self.up().bitand(empty); // 5
+        self = self.up().bitand(empty); // 6
+        self.up().bitand(empty) // 7
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn attack_down(mut self, occupance: BitBoard) -> Self {
+        let empty = occupance.not();
+        self = self.down().bitand(empty); // 1
+        self = self.down().bitand(empty); // 2
+        self = self.down().bitand(empty); // 3
+        self = self.down().bitand(empty); // 4
+        self = self.down().bitand(empty); // 5
+        self = self.down().bitand(empty); // 6
+        self.down().bitand(empty) // 7
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn rank_to_reversed_file(self) -> Self {
+        self.mul(Self::from_pos_diag(PosDiag::A1H8))
+            .shr(7)
+            .bitand(Self::from_file(File::A))
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn file_to_reversed_rank(self) -> Self {
+        self.mul(Self::from_pos_diag(PosDiag::A1H8)).shr(56)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn project_on_rank(self) -> Self {
+        self.fill_up().shr(56)
+    }
 }
 
 impl BitBoard {
