@@ -64,7 +64,7 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::F6))
             .bitor(BitBoard::from_square(Square::G7))
             .bitor(BitBoard::from_square(Square::H8));
-        DIAG_A1H8.genshift(diag as i8)
+        DIAG_A1H8.genshift(diag as i8 * 8)
     }
     pub const fn from_neg_diag(diag: NegDiag) -> Self {
         const DIAG_A8H1: BitBoard = BitBoard::from_square(Square::A8)
@@ -75,7 +75,7 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::F3))
             .bitor(BitBoard::from_square(Square::G2))
             .bitor(BitBoard::from_square(Square::H1));
-        DIAG_A8H1.genshift(diag as i8)
+        DIAG_A8H1.genshift(diag as i8 * 8)
     }
     #[inline(always)]
     #[must_use]
