@@ -6,17 +6,115 @@ use crate::table_generation::{
     make_rank_mask_ex_table,
 };
 pub use indexing::{File, Rank, Square};
-use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
+use std::ops::{
+    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not, Shl, ShlAssign, Shr,
+    ShrAssign,
+};
+use strum::EnumCount;
 
 mod indexing;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct BitBoard(u64);
 
+impl BitBoard {
+    #[inline(always)]
+    #[must_use]
+    const fn from_square(value: Square) -> Self {
+        const SQUARE_A1: BitBoard = BitBoard(1);
+        SQUARE_A1.shl(value as u8)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn from_rank(value: Rank) -> Self {
+        const RANK_ONE: BitBoard = BitBoard::from_square(Square::A1)
+            .bitor(BitBoard::from_square(Square::B1))
+            .bitor(BitBoard::from_square(Square::C1))
+            .bitor(BitBoard::from_square(Square::D1))
+            .bitor(BitBoard::from_square(Square::E1))
+            .bitor(BitBoard::from_square(Square::F1))
+            .bitor(BitBoard::from_square(Square::G1))
+            .bitor(BitBoard::from_square(Square::H1));
+        RANK_ONE.shl(File::COUNT as u8 + value as u8)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn from_file(value: File) -> Self {
+        const FILE_A: BitBoard = BitBoard::from_square(Square::A1)
+            .bitor(BitBoard::from_square(Square::A2))
+            .bitor(BitBoard::from_square(Square::A3))
+            .bitor(BitBoard::from_square(Square::A4))
+            .bitor(BitBoard::from_square(Square::A5))
+            .bitor(BitBoard::from_square(Square::A6))
+            .bitor(BitBoard::from_square(Square::A7))
+            .bitor(BitBoard::from_square(Square::A8));
+        FILE_A.shl(value as u8)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn not(self) -> Self {
+        BitBoard(!self.0)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn bitand(self, rhs: BitBoard) -> Self {
+        BitBoard(self.0 & rhs.0)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn bitor(self, rhs: BitBoard) -> Self {
+        BitBoard(self.0 | rhs.0)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn bitxor(self, rhs: BitBoard) -> Self {
+        BitBoard(self.0 ^ rhs.0)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn shl(self, rhs: u8) -> Self {
+        BitBoard(self.0 << rhs)
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn shr(self, rhs: u8) -> Self {
+        BitBoard(self.0 >> rhs)
+    }
+    const fn bitand_assign(&mut self, rhs: BitBoard) {
+        *self = Self::bitand(*self, rhs);
+    }
+    const fn bitor_assign(&mut self, rhs: BitBoard) {
+        *self = Self::bitor(*self, rhs);
+    }
+    const fn bitxor_assign(&mut self, rhs: BitBoard) {
+        *self = Self::bitxor(*self, rhs);
+    }
+    const fn shl_assign(&mut self, rhs: u8) {
+        *self = Self::shl(*self, rhs);
+    }
+    const fn shr_assign(&mut self, rhs: u8) {
+        *self = Self::shr(*self, rhs);
+    }
+}
+
 impl From<Square> for BitBoard {
     #[inline(always)]
     fn from(value: Square) -> Self {
-        BitBoard(1u64 << (value as u8))
+        Self::from_square(value)
+    }
+}
+
+impl From<Rank> for BitBoard {
+    #[inline(always)]
+    fn from(value: Rank) -> Self {
+        Self::from_rank(value)
+    }
+}
+
+impl From<File> for BitBoard {
+    #[inline(always)]
+    fn from(value: File) -> Self {
+        Self::from_file(value)
     }
 }
 
@@ -25,14 +123,14 @@ impl BitAnd<BitBoard> for BitBoard {
 
     #[inline(always)]
     fn bitand(self, rhs: BitBoard) -> Self::Output {
-        BitBoard(self.0 & rhs.0)
+        Self::bitand(self, rhs)
     }
 }
 
 impl BitAndAssign<BitBoard> for BitBoard {
     #[inline(always)]
     fn bitand_assign(&mut self, rhs: BitBoard) {
-        self.0 &= rhs.0;
+        Self::bitand_assign(self, rhs);
     }
 }
 
@@ -41,14 +139,14 @@ impl BitOr<BitBoard> for BitBoard {
 
     #[inline(always)]
     fn bitor(self, rhs: BitBoard) -> Self::Output {
-        BitBoard(self.0 | rhs.0)
+        Self::bitor(self, rhs)
     }
 }
 
 impl BitOrAssign<BitBoard> for BitBoard {
     #[inline(always)]
     fn bitor_assign(&mut self, rhs: BitBoard) {
-        self.0 |= rhs.0;
+        Self::bitor_assign(self, rhs);
     }
 }
 
@@ -57,14 +155,42 @@ impl BitXor<BitBoard> for BitBoard {
 
     #[inline(always)]
     fn bitxor(self, rhs: BitBoard) -> Self::Output {
-        BitBoard(self.0 ^ rhs.0)
+        Self::bitxor(self, rhs)
     }
 }
 
 impl BitXorAssign<BitBoard> for BitBoard {
     #[inline(always)]
     fn bitxor_assign(&mut self, rhs: BitBoard) {
-        self.0 ^= rhs.0;
+        Self::bitxor_assign(self, rhs);
+    }
+}
+
+impl Shl<u8> for BitBoard {
+    type Output = BitBoard;
+
+    fn shl(self, rhs: u8) -> Self::Output {
+        Self::shl(self, rhs)
+    }
+}
+
+impl ShlAssign<u8> for BitBoard {
+    fn shl_assign(&mut self, rhs: u8) {
+        Self::shl_assign(self, rhs);
+    }
+}
+
+impl Shr<u8> for BitBoard {
+    type Output = BitBoard;
+
+    fn shr(self, rhs: u8) -> Self::Output {
+        Self::shr(self, rhs)
+    }
+}
+
+impl ShrAssign<u8> for BitBoard {
+    fn shr_assign(&mut self, rhs: u8) {
+        Self::shr_assign(self, rhs);
     }
 }
 
@@ -73,7 +199,7 @@ impl Not for BitBoard {
 
     #[inline(always)]
     fn not(self) -> Self::Output {
-        BitBoard(!self.0)
+        Self::not(self)
     }
 }
 
