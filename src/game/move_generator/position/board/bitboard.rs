@@ -133,6 +133,26 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
+    pub const fn up(self) -> Self {
+        self.shl(File::COUNT as u8)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn down(self) -> Self {
+        self.shr(File::COUNT as u8)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn right(self) -> Self {
+        self.bitand(Self::from_file(File::H).not()).shl(1)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn left(self) -> Self {
+        self.bitand(Self::from_file(File::A).not()).shr(1)
+    }
+    #[inline(always)]
+    #[must_use]
     pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
