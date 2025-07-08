@@ -1,9 +1,12 @@
 use super::Color;
-use crate::table_generation::{
-    make_antidiag_mask_ex_table, make_diagonal_mask_ex_table,
-    make_kindergarten_a_file_attacks_table, make_kindergarten_fill_up_attacks_table,
-    make_king_attack_table, make_knight_attack_table, make_pawn_attack_table,
-    make_rank_mask_ex_table,
+use crate::{
+    game::move_generator::position::board::bitboard::indexing::{NegDiag, PosDiag},
+    table_generation::{
+        make_antidiag_mask_ex_table, make_diagonal_mask_ex_table,
+        make_kindergarten_a_file_attacks_table, make_kindergarten_fill_up_attacks_table,
+        make_king_attack_table, make_knight_attack_table, make_pawn_attack_table,
+        make_rank_mask_ex_table,
+    },
 };
 pub use indexing::{File, Rank, Square};
 use std::ops::{
@@ -52,6 +55,28 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::A8));
         FILE_A.shl(value as u8)
     }
+    pub const fn from_pos_diag(diag: PosDiag) -> Self {
+        const DIAG_A1H8: BitBoard = BitBoard::from_square(Square::A1)
+            .bitor(BitBoard::from_square(Square::B2))
+            .bitor(BitBoard::from_square(Square::C3))
+            .bitor(BitBoard::from_square(Square::D4))
+            .bitor(BitBoard::from_square(Square::E5))
+            .bitor(BitBoard::from_square(Square::F6))
+            .bitor(BitBoard::from_square(Square::G7))
+            .bitor(BitBoard::from_square(Square::H8));
+        DIAG_A1H8.genshift(diag as i8)
+    }
+    pub const fn from_neg_diag(diag: NegDiag) -> Self {
+        const DIAG_A8H1: BitBoard = BitBoard::from_square(Square::A8)
+            .bitor(BitBoard::from_square(Square::B7))
+            .bitor(BitBoard::from_square(Square::C6))
+            .bitor(BitBoard::from_square(Square::D5))
+            .bitor(BitBoard::from_square(Square::E4))
+            .bitor(BitBoard::from_square(Square::F3))
+            .bitor(BitBoard::from_square(Square::G2))
+            .bitor(BitBoard::from_square(Square::H1));
+        DIAG_A8H1.genshift(diag as i8)
+    }
     #[inline(always)]
     #[must_use]
     pub const fn not(self) -> Self {
@@ -81,6 +106,15 @@ impl BitBoard {
     #[must_use]
     pub const fn shr(self, rhs: u8) -> Self {
         BitBoard(self.0 >> rhs)
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn genshift(self, rhs: i8) -> Self {
+        if rhs >= 0 {
+            self.shl(rhs as u8)
+        } else {
+            self.shr(-rhs as u8)
+        }
     }
     pub const fn bitand_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitand(*self, rhs);

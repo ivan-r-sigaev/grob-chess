@@ -27,6 +27,46 @@ pub enum Rank {
     R8,
 }
 
+#[repr(i8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+pub enum PosDiag {
+    H1H1 = -7,
+    G1H2,
+    F1H3,
+    E1H4,
+    D1H5,
+    C1H6,
+    B1H7,
+    A1H8,
+    A2G8,
+    A3F8,
+    A4E8,
+    A5D8,
+    A6C8,
+    A7B8,
+    A8A8,
+}
+
+#[repr(i8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+pub enum NegDiag {
+    A1A1 = -7,
+    A2B1,
+    A3C1,
+    A4D1,
+    A5E1,
+    A6F1,
+    A7G1,
+    A8H1,
+    B8H2,
+    C8H3,
+    D8H4,
+    E8H5,
+    F8H6,
+    G8H7,
+    H8H8,
+}
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Square {
