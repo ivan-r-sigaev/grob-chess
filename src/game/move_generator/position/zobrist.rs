@@ -1,13 +1,23 @@
-use crate::{
-    game::position::{
-        board::{
-            bitboard::{File, Square},
-            Color, Piece,
-        },
-        CastlingRights,
+use crate::game::position::{
+    board::{
+        bitboard::{File, Square},
+        Color, Piece,
     },
-    table_generation::make_random_u64_table,
+    CastlingRights,
 };
+
+use const_random::const_random;
+
+#[must_use]
+const fn make_random_u64_table<const SIZE: usize>() -> [u64; SIZE] {
+    let mut result = [0; SIZE];
+    let mut i = 0;
+    while i < SIZE {
+        result[i] = const_random!(u64);
+        i += 1;
+    }
+    result
+}
 
 #[must_use]
 #[inline(always)]

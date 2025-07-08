@@ -1,7 +1,8 @@
 use crate::game::position::board::bitboard::Rank;
 use std::{mem::transmute, ops::Not};
+use strum::{EnumCount, VariantArray};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Color {
     White,
     Black,
@@ -43,7 +44,7 @@ impl Not for Color {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Piece {
     Pawn,
     Bishop,

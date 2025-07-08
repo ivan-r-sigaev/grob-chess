@@ -415,14 +415,14 @@ impl Position {
                 } else {
                     Square::H8
                 }))
-            .none()
+            .is_empty()
             || !(self.board.get_occupance()
                 & if color == Color::White {
                     w_empty
                 } else {
                     b_empty
                 })
-            .none()
+            .is_empty()
             || !(self.board.get_color_attackers_to(
                 if color == Color::White {
                     Square::F1
@@ -431,7 +431,7 @@ impl Position {
                 },
                 !color,
             ))
-            .none()
+            .is_empty()
             || !(self.board.get_color_attackers_to(
                 if color == Color::White {
                     Square::G1
@@ -440,7 +440,7 @@ impl Position {
                 },
                 !color,
             ))
-            .none()
+            .is_empty()
     }
     #[inline(always)]
     #[must_use]
@@ -459,14 +459,14 @@ impl Position {
                 } else {
                     Square::A8
                 }))
-            .none()
+            .is_empty()
             || !(self.board.get_occupance()
                 & if color == Color::White {
                     w_empty
                 } else {
                     b_empty
                 })
-            .none()
+            .is_empty()
             || !(self.board.get_color_attackers_to(
                 if color == Color::White {
                     Square::C1
@@ -475,7 +475,7 @@ impl Position {
                 },
                 !color,
             ))
-            .none()
+            .is_empty()
             || !(self.board.get_color_attackers_to(
                 if color == Color::White {
                     Square::D1
@@ -484,6 +484,6 @@ impl Position {
                 },
                 !color,
             ))
-            .none()
+            .is_empty()
     }
 }

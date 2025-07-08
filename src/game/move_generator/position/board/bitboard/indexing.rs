@@ -1,7 +1,8 @@
 use std::mem::transmute;
+use strum::{EnumCount, VariantArray};
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum File {
     A,
     B,
@@ -14,7 +15,7 @@ pub enum File {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Rank {
     R1,
     R2,
@@ -26,8 +27,48 @@ pub enum Rank {
     R8,
 }
 
+#[repr(i8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+pub enum PosDiag {
+    H1H1 = -7,
+    G1H2,
+    F1H3,
+    E1H4,
+    D1H5,
+    C1H6,
+    B1H7,
+    A1H8,
+    A2G8,
+    A3F8,
+    A4E8,
+    A5D8,
+    A6C8,
+    A7B8,
+    A8A8,
+}
+
+#[repr(i8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+pub enum NegDiag {
+    A1A1 = -7,
+    A2B1,
+    A3C1,
+    A4D1,
+    A5E1,
+    A6F1,
+    A7G1,
+    A8H1,
+    B8H2,
+    C8H3,
+    D8H4,
+    E8H5,
+    F8H6,
+    G8H7,
+    H8H8,
+}
+
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Square {
     A1,
     B1,
@@ -98,22 +139,32 @@ pub enum Square {
 impl Square {
     #[inline(always)]
     #[must_use]
-    pub fn new(file: File, rank: Rank) -> Square {
+    pub const fn new(file: File, rank: Rank) -> Square {
         unsafe { transmute((rank as u8) * 8 + (file as u8)) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn into_file(self) -> File {
+    pub const fn into_file(self) -> File {
         unsafe { transmute(self as u8 & 7) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn into_rank(self) -> Rank {
+    pub const fn into_rank(self) -> Rank {
         unsafe { transmute(self as u8 >> 3) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn shifted(self, delta: i8) -> Square {
+    pub const fn into_pos_diag(self) -> PosDiag {
+        unsafe { transmute(self.into_rank() as i8 - self.into_file() as i8) }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn into_neg_diag(self) -> NegDiag {
+        unsafe { transmute(self.into_rank() as i8 + self.into_file() as i8 - 7) }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn shifted(self, delta: i8) -> Square {
         unsafe { transmute(((self as i8).wrapping_add(delta)) & 63) }
     }
 }

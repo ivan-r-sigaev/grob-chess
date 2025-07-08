@@ -1,5 +1,6 @@
 pub mod position;
 
+use crate::game::move_generator::position::board::bitboard::Rank;
 use crate::game::position::board::bitboard::{BitBoard, File, Square};
 use crate::game::position::board::{Color, Piece};
 use crate::game::position::{CastlingRights, Position};
@@ -213,18 +214,18 @@ impl MoveGenerator {
         let double_pushes = BitBoard::pawn_pushes(
             single_pushes
                 & if pos.turn() == Color::White {
-                    BitBoard::RANK_3
+                    BitBoard::from_rank(Rank::R3)
                 } else {
-                    BitBoard::RANK_6
+                    BitBoard::from_rank(Rank::R6)
                 },
             empty,
             pos.turn(),
         );
         let promotion_pushes = single_pushes
             & if pos.turn() == Color::White {
-                BitBoard::RANK_8
+                BitBoard::from_rank(Rank::R8)
             } else {
-                BitBoard::RANK_1
+                BitBoard::from_rank(Rank::R1)
             };
         single_pushes &= !promotion_pushes;
         let push_offset = if pos.turn() == Color::White { -8 } else { 8 };
@@ -259,9 +260,9 @@ impl MoveGenerator {
         let mut pawns = pos.board().get_color_piece(pos.turn(), Piece::Pawn);
         let promoters = pawns
             & if pos.turn() == Color::White {
-                BitBoard::RANK_7
+                BitBoard::from_rank(Rank::R7)
             } else {
-                BitBoard::RANK_2
+                BitBoard::from_rank(Rank::R2)
             };
         pawns &= !promoters;
         for from in promoters.serialize() {
@@ -376,18 +377,18 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
                     return false;
                 }
                 if hint.is_capture() {
-                    !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
+                    !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
                 } else {
                     !(BitBoard::pawn_pushes(BitBoard::from(from), empty, color)
                         & BitBoard::from(to))
-                    .none()
+                    .is_empty()
                 }
             }
-            Piece::Bishop => !(BitBoard::bishop_attacks(occ, from) & BitBoard::from(to)).none(),
-            Piece::Knight => !(BitBoard::knight_attacks(from) & BitBoard::from(to)).none(),
-            Piece::Rook => !(BitBoard::rook_attacks(occ, from) & BitBoard::from(to)).none(),
-            Piece::Queen => !(BitBoard::queen_attacks(occ, from) & BitBoard::from(to)).none(),
-            Piece::King => !(BitBoard::king_attacks(from) & BitBoard::from(to)).none(),
+            Piece::Bishop => !(BitBoard::bishop_attacks(occ, from) & BitBoard::from(to)).is_empty(),
+            Piece::Knight => !(BitBoard::knight_attacks(from) & BitBoard::from(to)).is_empty(),
+            Piece::Rook => !(BitBoard::rook_attacks(occ, from) & BitBoard::from(to)).is_empty(),
+            Piece::Queen => !(BitBoard::queen_attacks(occ, from) & BitBoard::from(to)).is_empty(),
+            Piece::King => !(BitBoard::king_attacks(from) & BitBoard::from(to)).is_empty(),
         },
         MoveHint::DoublePawn => {
             piece == Piece::Pawn
@@ -409,7 +410,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
             };
             let target_sq = Square::new(to.into_file(), from.into_rank());
             Square::new(file, color.en_passant_dest_rank()) == to
-                && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
+                && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
                 && pos.board().get_piece_at(target_sq) == Some(Piece::Pawn)
                 && pos.board().get_color_at(target_sq) == Some(!color)
         }
@@ -419,7 +420,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         | MoveHint::QueenPromotion => {
             piece == Piece::Pawn
                 && to.into_rank() == color.promotion_rank()
-                && BitBoard::pawn_pushes(BitBoard::from(from), BitBoard::FULL, color)
+                && BitBoard::pawn_pushes(BitBoard::from(from), BitBoard::FILLED, color)
                     == BitBoard::from(to)
         }
         MoveHint::KnightPromotionCapture
@@ -428,7 +429,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         | MoveHint::QueenPromotionCapture => {
             piece == Piece::Pawn
                 && to.into_rank() == color.promotion_rank()
-                && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).none()
+                && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
         }
     }
 }
