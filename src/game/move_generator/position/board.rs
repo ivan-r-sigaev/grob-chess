@@ -3,6 +3,7 @@ pub mod bitboard;
 use bitboard::{BitBoard, Square};
 
 mod indexing;
+mod move_calculation;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Board {
