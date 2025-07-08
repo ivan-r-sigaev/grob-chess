@@ -13,7 +13,7 @@ use std::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, Not, Shl, ShlAssign, Shr,
     ShrAssign,
 };
-use strum::EnumCount;
+use strum::{EnumCount, VariantArray};
 
 mod indexing;
 
@@ -281,6 +281,7 @@ impl BitBoard {
     pub const fn project_on_rank(self) -> Self {
         self.fill_up().shr(56)
     }
+    pub const KINDERGARTEN_OCCUPANCY_MAX: u8 = 64;
     #[inline(always)]
     #[must_use]
     pub const fn into_kindergarten_occupancy(self) -> u8 {
@@ -292,25 +293,52 @@ impl BitBoard {
     #[inline(always)]
     #[must_use]
     pub const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
-        assert!(kg_occupancy < 64);
-        let kg_occupancy_bb = BitBoard(kg_occupancy as u64).shl(1);
-        let slider = BitBoard::from_square(Square::new(file, Rank::R1));
-        let result = slider
-            .attack_left(kg_occupancy_bb)
-            .bitor(slider.attack_right(kg_occupancy_bb))
-            .fill_up();
-        result
+        const LOOKUP: [[BitBoard; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; File::COUNT] = {
+            let mut result =
+                [[BitBoard::EMPTY; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; File::COUNT];
+            let mut i = 0;
+            while i < File::COUNT {
+                let file = File::VARIANTS[i];
+                let mut kg_occupancy = 0;
+                while kg_occupancy < BitBoard::KINDERGARTEN_OCCUPANCY_MAX {
+                    let kg_occupancy_bb = BitBoard(kg_occupancy as u64).shl(1);
+                    let slider = BitBoard::from_square(Square::new(file, Rank::R1));
+                    result[file as usize][kg_occupancy as usize] = slider
+                        .attack_left(kg_occupancy_bb)
+                        .bitor(slider.attack_right(kg_occupancy_bb))
+                        .fill_up();
+                    kg_occupancy += 1;
+                }
+                i += 1;
+            }
+            result
+        };
+        LOOKUP[file as usize][kg_occupancy as usize]
     }
     #[inline(always)]
     #[must_use]
     pub const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
-        assert!(kg_occupancy_rev < 64);
-        let kg_occupancy_rev_bb = BitBoard(kg_occupancy_rev as u64).shl(1);
-        let occupancy_on_a_file = kg_occupancy_rev_bb.rank_to_reversed_file();
-        let slider = BitBoard::from_square(Square::new(File::A, rank));
-        slider
-            .attack_up(occupancy_on_a_file)
-            .bitor(slider.attack_down(occupancy_on_a_file))
+        const LOOKUP: [[BitBoard; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; Rank::COUNT] = {
+            let mut result =
+                [[BitBoard::EMPTY; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; Rank::COUNT];
+            let mut i = 0;
+            while i < Rank::COUNT {
+                let rank = Rank::VARIANTS[i];
+                let mut kg_occupancy_rev = 0;
+                while kg_occupancy_rev < BitBoard::KINDERGARTEN_OCCUPANCY_MAX {
+                    let kg_occupancy_rev_bb = BitBoard(kg_occupancy_rev as u64).shl(1);
+                    let occupancy_on_a_file = kg_occupancy_rev_bb.rank_to_reversed_file();
+                    let slider = BitBoard::from_square(Square::new(File::A, rank));
+                    result[rank as usize][kg_occupancy_rev as usize] = slider
+                        .attack_up(occupancy_on_a_file)
+                        .bitor(slider.attack_down(occupancy_on_a_file));
+                    kg_occupancy_rev += 1;
+                }
+                i += 1;
+            }
+            result
+        };
+        LOOKUP[rank as usize][kg_occupancy_rev as usize]
     }
 }
 
