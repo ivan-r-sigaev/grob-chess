@@ -37,7 +37,7 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::F1))
             .bitor(BitBoard::from_square(Square::G1))
             .bitor(BitBoard::from_square(Square::H1));
-        RANK_ONE.shl(File::COUNT as u8 + value as u8)
+        RANK_ONE.shl(File::COUNT as u8 * value as u8)
     }
     #[inline(always)]
     #[must_use]
