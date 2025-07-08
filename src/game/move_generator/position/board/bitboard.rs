@@ -291,7 +291,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
+    pub const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
         assert!(kg_occupancy < 64);
         let kg_occupancy_bb = BitBoard(kg_occupancy as u64).shl(1);
         let slider = BitBoard::from_square(Square::new(file, Rank::R1));
@@ -303,7 +303,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
+    pub const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
         assert!(kg_occupancy_rev < 64);
         let kg_occupancy_rev_bb = BitBoard(kg_occupancy_rev as u64).shl(1);
         let occupancy_on_a_file = kg_occupancy_rev_bb.rank_to_reversed_file();
