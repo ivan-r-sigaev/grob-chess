@@ -381,6 +381,18 @@ impl From<File> for BitBoard {
     }
 }
 
+impl From<PosDiag> for BitBoard {
+    fn from(value: PosDiag) -> Self {
+        Self::from_pos_diag(value)
+    }
+}
+
+impl From<NegDiag> for BitBoard {
+    fn from(value: NegDiag) -> Self {
+        Self::from_neg_diag(value)
+    }
+}
+
 impl BitAnd<BitBoard> for BitBoard {
     type Output = BitBoard;
 
