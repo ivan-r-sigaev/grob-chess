@@ -291,24 +291,26 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn from_kindergarten_occupancy_as_rank(file: File, occ_6bit: u8) -> BitBoard {
-        assert!(occ_6bit < 64);
-        let occ = BitBoard(occ_6bit as u64).shl(1);
+    const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
+        assert!(kg_occupancy < 64);
+        let kg_occupancy_bb = BitBoard(kg_occupancy as u64).shl(1);
         let slider = BitBoard::from_square(Square::new(file, Rank::R1));
         let result = slider
-            .attack_left(occ)
-            .bitor(slider.attack_right(occ))
+            .attack_left(kg_occupancy_bb)
+            .bitor(slider.attack_right(kg_occupancy_bb))
             .fill_up();
         result
     }
     #[inline(always)]
     #[must_use]
-    const fn from_kindergarten_occupancy_as_file(rank: Rank, rev_occ_6bit: u8) -> BitBoard {
-        assert!(rev_occ_6bit < 64);
-        let rev_occ = BitBoard(rev_occ_6bit as u64).shl(1);
-        let occ = rev_occ.rank_to_reversed_file();
+    const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
+        assert!(kg_occupancy_rev < 64);
+        let kg_occupancy_rev_bb = BitBoard(kg_occupancy_rev as u64).shl(1);
+        let occupancy_on_a_file = kg_occupancy_rev_bb.rank_to_reversed_file();
         let slider = BitBoard::from_square(Square::new(File::A, rank));
-        slider.attack_up(occ).bitor(slider.attack_down(occ))
+        slider
+            .attack_up(occupancy_on_a_file)
+            .bitor(slider.attack_down(occupancy_on_a_file))
     }
 }
 
@@ -359,10 +361,10 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn pos_diag_attacks(from: Square, occ: BitBoard) -> BitBoard {
+    const fn pos_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
         let mask =
             BitBoard::from_pos_diag(from.into_pos_diag()).bitxor(BitBoard::from_square(from));
-        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occ).project_on_rank());
+        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(Self::from_kindergarten_occupancy_as_rank(
             from.into_file(),
             occ_6bit,
@@ -370,10 +372,10 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn neg_diag_attacks(from: Square, occ: BitBoard) -> BitBoard {
+    const fn neg_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
         let mask =
             BitBoard::from_neg_diag(from.into_neg_diag()).bitxor(BitBoard::from_square(from));
-        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occ).project_on_rank());
+        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(Self::from_kindergarten_occupancy_as_rank(
             from.into_file(),
             occ_6bit,
@@ -381,9 +383,9 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    const fn rank_attacks(from: Square, occ: BitBoard) -> BitBoard {
+    const fn rank_attacks(from: Square, occupance: BitBoard) -> BitBoard {
         let mask = BitBoard::from_rank(from.into_rank()).bitxor(BitBoard::from_square(from));
-        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occ).project_on_rank());
+        let occ_6bit = Self::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(Self::from_kindergarten_occupancy_as_rank(
             from.into_file(),
             occ_6bit,
@@ -403,18 +405,18 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub fn bishop_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::pos_diag_attacks(sq, occ) | BitBoard::neg_diag_attacks(sq, occ)
+    pub fn bishop_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+        BitBoard::pos_diag_attacks(from, occupance) | BitBoard::neg_diag_attacks(from, occupance)
     }
     #[inline(always)]
     #[must_use]
-    pub fn rook_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::rank_attacks(sq, occ) | BitBoard::file_attack(sq, occ)
+    pub fn rook_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+        BitBoard::rank_attacks(from, occupance) | BitBoard::file_attack(from, occupance)
     }
     #[inline(always)]
     #[must_use]
-    pub fn queen_attacks(occ: BitBoard, sq: Square) -> BitBoard {
-        BitBoard::bishop_attacks(occ, sq) | BitBoard::rook_attacks(occ, sq)
+    pub fn queen_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+        BitBoard::bishop_attacks(occupance, from) | BitBoard::rook_attacks(occupance, from)
     }
     #[inline(always)]
     #[must_use]
