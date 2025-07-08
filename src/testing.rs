@@ -15,7 +15,7 @@ const CPW_DEBUG_5_FEN: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w 
 fn perft(fen: &str, depth: u8, expected: PerftValues) {
     let position = Position::try_from_fen(fen).unwrap();
     let values = perft_leaves(position, depth);
-    println!("explicit => {:?}", values);
+    println!("explicit => {values:?}");
     assert_eq!(values.to_perft_values(), expected);
 }
 

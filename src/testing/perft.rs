@@ -12,14 +12,14 @@ mod data {
 
     impl PerftData {
         pub fn new() -> PerftData {
-            return PerftData {
+            PerftData {
                 move_count: [0; 16],
                 check_count: 0,
                 checkmate_count: 0,
-            };
+            }
         }
         pub fn get_move_count(&self, hint: MoveHint) -> u128 {
-            return self.move_count[hint as usize];
+            self.move_count[hint as usize]
         }
         pub fn add_move(&mut self, hint: MoveHint) {
             self.move_count[hint as usize] += 1;
@@ -37,13 +37,13 @@ mod data {
                     total += self.get_move_count(hint);
                 }
             }
-            return total;
+            total
         }
         pub fn get_check_count(&self) -> u128 {
-            return self.check_count;
+            self.check_count
         }
         pub fn get_checkmate_count(&self) -> u128 {
-            return self.checkmate_count;
+            self.checkmate_count
         }
         pub fn to_perft_values(&self) -> PerftValues {
             let nodes = self.count_moves(|_| true);
@@ -55,7 +55,7 @@ mod data {
             let checks = self.get_check_count();
             let checkmates = self.get_checkmate_count();
 
-            return PerftValues {
+            PerftValues {
                 nodes,
                 captures,
                 ep,
@@ -63,7 +63,7 @@ mod data {
                 promotions,
                 checks,
                 checkmates,
-            };
+            }
         }
     }
 
@@ -74,7 +74,7 @@ mod data {
             for hint in all::<MoveHint>() {
                 let count = self.get_move_count(hint);
                 if count != 0 {
-                    write!(s, "{:?}: {}, ", hint, count)?;
+                    write!(s, "{hint:?}: {count}, ")?;
                 }
             }
             write!(
@@ -100,12 +100,12 @@ pub fn perft_leaves(mut position: Position, depth: u8) -> PerftData {
         &mut data,
         depth - 1,
     );
-    return data;
+    data
 }
 
 pub fn count_leaves(mut position: Position, depth: u8) -> u128 {
     //return count_legal_moves(&mut position, &mut MoveGenerator::new(), depth - 1)
-    return count_legal_moves(&mut position, &mut MoveGenerator::empty(), depth - 1);
+    count_legal_moves(&mut position, &mut MoveGenerator::empty(), depth - 1)
     //return count_legal_moves_game(&mut Game::from_position(position), depth - 1);
 }
 
@@ -162,7 +162,7 @@ fn can_move(game_state: &mut Position, move_list: &mut MoveGenerator) -> bool {
     }
 
     move_list.pop_group();
-    return false;
+    false
 }
 
 fn count_legal_moves(game_state: &mut Position, move_list: &mut MoveGenerator, depth: u8) -> u128 {
@@ -184,7 +184,7 @@ fn count_legal_moves(game_state: &mut Position, move_list: &mut MoveGenerator, d
     }
 
     move_list.pop_group();
-    return count;
+    count
 }
 
 // fn count_legal_moves_game(game: &mut Game, depth: u8) -> u128 {
