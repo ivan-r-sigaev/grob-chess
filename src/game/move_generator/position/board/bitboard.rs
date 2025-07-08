@@ -196,7 +196,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub fn bit_scan_forward(self) -> Option<Square> {
+    pub const fn bit_scan_forward(self) -> Option<Square> {
         if self.is_empty() {
             return None;
         }
@@ -208,7 +208,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub fn serialize(self) -> Serialized {
+    pub const fn serialize(self) -> Serialized {
         Serialized(self)
     }
 }
