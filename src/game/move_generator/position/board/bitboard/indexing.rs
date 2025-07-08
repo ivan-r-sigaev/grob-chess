@@ -1,5 +1,6 @@
 use std::mem::transmute;
 
+#[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum File {
     A,
@@ -12,6 +13,7 @@ pub enum File {
     H,
 }
 
+#[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Rank {
     R1,
@@ -24,6 +26,7 @@ pub enum Rank {
     R8,
 }
 
+#[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Square {
     A1,
