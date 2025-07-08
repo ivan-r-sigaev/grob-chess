@@ -139,32 +139,32 @@ pub enum Square {
 impl Square {
     #[inline(always)]
     #[must_use]
-    pub fn new(file: File, rank: Rank) -> Square {
+    pub const fn new(file: File, rank: Rank) -> Square {
         unsafe { transmute((rank as u8) * 8 + (file as u8)) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn into_file(self) -> File {
+    pub const fn into_file(self) -> File {
         unsafe { transmute(self as u8 & 7) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn into_rank(self) -> Rank {
+    pub const fn into_rank(self) -> Rank {
         unsafe { transmute(self as u8 >> 3) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn into_pos_diag(self) -> PosDiag {
+    pub const fn into_pos_diag(self) -> PosDiag {
         unsafe { transmute(self.into_rank() as i8 - self.into_file() as i8) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn into_neg_diag(self) -> NegDiag {
+    pub const fn into_neg_diag(self) -> NegDiag {
         unsafe { transmute(self.into_rank() as i8 + self.into_file() as i8 - 7) }
     }
     #[inline(always)]
     #[must_use]
-    pub fn shifted(self, delta: i8) -> Square {
+    pub const fn shifted(self, delta: i8) -> Square {
         unsafe { transmute(((self as i8).wrapping_add(delta)) & 63) }
     }
 }
