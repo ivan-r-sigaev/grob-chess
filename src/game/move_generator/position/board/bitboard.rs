@@ -1,13 +1,5 @@
 use super::Color;
-use crate::{
-    game::move_generator::position::board::bitboard::indexing::{NegDiag, PosDiag},
-    table_generation::{
-        make_antidiag_mask_ex_table, make_diagonal_mask_ex_table,
-        make_kindergarten_a_file_attacks_table, make_kindergarten_fill_up_attacks_table,
-        make_king_attack_table, make_knight_attack_table, make_pawn_attack_table,
-        make_rank_mask_ex_table,
-    },
-};
+use crate::game::move_generator::position::board::bitboard::indexing::{NegDiag, PosDiag};
 pub use indexing::{File, Rank, Square};
 use std::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, Not, Shl, ShlAssign, Shr,
