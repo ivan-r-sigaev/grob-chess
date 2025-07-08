@@ -1,4 +1,3 @@
-use super::Color;
 use crate::game::move_generator::position::board::bitboard::indexing::{NegDiag, PosDiag};
 pub use indexing::{File, Rank, Square};
 use std::ops::{
