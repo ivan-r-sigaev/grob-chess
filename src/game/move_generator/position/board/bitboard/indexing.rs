@@ -1,7 +1,8 @@
 use std::mem::transmute;
+use strum::{EnumCount, VariantArray};
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum File {
     A,
     B,
@@ -14,7 +15,7 @@ pub enum File {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Rank {
     R1,
     R2,
@@ -27,7 +28,7 @@ pub enum Rank {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
 pub enum Square {
     A1,
     B1,
