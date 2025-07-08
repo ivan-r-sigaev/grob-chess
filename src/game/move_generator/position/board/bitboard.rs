@@ -220,49 +220,49 @@ impl BitBoard {
     #[must_use]
     pub const fn attack_right(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
-        self = self.right().bitand(empty); // 1
-        self = self.right().bitand(empty); // 2
-        self = self.right().bitand(empty); // 3
-        self = self.right().bitand(empty); // 4
-        self = self.right().bitand(empty); // 5
-        self = self.right().bitand(empty); // 6
-        self.right().bitand(empty) // 7
+        self.bitor_assign(self.right().bitand(empty)); // 1
+        self.bitor_assign(self.right().bitand(empty)); // 2
+        self.bitor_assign(self.right().bitand(empty)); // 3
+        self.bitor_assign(self.right().bitand(empty)); // 4
+        self.bitor_assign(self.right().bitand(empty)); // 5
+        self.bitor_assign(self.right().bitand(empty)); // 6
+        self.bitand(empty).bitor(self.right()) // 7
     }
     #[inline(always)]
     #[must_use]
     pub const fn attack_left(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
-        self = self.left().bitand(empty); // 1
-        self = self.left().bitand(empty); // 2
-        self = self.left().bitand(empty); // 3
-        self = self.left().bitand(empty); // 4
-        self = self.left().bitand(empty); // 5
-        self = self.left().bitand(empty); // 6
-        self.left().bitand(empty) // 7
+        self.bitor_assign(self.left().bitand(empty)); // 1
+        self.bitor_assign(self.left().bitand(empty)); // 2
+        self.bitor_assign(self.left().bitand(empty)); // 3
+        self.bitor_assign(self.left().bitand(empty)); // 4
+        self.bitor_assign(self.left().bitand(empty)); // 5
+        self.bitor_assign(self.left().bitand(empty)); // 6
+        self.bitand(empty).bitor(self.left()) // 7
     }
     #[inline(always)]
     #[must_use]
     pub const fn attack_up(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
-        self = self.up().bitand(empty); // 1
-        self = self.up().bitand(empty); // 2
-        self = self.up().bitand(empty); // 3
-        self = self.up().bitand(empty); // 4
-        self = self.up().bitand(empty); // 5
-        self = self.up().bitand(empty); // 6
-        self.up().bitand(empty) // 7
+        self.bitor_assign(self.up().bitand(empty)); // 1
+        self.bitor_assign(self.up().bitand(empty)); // 2
+        self.bitor_assign(self.up().bitand(empty)); // 3
+        self.bitor_assign(self.up().bitand(empty)); // 4
+        self.bitor_assign(self.up().bitand(empty)); // 5
+        self.bitor_assign(self.up().bitand(empty)); // 6
+        self.bitand(empty).bitor(self.up()) // 7
     }
     #[inline(always)]
     #[must_use]
     pub const fn attack_down(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
-        self = self.down().bitand(empty); // 1
-        self = self.down().bitand(empty); // 2
-        self = self.down().bitand(empty); // 3
-        self = self.down().bitand(empty); // 4
-        self = self.down().bitand(empty); // 5
-        self = self.down().bitand(empty); // 6
-        self.down().bitand(empty) // 7
+        self.bitor_assign(self.down().bitand(empty)); // 1
+        self.bitor_assign(self.down().bitand(empty)); // 2
+        self.bitor_assign(self.down().bitand(empty)); // 3
+        self.bitor_assign(self.down().bitand(empty)); // 4
+        self.bitor_assign(self.down().bitand(empty)); // 5
+        self.bitor_assign(self.down().bitand(empty)); // 6
+        self.bitand(empty).bitor(self.down()) // 7
     }
     #[inline(always)]
     #[must_use]
