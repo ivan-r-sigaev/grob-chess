@@ -17,7 +17,7 @@ use strum::EnumCount;
 
 mod indexing;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy)]
 pub struct BitBoard(u64);
 
 impl BitBoard {
@@ -120,6 +120,16 @@ impl BitBoard {
         } else {
             self.shr(-rhs as u8)
         }
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn eq(&self, rhs: &BitBoard) -> bool {
+        self.0 == rhs.0
+    }
+    #[inline(always)]
+    #[must_use]
+    pub const fn ne(&self, rhs: &Self) -> bool {
+        !self.eq(rhs)
     }
     pub const fn bitand_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitand(*self, rhs);
@@ -393,6 +403,13 @@ impl Not for BitBoard {
         Self::not(self)
     }
 }
+
+impl PartialEq for BitBoard {
+    fn eq(&self, other: &Self) -> bool {
+        Self::eq(self, other)
+    }
+}
+impl Eq for BitBoard {}
 
 impl std::fmt::Debug for BitBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
