@@ -201,7 +201,7 @@ impl BitBoard {
             return None;
         }
         unsafe {
-            Some(std::mem::transmute(
+            Some(std::mem::transmute::<u8, Square>(
                 self.with_isolated_lsb().0.trailing_zeros() as u8,
             ))
         }
