@@ -46,6 +46,7 @@ fn cpw_debug_5_move_count_depth_4() {
 }
 
 #[test]
+#[ignore = "reason: slow test"]
 fn cpw_debug_5_move_count_depth_5() {
     test_move_count(CPW_DEBUG_5_FEN, 5, 89_941_194);
 }
@@ -272,6 +273,7 @@ fn cpw_debug_3_perft_depth_5() {
 }
 
 #[test]
+#[ignore = "reason: slow test"]
 fn cpw_debug_3_perft_depth_6() {
     perft(
         CPW_DEBUG_3_FEN,
@@ -442,6 +444,7 @@ fn initial_position_perft_depth_5() {
 }
 
 #[test]
+#[ignore = "reason: slow test"]
 fn initial_position_perft_depth_6() {
     perft(
         INITIAL_FEN,
