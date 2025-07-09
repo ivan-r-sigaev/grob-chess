@@ -138,7 +138,7 @@ pub enum Square {
 impl Square {
     #[inline(always)]
     #[must_use]
-    pub const fn new(file: File, rank: Rank) -> Square {
+    pub const fn new(rank: Rank, file: File) -> Square {
         Self::from_repr(rank as u8 * 8 + file as u8).unwrap()
     }
     #[inline(always)]
