@@ -143,6 +143,13 @@ impl Square {
     }
     #[inline(always)]
     #[must_use]
+    pub const fn diagonals(positive: PosDiag, negative: NegDiag) -> Square {
+        let rank = Rank::from_repr(((positive as i8 + negative as i8) / 2) as u8).unwrap();
+        let file = File::from_repr(((negative as i8 - positive as i8) / 2) as u8).unwrap();
+        Self::straights(rank, file)
+    }
+    #[inline(always)]
+    #[must_use]
     pub const fn file(self) -> File {
         File::from_repr(self as u8 % 8).unwrap()
     }
