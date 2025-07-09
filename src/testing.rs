@@ -468,7 +468,7 @@ fn initial_position_perft_depth_6() {
 #[test]
 fn test_rank_composite_bitboard_conversion() {
     for &square in Square::VARIANTS {
-        let rank = square.into_rank();
+        let rank = square.rank();
         let square_bb = BitBoard::from(square);
         let rank_bb = BitBoard::from(rank);
         assert!(
@@ -489,7 +489,7 @@ fn test_rank_composite_bitboard_conversion() {
 #[test]
 fn test_file_composite_bitboard_conversion() {
     for &square in Square::VARIANTS {
-        let file = square.into_file();
+        let file = square.file();
         let square_bb = BitBoard::from(square);
         let file_bb = BitBoard::from(file);
         assert!(
@@ -510,7 +510,7 @@ fn test_file_composite_bitboard_conversion() {
 #[test]
 fn test_pos_diag_composite_bitboard_conversion() {
     for &square in Square::VARIANTS {
-        let diagonal = square.into_pos_diag();
+        let diagonal = square.pos_diag();
         let square_bb = BitBoard::from(square);
         let diagonal_bb = BitBoard::from(diagonal);
         assert!(
@@ -531,7 +531,7 @@ fn test_pos_diag_composite_bitboard_conversion() {
 #[test]
 fn test_neg_diag_composite_bitboard_conversion() {
     for &square in Square::VARIANTS {
-        let diagonal = square.into_neg_diag();
+        let diagonal = square.neg_diag();
         let square_bb = BitBoard::from(square);
         let diagonal_bb = BitBoard::from(diagonal);
         assert!(

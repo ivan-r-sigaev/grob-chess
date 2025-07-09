@@ -138,28 +138,28 @@ pub enum Square {
 impl Square {
     #[inline(always)]
     #[must_use]
-    pub const fn new(rank: Rank, file: File) -> Square {
+    pub const fn straights(rank: Rank, file: File) -> Square {
         Self::from_repr(rank as u8 * 8 + file as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
-    pub const fn into_file(self) -> File {
+    pub const fn file(self) -> File {
         File::from_repr(self as u8 % 8).unwrap()
     }
     #[inline(always)]
     #[must_use]
-    pub const fn into_rank(self) -> Rank {
+    pub const fn rank(self) -> Rank {
         Rank::from_repr(self as u8 / 8).unwrap()
     }
     #[inline(always)]
     #[must_use]
-    pub const fn into_pos_diag(self) -> PosDiag {
-        PosDiag::from_repr(self.into_rank() as i8 - self.into_file() as i8).unwrap()
+    pub const fn pos_diag(self) -> PosDiag {
+        PosDiag::from_repr(self.rank() as i8 - self.file() as i8).unwrap()
     }
     #[inline(always)]
     #[must_use]
-    pub const fn into_neg_diag(self) -> NegDiag {
-        NegDiag::from_repr(self.into_rank() as i8 + self.into_file() as i8 - 7).unwrap()
+    pub const fn neg_diag(self) -> NegDiag {
+        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 - 7).unwrap()
     }
     #[inline(always)]
     #[must_use]

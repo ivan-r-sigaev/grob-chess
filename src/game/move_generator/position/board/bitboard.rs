@@ -290,7 +290,7 @@ impl BitBoard {
                 let mut kg_occupancy = 0;
                 while kg_occupancy < BitBoard::KINDERGARTEN_OCCUPANCY_MAX {
                     let kg_occupancy_bb = BitBoard(kg_occupancy as u64).shl(1);
-                    let slider = BitBoard::from_square(Square::new( Rank::R1, file));
+                    let slider = BitBoard::from_square(Square::straights( Rank::R1, file));
                     result[file as usize][kg_occupancy as usize] = slider
                         .attack_left(kg_occupancy_bb)
                         .bitor(slider.attack_right(kg_occupancy_bb))
@@ -316,7 +316,7 @@ impl BitBoard {
                 while kg_occupancy_rev < BitBoard::KINDERGARTEN_OCCUPANCY_MAX {
                     let kg_occupancy_rev_bb = BitBoard(kg_occupancy_rev as u64).shl(1);
                     let occupancy_on_a_file = kg_occupancy_rev_bb.rank_to_reversed_file();
-                    let slider = BitBoard::from_square(Square::new(rank, File::A));
+                    let slider = BitBoard::from_square(Square::straights(rank, File::A));
                     result[rank as usize][kg_occupancy_rev as usize] = slider
                         .attack_up(occupancy_on_a_file)
                         .bitor(slider.attack_down(occupancy_on_a_file));

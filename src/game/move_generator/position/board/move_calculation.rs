@@ -76,11 +76,11 @@ impl BitBoard {
     #[must_use]
     const fn pos_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
         let mask =
-            BitBoard::from_pos_diag(from.into_pos_diag()).bitxor(BitBoard::from_square(from));
+            BitBoard::from_pos_diag(from.pos_diag()).bitxor(BitBoard::from_square(from));
         let occ_6bit =
             BitBoard::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(BitBoard::from_kindergarten_occupancy_as_rank(
-            from.into_file(),
+            from.file(),
             occ_6bit,
         ))
     }
@@ -88,30 +88,30 @@ impl BitBoard {
     #[must_use]
     const fn neg_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
         let mask =
-            BitBoard::from_neg_diag(from.into_neg_diag()).bitxor(BitBoard::from_square(from));
+            BitBoard::from_neg_diag(from.neg_diag()).bitxor(BitBoard::from_square(from));
         let occ_6bit =
             BitBoard::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(BitBoard::from_kindergarten_occupancy_as_rank(
-            from.into_file(),
+            from.file(),
             occ_6bit,
         ))
     }
     #[inline(always)]
     #[must_use]
     const fn rank_attacks(from: Square, occupance: BitBoard) -> BitBoard {
-        let mask = BitBoard::from_rank(from.into_rank()).bitxor(BitBoard::from_square(from));
+        let mask = BitBoard::from_rank(from.rank()).bitxor(BitBoard::from_square(from));
         let occ_6bit =
             BitBoard::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(BitBoard::from_kindergarten_occupancy_as_rank(
-            from.into_file(),
+            from.file(),
             occ_6bit,
         ))
     }
     #[inline(always)]
     #[must_use]
     const fn file_attack(from: Square, occupance: BitBoard) -> BitBoard {
-        let rank = from.into_rank();
-        let file = from.into_file();
+        let rank = from.rank();
+        let file = from.file();
         let file_occ = BitBoard::from_file(File::A).bitand(occupance.shr(file as u8));
         let rev_occ = file_occ.file_to_reversed_rank();
         let rev_occ_6bit = BitBoard::into_kindergarten_occupancy(rev_occ);
