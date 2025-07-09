@@ -111,16 +111,6 @@ impl Board {
                 | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
                 | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders())
     }
-    // #[inline(always)]
-    // pub fn get_piece_score(&self, color: Color) -> PieceScore {
-    //     return PieceScore {
-    //         pawn_count: self.get_color_piece(color, Piece::Pawn).count_ones(),
-    //         bishop_count: self.get_color_piece(color, Piece::Bishop).count_ones(),
-    //         knight_count: self.get_color_piece(color, Piece::Knight).count_ones(),
-    //         rook_count: self.get_color_piece(color, Piece::Rook).count_ones(),
-    //         queen_count: self.get_color_piece(color, Piece::Queen).count_ones()
-    //     }
-    // }
 }
 
 impl Board {
@@ -201,29 +191,3 @@ impl std::fmt::Debug for Board {
         )
     }
 }
-
-// pub fn format_position(position: &Board) -> String {
-//     let mut formatted = String::new();
-//     for y in (0..8).rev() {
-//         for x in 0..8 {
-//             let sq = Square::try_from(y * 8 + x).unwrap();
-//             formatted += match position.get_bitboard().get_piece_at(sq) {
-//                 Some(piece) => {
-//                     let is_white = (1u64 << sq as u8) & position.get_bitboard().get_color(Color::White) != 0;
-//                     match piece {
-//                         Piece::Pawn => if is_white { "P" } else { "p" },
-//                         Piece::Bishop => if is_white { "B" } else { "b" },
-//                         Piece::Knight => if is_white { "N" } else { "n" },
-//                         Piece::Rook => if is_white { "R" } else { "r" },
-//                         Piece::Queen => if is_white { "Q" } else { "q" },
-//                         Piece::King => if is_white { "K" } else { "k" },
-//                     }
-//                 }
-//                 None => "_",
-//             };
-//             formatted += " ";
-//         }
-//         formatted += "\n";
-//     }
-//     return formatted;
-// }

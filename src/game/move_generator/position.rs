@@ -1,75 +1,3 @@
-// #[cfg(test)]
-// mod testing;
-// mod move_generation;
-
-// use crate::board::*;
-// use bitboard::*;
-// use move_generation::*;
-
-// use std::collections::HashMap;
-
-// #[derive(Debug, Clone)]
-// pub struct MoveGenerator {
-//     board: Position,
-//     move_list: MoveList,
-//     unmove_list: Vec<UnmoveConcept>,
-// }
-
-// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// pub enum GameEnding {
-//     Checkmate,
-//     Stalemate,
-// }
-
-// impl MoveGenerator {
-//     pub fn new(initial_board: Position) -> MoveGenerator {
-//         return MoveGenerator {
-//             board: initial_board,
-//             move_list: MoveList::new(),
-//             unmove_list: Vec::new(),
-//         }
-//     }
-//     #[inline(always)]
-//     fn next_node(&mut self) -> bool {
-//         while let Some(next_move) = self.move_list.pop_move() {
-//             let unmove = make_move(&mut self.board, next_move);
-
-//             if !self.board.get_bitboard().is_king_in_check(!self.board.get_turn()) {
-//                 self.unmove_list.push(unmove);
-//                 return true;
-//             }
-
-//             unmake_move(&mut self.board, unmove);
-//         }
-
-//         self.move_list.pop_group();
-//         return false;
-//     }
-//     #[inline(always)]
-//     pub fn inspect_child_nodes(&mut self) -> Option<GameEnding> {
-//         self.move_list.generate_moves(&self.board);
-
-//         if self.next_node() { return None; }
-
-//         if self.board.get_bitboard().is_king_in_check(self.board.get_turn()) {
-//             return Some(GameEnding::Checkmate);
-//         }
-//         else {
-//             return Some(GameEnding::Stalemate);
-//         }
-//     }
-//     #[inline(always)]
-//     pub fn to_next_child_node(&mut self) -> bool {
-//         unmake_move(&mut self.board, self.unmove_list.pop().unwrap());
-//         return self.next_node();
-//     }
-//     #[inline(always)]
-//     pub fn to_parent_node(&mut self) {
-//         if self.unmove_list.is_empty() { panic!("no parent node exists") }
-//         unmake_move(&mut self.board, self.unmove_list.pop().unwrap());
-//         self.move_list.pop_group();
-//     }
-// }
 pub use castling_rights::CastlingRights;
 pub mod board;
 use board::bitboard::{BitBoard, File, Square};
@@ -84,15 +12,6 @@ use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, 
 
 mod castling_rights;
 mod zobrist;
-
-// #[derive(Debug, Clone, Copy)]
-// pub struct PieceScore {
-//     pub pawn_count: u32,
-//     pub bishop_count: u32,
-//     pub knight_count: u32,
-//     pub rook_count: u32,
-//     pub queen_count: u32
-// }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
