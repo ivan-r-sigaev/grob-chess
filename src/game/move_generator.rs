@@ -281,7 +281,8 @@ impl MoveGenerator {
         }
 
         if pos.en_passant().is_some() {
-            let to = Square::straights(pos.turn().en_passant_dest_rank(), pos.en_passant().unwrap());
+            let to =
+                Square::straights(pos.turn().en_passant_dest_rank(), pos.en_passant().unwrap());
             for from in (pawns & BitBoard::pawn_attacks(to, !pos.turn())).serialize() {
                 self.push_move(MoveConcept::new(from, to, MoveHint::EnPassantCapture));
             }

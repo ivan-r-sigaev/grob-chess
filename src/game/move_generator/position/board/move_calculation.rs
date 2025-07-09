@@ -75,8 +75,7 @@ impl BitBoard {
     #[inline(always)]
     #[must_use]
     const fn pos_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
-        let mask =
-            BitBoard::from_pos_diag(from.pos_diag()).bitxor(BitBoard::from_square(from));
+        let mask = BitBoard::from_pos_diag(from.pos_diag()).bitxor(BitBoard::from_square(from));
         let occ_6bit =
             BitBoard::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(BitBoard::from_kindergarten_occupancy_as_rank(
@@ -87,8 +86,7 @@ impl BitBoard {
     #[inline(always)]
     #[must_use]
     const fn neg_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
-        let mask =
-            BitBoard::from_neg_diag(from.neg_diag()).bitxor(BitBoard::from_square(from));
+        let mask = BitBoard::from_neg_diag(from.neg_diag()).bitxor(BitBoard::from_square(from));
         let occ_6bit =
             BitBoard::into_kindergarten_occupancy(mask.bitand(occupance).project_on_rank());
         mask.bitand(BitBoard::from_kindergarten_occupancy_as_rank(
