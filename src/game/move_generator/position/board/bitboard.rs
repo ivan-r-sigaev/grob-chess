@@ -484,6 +484,7 @@ impl std::fmt::Debug for BitBoard {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Serialized(BitBoard);
 
 impl Iterator for Serialized {
