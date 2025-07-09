@@ -1,8 +1,9 @@
 use crate::game::position::board::bitboard::Rank;
-use std::{mem::transmute, ops::Not};
-use strum::{EnumCount, VariantArray};
+use std::ops::Not;
+use strum::{EnumCount, FromRepr, VariantArray};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum Color {
     White,
     Black,
@@ -40,11 +41,12 @@ impl Not for Color {
 
     #[inline(always)]
     fn not(self) -> Self::Output {
-        unsafe { transmute((self as u8) ^ 0x01) }
+        Self::from_repr((self as u8 + 1) % 2).unwrap()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, VariantArray)]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum Piece {
     Pawn,
     Bishop,

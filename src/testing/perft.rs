@@ -1,7 +1,8 @@
 mod data {
+    use strum::VariantArray;
+
     use super::PerftValues;
     use crate::game::move_generator::*;
-    use enum_iterator::all;
 
     #[derive(Default)]
     pub struct PerftData {
@@ -32,7 +33,7 @@ mod data {
         }
         pub fn count_moves(&self, p: fn(MoveHint) -> bool) -> u128 {
             let mut total = 0;
-            for hint in all::<MoveHint>() {
+            for &hint in MoveHint::VARIANTS {
                 if p(hint) {
                     total += self.get_move_count(hint);
                 }
@@ -71,7 +72,7 @@ mod data {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             use std::fmt::Write;
             let mut s = String::new();
-            for hint in all::<MoveHint>() {
+            for &hint in MoveHint::VARIANTS {
                 let count = self.get_move_count(hint);
                 if count != 0 {
                     write!(s, "{hint:?}: {count}, ")?;

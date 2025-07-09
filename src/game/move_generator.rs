@@ -1,12 +1,18 @@
 pub mod position;
 
+use strum::{EnumCount, VariantArray};
+
+use strum::FromRepr;
+
 use crate::game::move_generator::position::board::bitboard::Rank;
 use crate::game::position::board::bitboard::{BitBoard, File, Square};
 use crate::game::position::board::{Color, Piece};
 use crate::game::position::{CastlingRights, Position};
 
-#[cfg_attr(test, derive(enum_iterator::Sequence))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(u8)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, FromRepr, EnumCount, VariantArray,
+)]
 pub enum MoveHint {
     Quiet = 0,
     DoublePawn = 1,
@@ -55,17 +61,17 @@ impl MoveConcept {
     #[inline(always)]
     #[must_use]
     pub fn to(self) -> Square {
-        unsafe { std::mem::transmute((self.data & 0x3f) as u8) }
+        Square::from_repr((self.data & 0x3f) as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub fn from(self) -> Square {
-        unsafe { std::mem::transmute(((self.data >> 6) & 0x3f) as u8) }
+        Square::from_repr(((self.data >> 6) & 0x3f) as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub fn hint(self) -> MoveHint {
-        unsafe { std::mem::transmute(((self.data >> 12) & 0x0f) as u8) }
+        MoveHint::from_repr(((self.data >> 12) & 0x0f) as u8).unwrap()
     }
 }
 

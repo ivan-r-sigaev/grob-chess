@@ -1,8 +1,7 @@
-use std::mem::transmute;
-use strum::{EnumCount, VariantArray};
+use strum::{EnumCount, FromRepr, VariantArray};
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum File {
     A,
     B,
@@ -15,7 +14,7 @@ pub enum File {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum Rank {
     R1,
     R2,
@@ -28,7 +27,7 @@ pub enum Rank {
 }
 
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum PosDiag {
     H1H1 = -7,
     G1H2,
@@ -48,7 +47,7 @@ pub enum PosDiag {
 }
 
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum NegDiag {
     A1A1 = -7,
     A2B1,
@@ -68,7 +67,7 @@ pub enum NegDiag {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum Square {
     A1,
     B1,
@@ -140,31 +139,36 @@ impl Square {
     #[inline(always)]
     #[must_use]
     pub const fn new(file: File, rank: Rank) -> Square {
-        unsafe { transmute((rank as u8) * 8 + (file as u8)) }
+        Self::from_repr(rank as u8 * 8 + file as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub const fn into_file(self) -> File {
-        unsafe { transmute(self as u8 & 7) }
+        File::from_repr(self as u8 % 8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub const fn into_rank(self) -> Rank {
-        unsafe { transmute(self as u8 >> 3) }
+        Rank::from_repr(self as u8 / 8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub const fn into_pos_diag(self) -> PosDiag {
-        unsafe { transmute(self.into_rank() as i8 - self.into_file() as i8) }
+        PosDiag::from_repr(self.into_rank() as i8 - self.into_file() as i8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub const fn into_neg_diag(self) -> NegDiag {
-        unsafe { transmute(self.into_rank() as i8 + self.into_file() as i8 - 7) }
+        NegDiag::from_repr(self.into_rank() as i8 + self.into_file() as i8 - 7).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub const fn shifted(self, delta: i8) -> Square {
-        unsafe { transmute(((self as i8).wrapping_add(delta)) & 63) }
+        Self::from_repr(
+            (self as i8)
+                .wrapping_add(delta)
+                .rem_euclid(Square::COUNT as i8) as u8,
+        )
+        .unwrap()
     }
 }
