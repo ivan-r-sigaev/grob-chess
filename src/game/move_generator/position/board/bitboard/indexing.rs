@@ -29,7 +29,7 @@ pub enum Rank {
 #[repr(i8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum PosDiag {
-    H1H1 = -7,
+    H1H1 = -(Rank::COUNT as i8) + 1,
     G1H2,
     F1H3,
     E1H4,
@@ -49,7 +49,7 @@ pub enum PosDiag {
 #[repr(i8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
 pub enum NegDiag {
-    A1A1 = -7,
+    A1A1 = -(Rank::COUNT as i8) + 1,
     A2B1,
     A3C1,
     A4D1,
@@ -139,7 +139,7 @@ impl Square {
     #[inline(always)]
     #[must_use]
     pub const fn straights(rank: Rank, file: File) -> Square {
-        Self::from_repr(rank as u8 * 8 + file as u8).unwrap()
+        Self::from_repr(rank as u8 * File::COUNT as u8 + file as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
@@ -151,12 +151,12 @@ impl Square {
     #[inline(always)]
     #[must_use]
     pub const fn file(self) -> File {
-        File::from_repr(self as u8 % 8).unwrap()
+        File::from_repr(self as u8 % File::COUNT as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
     pub const fn rank(self) -> Rank {
-        Rank::from_repr(self as u8 / 8).unwrap()
+        Rank::from_repr(self as u8 / File::COUNT as u8).unwrap()
     }
     #[inline(always)]
     #[must_use]
@@ -166,7 +166,7 @@ impl Square {
     #[inline(always)]
     #[must_use]
     pub const fn neg_diag(self) -> NegDiag {
-        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 - 7).unwrap()
+        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 -(Rank::COUNT as i8) + 1).unwrap()
     }
     #[inline(always)]
     #[must_use]

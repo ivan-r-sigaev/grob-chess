@@ -55,7 +55,7 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::F6))
             .bitor(BitBoard::from_square(Square::G7))
             .bitor(BitBoard::from_square(Square::H8));
-        DIAG_A1H8.genshift(diag as i8 * 8)
+        DIAG_A1H8.genshift(diag as i8 * File::COUNT as i8)
     }
     pub const fn from_neg_diag(diag: NegDiag) -> Self {
         const DIAG_A8H1: BitBoard = BitBoard::from_square(Square::A8)
@@ -66,7 +66,7 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::F3))
             .bitor(BitBoard::from_square(Square::G2))
             .bitor(BitBoard::from_square(Square::H1));
-        DIAG_A8H1.genshift(diag as i8 * 8)
+        DIAG_A8H1.genshift(diag as i8 * File::COUNT as i8)
     }
     #[inline(always)]
     #[must_use]
@@ -262,12 +262,12 @@ impl BitBoard {
     #[inline(always)]
     #[must_use]
     pub const fn file_to_reversed_rank(self) -> Self {
-        self.mul(Self::from_pos_diag(PosDiag::A1H8)).shr(56)
+        self.mul(Self::from_pos_diag(PosDiag::A1H8)).shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
     }
     #[inline(always)]
     #[must_use]
     pub const fn project_on_rank(self) -> Self {
-        self.fill_up().shr(56)
+        self.fill_up().shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
     }
     pub const KINDERGARTEN_OCCUPANCY_MAX: u8 = 64;
     #[inline(always)]
