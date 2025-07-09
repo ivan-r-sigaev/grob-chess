@@ -46,6 +46,8 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::A8));
         FILE_A.shl(value as u8)
     }
+    #[inline(always)]
+    #[must_use]
     pub const fn from_pos_diag(diag: PosDiag) -> Self {
         const DIAG_A1H8: BitBoard = BitBoard::from_square(Square::A1)
             .bitor(BitBoard::from_square(Square::B2))
@@ -57,6 +59,8 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::H8));
         DIAG_A1H8.genshift(diag as i8 * File::COUNT as i8)
     }
+    #[inline(always)]
+    #[must_use]
     pub const fn from_neg_diag(diag: NegDiag) -> Self {
         const DIAG_A8H1: BitBoard = BitBoard::from_square(Square::A8)
             .bitor(BitBoard::from_square(Square::B7))
@@ -122,21 +126,27 @@ impl BitBoard {
     pub const fn ne(&self, rhs: &Self) -> bool {
         !self.eq(rhs)
     }
+    #[inline(always)]
     pub const fn bitand_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitand(*self, rhs);
     }
+    #[inline(always)]
     pub const fn bitor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitor(*self, rhs);
     }
+    #[inline(always)]
     pub const fn bitxor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitxor(*self, rhs);
     }
+    #[inline(always)]
     pub const fn mul_assign(&mut self, rhs: BitBoard) {
         *self = Self::mul(*self, rhs);
     }
+    #[inline(always)]
     pub const fn shl_assign(&mut self, rhs: u8) {
         *self = Self::shl(*self, rhs);
     }
+    #[inline(always)]
     pub const fn shr_assign(&mut self, rhs: u8) {
         *self = Self::shr(*self, rhs);
     }
@@ -262,12 +272,14 @@ impl BitBoard {
     #[inline(always)]
     #[must_use]
     pub const fn file_to_reversed_rank(self) -> Self {
-        self.mul(Self::from_pos_diag(PosDiag::A1H8)).shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
+        self.mul(Self::from_pos_diag(PosDiag::A1H8))
+            .shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
     }
     #[inline(always)]
     #[must_use]
     pub const fn project_on_rank(self) -> Self {
-        self.fill_up().shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
+        self.fill_up()
+            .shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
     }
     pub const KINDERGARTEN_OCCUPANCY_MAX: u8 = 64;
     #[inline(always)]
@@ -352,12 +364,14 @@ impl From<File> for BitBoard {
 }
 
 impl From<PosDiag> for BitBoard {
+    #[inline(always)]
     fn from(value: PosDiag) -> Self {
         Self::from_pos_diag(value)
     }
 }
 
 impl From<NegDiag> for BitBoard {
+    #[inline(always)]
     fn from(value: NegDiag) -> Self {
         Self::from_neg_diag(value)
     }
@@ -423,12 +437,14 @@ impl Mul for BitBoard {
 impl Shl<u8> for BitBoard {
     type Output = BitBoard;
 
+    #[inline(always)]
     fn shl(self, rhs: u8) -> Self::Output {
         Self::shl(self, rhs)
     }
 }
 
 impl ShlAssign<u8> for BitBoard {
+    #[inline(always)]
     fn shl_assign(&mut self, rhs: u8) {
         Self::shl_assign(self, rhs);
     }
@@ -437,12 +453,14 @@ impl ShlAssign<u8> for BitBoard {
 impl Shr<u8> for BitBoard {
     type Output = BitBoard;
 
+    #[inline(always)]
     fn shr(self, rhs: u8) -> Self::Output {
         Self::shr(self, rhs)
     }
 }
 
 impl ShrAssign<u8> for BitBoard {
+    #[inline(always)]
     fn shr_assign(&mut self, rhs: u8) {
         Self::shr_assign(self, rhs);
     }
@@ -458,6 +476,7 @@ impl Not for BitBoard {
 }
 
 impl PartialEq for BitBoard {
+    #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         Self::eq(self, other)
     }

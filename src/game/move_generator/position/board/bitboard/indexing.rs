@@ -166,7 +166,7 @@ impl Square {
     #[inline(always)]
     #[must_use]
     pub const fn neg_diag(self) -> NegDiag {
-        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 -(Rank::COUNT as i8) + 1).unwrap()
+        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 - (Rank::COUNT as i8) + 1).unwrap()
     }
     #[inline(always)]
     #[must_use]
