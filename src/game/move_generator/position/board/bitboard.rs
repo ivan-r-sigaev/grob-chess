@@ -191,11 +191,8 @@ impl BitBoard {
         if self.is_empty() {
             return None;
         }
-        unsafe {
-            Some(std::mem::transmute::<u8, Square>(
-                self.with_isolated_lsb().0.trailing_zeros() as u8,
-            ))
-        }
+        
+        Some(Square::from_repr(self.with_isolated_lsb().0.trailing_zeros() as u8).unwrap())
     }
     #[inline(always)]
     #[must_use]
