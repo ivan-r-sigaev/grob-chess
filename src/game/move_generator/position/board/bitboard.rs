@@ -191,7 +191,7 @@ impl BitBoard {
         if self.is_empty() {
             return None;
         }
-        
+
         Some(Square::from_repr(self.with_isolated_lsb().0.trailing_zeros() as u8).unwrap())
     }
     #[inline(always)]

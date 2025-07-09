@@ -10,7 +10,9 @@ use crate::game::position::board::{Color, Piece};
 use crate::game::position::{CastlingRights, Position};
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, FromRepr, EnumCount, VariantArray)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, FromRepr, EnumCount, VariantArray,
+)]
 pub enum MoveHint {
     Quiet = 0,
     DoublePawn = 1,

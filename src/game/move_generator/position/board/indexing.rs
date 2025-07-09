@@ -1,5 +1,5 @@
 use crate::game::position::board::bitboard::Rank;
-use std::{ops::Not};
+use std::ops::Not;
 use strum::{EnumCount, FromRepr, VariantArray};
 
 #[repr(u8)]
