@@ -5,7 +5,7 @@ use strum::{EnumCount, VariantArray};
 use strum::FromRepr;
 
 use crate::bitboard::{BitBoard, File, Rank, Square};
-use crate::game::position::board::{Color, Piece};
+use crate::board::{Color, Piece};
 use crate::game::position::{CastlingRights, Position};
 
 #[repr(u8)]

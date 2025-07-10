@@ -1,4 +1,4 @@
-use crate::game::position::board::Color;
+use crate::board::Color;
 use bitflags::bitflags; // This dependency is a pure utility. It may be removed if needed.
 
 bitflags! {

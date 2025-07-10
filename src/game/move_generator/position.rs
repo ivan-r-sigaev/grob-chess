@@ -1,7 +1,6 @@
-pub use castling_rights::CastlingRights;
-pub mod board;
 use crate::bitboard::{BitBoard, File, Square};
-use board::{Board, Color, Piece};
+use crate::board::{Board, Color, Piece};
+pub use castling_rights::CastlingRights;
 
 use std::error::Error;
 use std::fmt::Display;
