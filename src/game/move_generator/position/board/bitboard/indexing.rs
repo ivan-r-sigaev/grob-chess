@@ -179,3 +179,30 @@ impl Square {
         .unwrap()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_square_straights_conversion() {
+        for &rank in Rank::VARIANTS {
+            for &file in File::VARIANTS {
+                let square = Square::straights(rank, file);
+                assert_eq!(square.rank(), rank);
+                assert_eq!(square.file(), file);
+            }
+        }
+    }
+
+    #[test]
+    fn test_square_diagonals_conversion() {
+        for &positive in PosDiag::VARIANTS {
+            for &negative in NegDiag::VARIANTS {
+                let square = Square::diagonals(positive, negative);
+                assert_eq!(square.pos_diag(), positive);
+                assert_eq!(square.neg_diag(), negative);
+            }
+        }
+    }
+}
