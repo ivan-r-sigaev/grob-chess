@@ -527,85 +527,113 @@ mod tests {
 
     #[test]
     fn test_rank_composite_bitboard_conversion() {
-        for &square in Square::VARIANTS {
-            let rank = square.rank();
-            let square_bb = BitBoard::from(square);
+        for &rank in Rank::VARIANTS {
             let rank_bb = BitBoard::from(rank);
-            assert!(
-                !BitBoard::bitand(square_bb, rank_bb).is_empty(),
-                concat!(
-                    "Bitboard generated from square's rank does not contain the original square!\n",
-                    "rank ({:?}):\n{:?}\n",
-                    "square ({:?}):\n{:?}\n"
-                ),
-                rank,
-                rank_bb,
-                square,
-                square_bb
-            )
+            for &square in Square::VARIANTS {
+                let square_bb = BitBoard::from_square(square);
+                let is_passed;
+                let phrasing;
+                if square.rank() == rank {
+                    is_passed = rank_bb.has_square(square);
+                    phrasing = "does not contain a square on this rank";
+                } else {
+                    is_passed = !rank_bb.has_square(square);
+                    phrasing = "contains a square not on this rank";
+                }
+                assert!(
+                    is_passed,
+                    concat!(
+                        "Bitboard generated from rank {}!\n",
+                        "rank ({:?}):\n{:?}\n",
+                        "square ({:?}):\n{:?}\n"
+                    ),
+                    phrasing, rank, rank_bb, square, square_bb
+                )
+            }
         }
     }
 
     #[test]
     fn test_file_composite_bitboard_conversion() {
-        for &square in Square::VARIANTS {
-            let file = square.file();
-            let square_bb = BitBoard::from(square);
+        for &file in File::VARIANTS {
             let file_bb = BitBoard::from(file);
-            assert!(
-                !BitBoard::bitand(square_bb, file_bb).is_empty(),
-                concat!(
-                    "Bitboard generated from square's file does not contain the original square!\n",
-                    "file ({:?}):\n{:?}\n",
-                    "square ({:?}):\n{:?}\n"
-                ),
-                file,
-                file_bb,
-                square,
-                square_bb
-            )
+            for &square in Square::VARIANTS {
+                let square_bb = BitBoard::from_square(square);
+                let is_passed;
+                let phrasing;
+                if square.file() == file {
+                    is_passed = file_bb.has_square(square);
+                    phrasing = "does not contain a square on this file";
+                } else {
+                    is_passed = !file_bb.has_square(square);
+                    phrasing = "contains a square not on this file";
+                }
+                assert!(
+                    is_passed,
+                    concat!(
+                        "Bitboard generated from file {}!\n",
+                        "file ({:?}):\n{:?}\n",
+                        "square ({:?}):\n{:?}\n"
+                    ),
+                    phrasing, file, file_bb, square, square_bb
+                )
+            }
         }
     }
 
     #[test]
     fn test_pos_diag_composite_bitboard_conversion() {
-        for &square in Square::VARIANTS {
-            let diagonal = square.pos_diag();
-            let square_bb = BitBoard::from(square);
+        for &diagonal in PosDiag::VARIANTS {
             let diagonal_bb = BitBoard::from(diagonal);
-            assert!(
-                !BitBoard::bitand(square_bb, diagonal_bb).is_empty(),
-                concat!(
-                    "Bitboard generated from square's positive diagonal does not contain the original square!\n",
-                    "diagonal ({:?}):\n{:?}\n",
-                    "square ({:?}):\n{:?}\n"
-                ),
-                diagonal,
-                diagonal_bb,
-                square,
-                square_bb
-            )
+            for &square in Square::VARIANTS {
+                let square_bb = BitBoard::from_square(square);
+                let is_passed;
+                let phrasing;
+                if square.pos_diag() == diagonal {
+                    is_passed = diagonal_bb.has_square(square);
+                    phrasing = "does not contain a square on this diagonal";
+                } else {
+                    is_passed = !diagonal_bb.has_square(square);
+                    phrasing = "contains a square not on this diagonal";
+                }
+                assert!(
+                    is_passed,
+                    concat!(
+                        "Bitboard generated from positive diagonal {}!\n",
+                        "diagonal ({:?}):\n{:?}\n",
+                        "square ({:?}):\n{:?}\n"
+                    ),
+                    phrasing, diagonal, diagonal_bb, square, square_bb
+                )
+            }
         }
     }
 
     #[test]
     fn test_neg_diag_composite_bitboard_conversion() {
-        for &square in Square::VARIANTS {
-            let diagonal = square.neg_diag();
-            let square_bb = BitBoard::from(square);
+        for &diagonal in NegDiag::VARIANTS {
             let diagonal_bb = BitBoard::from(diagonal);
-            assert!(
-                !BitBoard::bitand(square_bb, diagonal_bb).is_empty(),
-                concat!(
-                    "Bitboard generated from square's negative diagonal does not contain the original square!\n",
-                    "diagonal ({:?}):\n{:?}\n",
-                    "square ({:?}):\n{:?}\n"
-                ),
-                diagonal,
-                diagonal_bb,
-                square,
-                square_bb
-            )
+            for &square in Square::VARIANTS {
+                let square_bb = BitBoard::from_square(square);
+                let is_passed;
+                let phrasing;
+                if square.neg_diag() == diagonal {
+                    is_passed = diagonal_bb.has_square(square);
+                    phrasing = "does not contain a square on this diagonal";
+                } else {
+                    is_passed = !diagonal_bb.has_square(square);
+                    phrasing = "contains a square not on this diagonal";
+                }
+                assert!(
+                    is_passed,
+                    concat!(
+                        "Bitboard generated from negative diagonal {}!\n",
+                        "diagonal ({:?}):\n{:?}\n",
+                        "square ({:?}):\n{:?}\n"
+                    ),
+                    phrasing, diagonal, diagonal_bb, square, square_bb
+                )
+            }
         }
     }
 }
