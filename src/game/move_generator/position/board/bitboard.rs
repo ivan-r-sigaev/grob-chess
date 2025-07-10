@@ -1,10 +1,9 @@
-use crate::game::move_generator::position::board::bitboard::indexing::{NegDiag, PosDiag};
-pub use indexing::{File, Rank, Square};
+pub use indexing::{File, NegDiag, PosDiag, Rank, Square};
 use std::ops::{
     BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, Not, Shl, ShlAssign, Shr,
     ShrAssign,
 };
-use strum::{EnumCount, VariantArray};
+use strum::EnumCount;
 
 mod indexing;
 
@@ -125,15 +124,6 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn genshift(self, rhs: i8) -> Self {
-        if rhs >= 0 {
-            self.shl(rhs as u8)
-        } else {
-            self.shr(-rhs as u8)
-        }
-    }
-    #[inline(always)]
-    #[must_use]
     pub const fn eq(&self, rhs: &BitBoard) -> bool {
         self.0 == rhs.0
     }
@@ -168,26 +158,6 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn up(self) -> Self {
-        self.shl(File::COUNT as u8)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn down(self) -> Self {
-        self.shr(File::COUNT as u8)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn right(self) -> Self {
-        self.bitand(Self::from_file(File::H).not()).shl(1)
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn left(self) -> Self {
-        self.bitand(Self::from_file(File::A).not()).shr(1)
-    }
-    #[inline(always)]
-    #[must_use]
     pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
@@ -195,21 +165,6 @@ impl BitBoard {
     #[must_use]
     pub const fn has_square(self, sq: Square) -> bool {
         !self.bitand(BitBoard::from_square(sq)).is_empty()
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn with_isolated_lsb(self) -> BitBoard {
-        BitBoard(self.0 & self.0.wrapping_neg())
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn with_separated_lsb(self) -> BitBoard {
-        BitBoard(self.0 ^ self.0.wrapping_sub(1))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn with_reset_lsb(self) -> BitBoard {
-        BitBoard(self.0 & self.0.wrapping_sub(1))
     }
     #[inline(always)]
     #[must_use]
@@ -222,134 +177,22 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn fill_up(self) -> Self {
-        self.mul(Self::from_file(File::A))
+    const fn genshift(self, rhs: i8) -> Self {
+        if rhs >= 0 {
+            self.shl(rhs as u8)
+        } else {
+            self.shr(-rhs as u8)
+        }
     }
     #[inline(always)]
     #[must_use]
-    pub const fn attack_right(mut self, occupance: BitBoard) -> Self {
-        let empty = occupance.not();
-        self.bitor_assign(self.right().bitand(empty)); // 1
-        self.bitor_assign(self.right().bitand(empty)); // 2
-        self.bitor_assign(self.right().bitand(empty)); // 3
-        self.bitor_assign(self.right().bitand(empty)); // 4
-        self.bitor_assign(self.right().bitand(empty)); // 5
-        self.bitor_assign(self.right().bitand(empty)); // 6
-        self.bitand(empty).bitor(self.right()) // 7
+    const fn with_isolated_lsb(self) -> BitBoard {
+        BitBoard(self.0 & self.0.wrapping_neg())
     }
     #[inline(always)]
     #[must_use]
-    pub const fn attack_left(mut self, occupance: BitBoard) -> Self {
-        let empty = occupance.not();
-        self.bitor_assign(self.left().bitand(empty)); // 1
-        self.bitor_assign(self.left().bitand(empty)); // 2
-        self.bitor_assign(self.left().bitand(empty)); // 3
-        self.bitor_assign(self.left().bitand(empty)); // 4
-        self.bitor_assign(self.left().bitand(empty)); // 5
-        self.bitor_assign(self.left().bitand(empty)); // 6
-        self.bitand(empty).bitor(self.left()) // 7
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn attack_up(mut self, occupance: BitBoard) -> Self {
-        let empty = occupance.not();
-        self.bitor_assign(self.up().bitand(empty)); // 1
-        self.bitor_assign(self.up().bitand(empty)); // 2
-        self.bitor_assign(self.up().bitand(empty)); // 3
-        self.bitor_assign(self.up().bitand(empty)); // 4
-        self.bitor_assign(self.up().bitand(empty)); // 5
-        self.bitor_assign(self.up().bitand(empty)); // 6
-        self.bitand(empty).bitor(self.up()) // 7
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn attack_down(mut self, occupance: BitBoard) -> Self {
-        let empty = occupance.not();
-        self.bitor_assign(self.down().bitand(empty)); // 1
-        self.bitor_assign(self.down().bitand(empty)); // 2
-        self.bitor_assign(self.down().bitand(empty)); // 3
-        self.bitor_assign(self.down().bitand(empty)); // 4
-        self.bitor_assign(self.down().bitand(empty)); // 5
-        self.bitor_assign(self.down().bitand(empty)); // 6
-        self.bitand(empty).bitor(self.down()) // 7
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn rank_to_reversed_file(self) -> Self {
-        self.mul(Self::from_pos_diag(PosDiag::A1H8))
-            .shr(7)
-            .bitand(Self::from_file(File::A))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn file_to_reversed_rank(self) -> Self {
-        self.mul(Self::from_pos_diag(PosDiag::A1H8))
-            .shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn project_on_rank(self) -> Self {
-        self.fill_up()
-            .shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
-    }
-    pub const KINDERGARTEN_OCCUPANCY_MAX: u8 = 64;
-    #[inline(always)]
-    #[must_use]
-    pub const fn into_kindergarten_occupancy(self) -> u8 {
-        assert!(self.bitand(BitBoard::from_rank(Rank::R1).not()).is_empty());
-        self.bitand(BitBoard::from_square(Square::H1).not())
-            .shr(1)
-            .0 as u8
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
-        const LOOKUP: [[BitBoard; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; File::COUNT] = {
-            let mut result =
-                [[BitBoard::EMPTY; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; File::COUNT];
-            let mut i = 0;
-            while i < File::COUNT {
-                let file = File::VARIANTS[i];
-                let mut kg_occupancy = 0;
-                while kg_occupancy < BitBoard::KINDERGARTEN_OCCUPANCY_MAX {
-                    let kg_occupancy_bb = BitBoard(kg_occupancy as u64).shl(1);
-                    let slider = BitBoard::from_square(Square::new(Rank::R1, file));
-                    result[file as usize][kg_occupancy as usize] = slider
-                        .attack_left(kg_occupancy_bb)
-                        .bitor(slider.attack_right(kg_occupancy_bb))
-                        .fill_up();
-                    kg_occupancy += 1;
-                }
-                i += 1;
-            }
-            result
-        };
-        LOOKUP[file as usize][kg_occupancy as usize]
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
-        const LOOKUP: [[BitBoard; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; Rank::COUNT] = {
-            let mut result =
-                [[BitBoard::EMPTY; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; Rank::COUNT];
-            let mut i = 0;
-            while i < Rank::COUNT {
-                let rank = Rank::VARIANTS[i];
-                let mut kg_occupancy_rev = 0;
-                while kg_occupancy_rev < BitBoard::KINDERGARTEN_OCCUPANCY_MAX {
-                    let kg_occupancy_rev_bb = BitBoard(kg_occupancy_rev as u64).shl(1);
-                    let occupancy_on_a_file = kg_occupancy_rev_bb.rank_to_reversed_file();
-                    let slider = BitBoard::from_square(Square::new(rank, File::A));
-                    result[rank as usize][kg_occupancy_rev as usize] = slider
-                        .attack_up(occupancy_on_a_file)
-                        .bitor(slider.attack_down(occupancy_on_a_file));
-                    kg_occupancy_rev += 1;
-                }
-                i += 1;
-            }
-            result
-        };
-        LOOKUP[rank as usize][kg_occupancy_rev as usize]
+    const fn with_reset_lsb(self) -> BitBoard {
+        BitBoard(self.0 & self.0.wrapping_sub(1))
     }
 }
 
