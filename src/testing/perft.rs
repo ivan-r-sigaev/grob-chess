@@ -89,7 +89,7 @@ mod data {
 
 use crate::game::move_generator::*;
 
-use crate::game::move_generator::position::*;
+use crate::position::*;
 
 use data::PerftData;
 

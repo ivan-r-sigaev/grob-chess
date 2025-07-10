@@ -1,6 +1,6 @@
 use crate::bitboard::{File, Square};
 use crate::board::{Color, Piece};
-use crate::game::position::CastlingRights;
+use crate::position::CastlingRights;
 
 use const_random::const_random;
 

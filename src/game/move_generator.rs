@@ -1,12 +1,10 @@
-pub mod position;
-
 use strum::{EnumCount, VariantArray};
 
 use strum::FromRepr;
 
 use crate::bitboard::{BitBoard, File, Rank, Square};
 use crate::board::{Color, Piece};
-use crate::game::position::{CastlingRights, Position};
+use crate::position::{CastlingRights, Position};
 
 #[repr(u8)]
 #[derive(

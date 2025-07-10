@@ -1,8 +1,8 @@
 pub mod move_generator;
 
-use move_generator::position::{ParseFenError, Position};
+use crate::position::{ParseFenError, Position};
 use move_generator::{
-    can_make_move, make_move, position, unmake_move, MoveConcept, MoveGenerator, UnmoveConcept,
+    can_make_move, make_move, unmake_move, MoveConcept, MoveGenerator, UnmoveConcept,
 };
 
 #[derive(Debug, Clone)]

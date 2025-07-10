@@ -6,6 +6,7 @@
 pub mod bitboard;
 pub mod board;
 pub mod game;
+pub mod position;
 pub mod search;
 pub mod transposition_table;
 

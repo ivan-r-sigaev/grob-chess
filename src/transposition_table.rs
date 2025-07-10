@@ -1,4 +1,4 @@
-use crate::game::move_generator::position::PositionHash;
+use crate::position::PositionHash;
 
 pub struct TranspositionTable<const N: usize, V: Copy> {
     values: [Option<(PositionHash, V)>; N],
