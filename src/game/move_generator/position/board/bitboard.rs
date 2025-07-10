@@ -74,6 +74,22 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
+    pub const fn into_iter(self) -> Self {
+        self
+    }
+    #[inline(always)]
+    #[must_use]
+    const fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+        match self.bit_scan_forward() {
+            Some(sq) => {
+                *self = self.with_reset_lsb();
+                Some(sq)
+            }
+            None => None,
+        }
+    }
+    #[inline(always)]
+    #[must_use]
     pub const fn not(self) -> Self {
         BitBoard(!self.0)
     }
@@ -206,11 +222,6 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn serialize(self) -> Serialized {
-        Serialized(self)
-    }
-    #[inline(always)]
-    #[must_use]
     pub const fn fill_up(self) -> Self {
         self.mul(Self::from_file(File::A))
     }
@@ -339,6 +350,15 @@ impl BitBoard {
             result
         };
         LOOKUP[rank as usize][kg_occupancy_rev as usize]
+    }
+}
+
+impl Iterator for BitBoard {
+    type Item = Square;
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<Self::Item> {
+        Self::next(self)
     }
 }
 
@@ -500,24 +520,6 @@ impl std::fmt::Debug for BitBoard {
             ret = row + "\n" + &ret;
         }
         f.write_str(&ret)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Serialized(BitBoard);
-
-impl Iterator for Serialized {
-    type Item = Square;
-
-    #[inline(always)]
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.0.bit_scan_forward() {
-            Some(sq) => {
-                self.0 = self.0.with_reset_lsb();
-                Some(sq)
-            }
-            None => None,
-        }
     }
 }
 
