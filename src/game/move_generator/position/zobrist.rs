@@ -1,8 +1,6 @@
+use crate::bitboard::{File, Square};
 use crate::game::position::{
-    board::{
-        bitboard::{File, Square},
-        Color, Piece,
-    },
+    board::{Color, Piece},
     CastlingRights,
 };
 

@@ -1,4 +1,4 @@
-use crate::game::position::board::bitboard::Rank;
+use crate::bitboard::Rank;
 use std::ops::Not;
 use strum::{EnumCount, FromRepr, VariantArray};
 

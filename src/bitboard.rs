@@ -369,6 +369,7 @@ impl std::fmt::Debug for BitBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use strum::VariantArray;
 
     #[test]
     fn test_rank_composite_bitboard_conversion() {

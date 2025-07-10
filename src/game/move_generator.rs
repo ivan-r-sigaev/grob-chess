@@ -4,8 +4,7 @@ use strum::{EnumCount, VariantArray};
 
 use strum::FromRepr;
 
-use crate::game::move_generator::position::board::bitboard::Rank;
-use crate::game::position::board::bitboard::{BitBoard, File, Square};
+use crate::bitboard::{BitBoard, File, Rank, Square};
 use crate::game::position::board::{Color, Piece};
 use crate::game::position::{CastlingRights, Position};
 

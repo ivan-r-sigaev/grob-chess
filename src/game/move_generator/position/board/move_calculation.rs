@@ -1,9 +1,7 @@
 use strum::{EnumCount, VariantArray};
 
-use crate::game::move_generator::position::board::{
-    bitboard::{BitBoard, File, PosDiag, Rank, Square},
-    Color,
-};
+use crate::bitboard::{BitBoard, File, PosDiag, Rank, Square};
+use crate::game::move_generator::position::board::Color;
 
 impl BitBoard {
     #[inline(always)]

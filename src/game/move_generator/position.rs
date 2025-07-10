@@ -1,6 +1,6 @@
 pub use castling_rights::CastlingRights;
 pub mod board;
-use board::bitboard::{BitBoard, File, Square};
+use crate::bitboard::{BitBoard, File, Square};
 use board::{Board, Color, Piece};
 
 use std::error::Error;

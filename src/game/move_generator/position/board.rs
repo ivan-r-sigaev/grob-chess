@@ -1,6 +1,5 @@
+use crate::bitboard::{BitBoard, Square};
 pub use indexing::{Color, Piece};
-pub mod bitboard;
-use bitboard::{BitBoard, Square};
 
 mod indexing;
 mod move_calculation;
