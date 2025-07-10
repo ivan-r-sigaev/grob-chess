@@ -9,7 +9,7 @@ use strum::{EnumCount, VariantArray};
 mod indexing;
 
 #[derive(Clone, Copy)]
-pub struct BitBoard(u64);
+pub struct BitBoard(pub u64);
 
 impl BitBoard {
     pub const EMPTY: BitBoard = BitBoard(0);
