@@ -73,7 +73,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn into_iter(self) -> Self {
+    pub const fn into_iter(self) -> <Self as IntoIterator>::IntoIter {
         self
     }
     #[inline(always)]
