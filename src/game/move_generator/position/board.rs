@@ -214,12 +214,12 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn fill_up(self) -> Self {
+    const fn fill_up(self) -> Self {
         self.mul(Self::from_file(File::A))
     }
     #[inline(always)]
     #[must_use]
-    pub const fn attack_right(mut self, occupance: BitBoard) -> Self {
+    const fn attack_right(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
         self.bitor_assign(self.right().bitand(empty)); // 1
         self.bitor_assign(self.right().bitand(empty)); // 2
@@ -231,7 +231,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn attack_left(mut self, occupance: BitBoard) -> Self {
+    const fn attack_left(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
         self.bitor_assign(self.left().bitand(empty)); // 1
         self.bitor_assign(self.left().bitand(empty)); // 2
@@ -243,7 +243,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn attack_up(mut self, occupance: BitBoard) -> Self {
+    const fn attack_up(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
         self.bitor_assign(self.up().bitand(empty)); // 1
         self.bitor_assign(self.up().bitand(empty)); // 2
@@ -255,7 +255,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn attack_down(mut self, occupance: BitBoard) -> Self {
+    const fn attack_down(mut self, occupance: BitBoard) -> Self {
         let empty = occupance.not();
         self.bitor_assign(self.down().bitand(empty)); // 1
         self.bitor_assign(self.down().bitand(empty)); // 2
@@ -267,27 +267,27 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn rank_to_reversed_file(self) -> Self {
+    const fn rank_to_reversed_file(self) -> Self {
         self.mul(Self::from_pos_diag(PosDiag::A1H8))
             .shr(7)
             .bitand(Self::from_file(File::A))
     }
     #[inline(always)]
     #[must_use]
-    pub const fn file_to_reversed_rank(self) -> Self {
+    const fn file_to_reversed_rank(self) -> Self {
         self.mul(Self::from_pos_diag(PosDiag::A1H8))
             .shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
     }
     #[inline(always)]
     #[must_use]
-    pub const fn project_on_rank(self) -> Self {
+    const fn project_on_rank(self) -> Self {
         self.fill_up()
             .shr(File::COUNT as u8 * (Rank::COUNT as u8 - 1))
     }
-    pub const KINDERGARTEN_OCCUPANCY_MAX: u8 = 64;
+    const KINDERGARTEN_OCCUPANCY_MAX: u8 = 64;
     #[inline(always)]
     #[must_use]
-    pub const fn into_kindergarten_occupancy(self) -> u8 {
+    const fn into_kindergarten_occupancy(self) -> u8 {
         assert!(self.bitand(BitBoard::from_rank(Rank::R1).not()).is_empty());
         self.bitand(BitBoard::from_square(Square::H1).not())
             .shr(1)
@@ -295,7 +295,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
+    const fn from_kindergarten_occupancy_as_rank(file: File, kg_occupancy: u8) -> BitBoard {
         const LOOKUP: [[BitBoard; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; File::COUNT] = {
             let mut result =
                 [[BitBoard::EMPTY; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; File::COUNT];
@@ -320,7 +320,7 @@ impl BitBoard {
     }
     #[inline(always)]
     #[must_use]
-    pub const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
+    const fn from_kindergarten_occupancy_as_file(rank: Rank, kg_occupancy_rev: u8) -> BitBoard {
         const LOOKUP: [[BitBoard; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; Rank::COUNT] = {
             let mut result =
                 [[BitBoard::EMPTY; BitBoard::KINDERGARTEN_OCCUPANCY_MAX as usize]; Rank::COUNT];
