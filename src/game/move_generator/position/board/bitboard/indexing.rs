@@ -138,15 +138,8 @@ pub enum Square {
 impl Square {
     #[inline(always)]
     #[must_use]
-    pub const fn straights(rank: Rank, file: File) -> Square {
+    pub const fn new(rank: Rank, file: File) -> Square {
         Self::from_repr(rank as u8 * File::COUNT as u8 + file as u8).unwrap()
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn diagonals(positive: PosDiag, negative: NegDiag) -> Square {
-        let rank = Rank::from_repr(((positive as i8 + negative as i8) / 2) as u8).unwrap();
-        let file = File::from_repr(((negative as i8 - positive as i8) / 2) as u8).unwrap();
-        Self::straights(rank, file)
     }
     #[inline(always)]
     #[must_use]
@@ -166,7 +159,7 @@ impl Square {
     #[inline(always)]
     #[must_use]
     pub const fn neg_diag(self) -> NegDiag {
-        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 - (Rank::COUNT as i8) + 1).unwrap()
+        NegDiag::from_repr(self.rank() as i8 + self.file() as i8 + NegDiag::A1A1 as i8).unwrap()
     }
     #[inline(always)]
     #[must_use]
@@ -185,23 +178,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_square_straights_conversion() {
+    fn test_square_constructor() {
         for &rank in Rank::VARIANTS {
             for &file in File::VARIANTS {
-                let square = Square::straights(rank, file);
+                let square = Square::new(rank, file);
                 assert_eq!(square.rank(), rank);
                 assert_eq!(square.file(), file);
-            }
-        }
-    }
-
-    #[test]
-    fn test_square_diagonals_conversion() {
-        for &positive in PosDiag::VARIANTS {
-            for &negative in NegDiag::VARIANTS {
-                let square = Square::diagonals(positive, negative);
-                assert_eq!(square.pos_diag(), positive);
-                assert_eq!(square.neg_diag(), negative);
             }
         }
     }

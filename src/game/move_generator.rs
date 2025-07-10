@@ -281,8 +281,7 @@ impl MoveGenerator {
         }
 
         if pos.en_passant().is_some() {
-            let to =
-                Square::straights(pos.turn().en_passant_dest_rank(), pos.en_passant().unwrap());
+            let to = Square::new(pos.turn().en_passant_dest_rank(), pos.en_passant().unwrap());
             for from in (pawns & BitBoard::pawn_attacks(to, !pos.turn())).serialize() {
                 self.push_move(MoveConcept::new(from, to, MoveHint::EnPassantCapture));
             }
@@ -415,8 +414,8 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
                 Some(file) => file,
                 None => return false,
             };
-            let target_sq = Square::straights(from.rank(), to.file());
-            Square::straights(color.en_passant_dest_rank(), file) == to
+            let target_sq = Square::new(from.rank(), to.file());
+            Square::new(color.en_passant_dest_rank(), file) == to
                 && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
                 && pos.board().get_piece_at(target_sq) == Some(Piece::Pawn)
                 && pos.board().get_color_at(target_sq) == Some(!color)
@@ -597,7 +596,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
             pos.remove_color_piece(
                 !pos.turn(),
                 Piece::Pawn,
-                Square::straights(from.rank(), to.file()),
+                Square::new(from.rank(), to.file()),
             );
             pos.add_color_piece(pos.turn(), Piece::Pawn, to);
         }
@@ -788,7 +787,7 @@ pub fn unmake_move(board: &mut Position, unmove_concept: UnmoveConcept) {
             board.add_color_piece(
                 !board.turn(),
                 Piece::Pawn,
-                Square::straights(from.rank(), to.file()),
+                Square::new(from.rank(), to.file()),
             );
             board.add_color_piece(board.turn(), Piece::Pawn, from);
         }
