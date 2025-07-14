@@ -1,42 +1,87 @@
 use crate::board::Color;
-use bitflags::bitflags; // This dependency is a pure utility. It may be removed if needed.
+use bitflags::bitflags;
 
 bitflags! {
+    /// Castlight rights of a chess position.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct CastlingRights: u8 {
+        /// The castling rights for white kingside castling.
         const WHITE_KING = 1 << 0;
+        /// The castling rights for white queenside castling.
         const WHITE_QUEEN = 1 << 1;
+        /// The castling rights for black kingside castling.
         const BLACK_KING = 1 << 2;
+        /// The castling rights for black queenside castling.
         const BLACK_QUEEN = 1 << 3;
     }
 }
 
 impl CastlingRights {
+    /// Constructs the king's castling rights for the given color.
+    ///
+    /// # Arguments
+    /// * `color`: Color
+    ///
+    /// # Returns
+    /// `Self` - the king's castling rights for the given color
     #[inline(always)]
     #[must_use]
-    pub fn kingside(color: Color) -> CastlingRights {
+    pub fn kingside(color: Color) -> Self {
         if color == Color::White {
-            CastlingRights::WHITE_KING
+            Self::WHITE_KING
         } else {
-            CastlingRights::BLACK_KING
+            Self::BLACK_KING
         }
     }
+
+    /// Constructs the queen's castling rights for the given color.
+    ///
+    /// # Arguments
+    /// * `color`: Color
+    ///
+    /// # Returns
+    /// `Self` - the queen's castling rights for the given color
     #[inline(always)]
     #[must_use]
-    pub fn queenside(color: Color) -> CastlingRights {
+    pub fn queenside(color: Color) -> Self {
         if color == Color::White {
-            CastlingRights::WHITE_QUEEN
+            Self::WHITE_QUEEN
         } else {
-            CastlingRights::BLACK_QUEEN
+            Self::BLACK_QUEEN
         }
     }
+
+    /// Constructs the castling rights for the given color.
+    ///
+    /// # Arguments
+    /// * `color`: Color
+    ///
+    /// # Returns
+    /// `Self` - the castling rights for the given color
+    ///
+    /// # Examples
+    /// ```rust
+    /// use position::prelude::{CastlingRights, Color};
+    ///
+    /// let white = CastlingRights::both_sides(Color::White);
+    /// let white_king = CastlingRights::WHITE_KING;
+    /// let white_queen = CastlingRights::WHITE_QUEEN;
+    ///
+    /// assert_eq!(white, white_king | white_queen);
+    ///
+    /// let black = CastlingRights::both_sides(Color::Black);
+    /// let black_king = CastlingRights::BLACK_KING;
+    /// let black_queen = CastlingRights::BLACK_QUEEN;
+    ///
+    /// assert_eq!(black, black_king | black_queen);
+    /// ```
     #[inline(always)]
     #[must_use]
-    pub fn both_sides(color: Color) -> CastlingRights {
+    pub fn both_sides(color: Color) -> Self {
         if color == Color::White {
-            CastlingRights::WHITE_QUEEN | CastlingRights::WHITE_KING
+            Self::WHITE_QUEEN | Self::WHITE_KING
         } else {
-            CastlingRights::BLACK_QUEEN | CastlingRights::BLACK_KING
+            Self::BLACK_QUEEN | Self::BLACK_KING
         }
     }
 }

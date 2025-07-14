@@ -12,6 +12,7 @@ use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, 
 mod castling_rights;
 mod zobrist;
 
+/// A chess position.
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
     board: Board,
@@ -36,6 +37,9 @@ impl PartialEq for Position {
 
 impl Eq for Position {}
 
+/// An error that had occured while parsing [FEN].
+///
+/// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
 #[derive(Debug, Clone)]
 pub enum ParseFenError {
     BadFenSize,
@@ -57,7 +61,27 @@ impl Display for ParseFenError {
 impl Error for ParseFenError {}
 
 impl Position {
-    pub fn try_from_fen(fen: &str) -> Result<Position, ParseFenError> {
+    /// Try to construct a new position from [FEN].
+    ///
+    /// # Arguments
+    /// * `fen` - FEN text
+    ///
+    /// # Returns
+    /// `Result<Self, ParseFenError>`:
+    /// - `Ok(position: Self)` - the parsed position
+    /// - `Error(error: ParseFenError)` - the error that occured while parsing
+    ///
+    /// # Examples
+    /// ```rust
+    /// use position::prelude::{Position, ParseFenError};
+    ///
+    /// let initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    /// let _initial_position = Position::try_from_fen(initial_position_fen)?;
+    /// Ok::<(), ParseFenError>(())
+    /// ```
+    ///
+    /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
+    pub fn try_from_fen(fen: &str) -> Result<Self, ParseFenError> {
         let fen_parts: Vec<&str> = fen.split_whitespace().collect();
         if fen_parts.len() != 6 {
             return Err(ParseFenError::BadFenSize);
@@ -216,6 +240,7 @@ impl Position {
     }
 }
 
+/// Unique hash generated from a chess position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PositionHash(u64);
 
@@ -233,31 +258,64 @@ impl Rem<usize> for PositionHash {
 }
 
 impl Position {
+    /// Returns a hash for the current position.
+    ///
+    /// # Returns
+    /// `PositionHash` - a hash for the current position
     #[inline(always)]
     #[must_use]
     pub fn position_hash(&self) -> PositionHash {
         PositionHash(self.zobrist_hash)
     }
+
+    /// Returns the currently available en passant file (or `None` if not available).
+    ///
+    /// # Returns
+    /// `Option<File>`:
+    /// - `Some(file: File)` - the file of the currently available en passant
+    /// - `None` - if en passant is not currently available
     #[inline(always)]
     #[must_use]
     pub fn en_passant(&self) -> Option<File> {
         self.en_passant
     }
+
+    /// Returns the current castling rights of a position.
+    ///
+    /// # Returns
+    /// `CastlingRights` - the current castling rights of a position
     #[inline(always)]
     #[must_use]
     pub fn castling_rights(&self) -> CastlingRights {
         self.castling_rights
     }
+
+    /// Returns a reference to the position's board.
+    ///
+    /// # Returns
+    /// `Board` - a reference to the position's board
     #[inline(always)]
     #[must_use]
     pub fn board(&self) -> &Board {
         &self.board
     }
+
+    /// Returns the color of the player who is about to make a turn.
+    ///
+    /// # Returns
+    /// `Color` - the color of the player who is about to make a turn
     #[inline(always)]
     #[must_use]
     pub fn turn(&self) -> Color {
         self.turn
     }
+
+    /// Returns the current state of the [halfmove clock].
+    ///
+    /// # Returns
+    /// `u32` - the current amount of halfmoves
+    ///
+    /// [halfmove clock]: https://www.chessprogramming.org/Halfmove_Clock
     #[inline(always)]
     #[must_use]
     pub fn halfmove_clock(&self) -> u32 {
@@ -266,24 +324,54 @@ impl Position {
 }
 
 impl Position {
+    /// Sets the currently available en passant file.
+    ///
+    /// # Arguments
+    /// * `en_passant` - the value to set
     #[inline(always)]
     pub fn set_en_passant(&mut self, en_passant: Option<File>) {
         self.zobrist_hash ^= get_en_passant_zobrist(self.en_passant);
         self.zobrist_hash ^= get_en_passant_zobrist(en_passant);
         self.en_passant = en_passant;
     }
+
+    /// Sets the currently available castling rights.
+    ///
+    /// # Arguments
+    /// * `castling_rights` - the value to set
     #[inline(always)]
     pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
         self.zobrist_hash ^= get_castling_zobrist(self.castling_rights);
         self.zobrist_hash ^= get_castling_zobrist(castling_rights);
         self.castling_rights = castling_rights;
     }
+
+    /// Adds a piece to the board.
+    ///
+    /// # Arguments
+    /// `color` - the color of the piece to add
+    /// `piece` - the type of the piece to add
+    /// `sq` - the square where to add the piece
+    ///
+    /// # Panics
+    /// If trying to add the piece to an already occupied square
     #[inline(always)]
     pub fn add_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
         debug_assert!(!self.board.get_occupance().has_square(sq));
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_or(color, piece, BitBoard::from(sq));
     }
+
+    /// Removes a piece from the board.
+    ///
+    /// # Arguments
+    /// `color` - the color of the piece to remove
+    /// `piece` - the type of the piece to remove
+    /// `sq` - the square where to remove the piece
+    ///
+    /// # Panics
+    /// - if trying to remove an unoccupied square
+    /// - if the `sq` contains the piece of different type or color than specified.
     #[inline(always)]
     pub fn remove_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
         debug_assert!(
@@ -293,6 +381,19 @@ impl Position {
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_and(color, piece, !BitBoard::from(sq));
     }
+
+    /// Moves a piece on the board.
+    ///
+    /// # Arguments
+    /// `color` - the color of the piece to move
+    /// `piece` - the type of the piece to move
+    /// `from` - the square from where to move the piece
+    /// `to` - the square where to move the piece
+    ///
+    /// # Panics
+    /// - if trying to move a piece from an unoccupied square
+    /// - if `from` contains a piece with a different type or color than specified
+    /// - if `to` is occupied
     #[inline(always)]
     pub fn move_color_piece(&mut self, color: Color, piece: Piece, from: Square, to: Square) {
         debug_assert!(
@@ -305,12 +406,24 @@ impl Position {
         self.board
             .mask_xor(color, piece, BitBoard::from(from) | BitBoard::from(to));
     }
+
+    /// Sets the color of the player that is about to make a turn.
+    ///
+    /// # Arguments
+    /// `turn` - the color of the player that is about to make a turn
     #[inline(always)]
     pub fn set_turn(&mut self, turn: Color) {
         self.zobrist_hash ^= get_turn_zobrist(self.turn);
         self.zobrist_hash ^= get_turn_zobrist(turn);
         self.turn = turn;
     }
+
+    /// Sets the current state of [halfmove clock].
+    ///
+    /// # Arguments
+    /// `halfmove_clock` - the amount of halfmoves
+    ///
+    /// [halfmove clock]: https://www.chessprogramming.org/Halfmove_Clock
     #[inline(always)]
     pub fn set_halfmove_clock(&mut self, halfmove_clock: u32) {
         self.halfmove_clock = halfmove_clock;
@@ -318,6 +431,10 @@ impl Position {
 }
 
 impl Position {
+    /// Returns whether kingside castling is NOT allowed for a given color.
+    ///
+    /// # Returns
+    /// `bool` - whether kingside castling is NOT allowed for a given color
     #[inline(always)]
     #[must_use]
     pub fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
@@ -360,6 +477,11 @@ impl Position {
             ))
             .is_empty()
     }
+
+    /// Returns whether queenside castling is NOT allowed for a given color.
+    ///
+    /// # Returns
+    /// `bool` - whether queenside castling is NOT allowed for a given color
     #[inline(always)]
     #[must_use]
     pub fn is_queenside_castling_prohibited(&self, color: Color) -> bool {

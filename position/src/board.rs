@@ -4,6 +4,7 @@ use strum::{EnumCount, VariantArray};
 
 mod indexing;
 
+/// Current state of all the pieces on the chess board.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Board {
     /*
@@ -21,38 +22,87 @@ pub struct Board {
 
 impl Board {
     // TODO: it may be better to add a constructor from FEN.
+    /// Constructs an empty board.
+    ///
+    /// # Returns
+    /// `Self` - an empty board.
     #[inline(always)]
     #[must_use]
-    pub fn empty() -> Board {
-        Board {
+    pub fn empty() -> Self {
+        Self {
             boards: [BitBoard::EMPTY; 8],
         }
     }
+
+    /// Returns the bitboard with all the pieces of the given color.
+    ///
+    /// # Arguments
+    /// * `color` - the given color
+    ///
+    /// # Returns
+    /// * `BitBoard` - the bitboard with all the pieces of the given color
     #[inline(always)]
     #[must_use]
     pub fn get_color(&self, color: Color) -> BitBoard {
         self.boards[color as usize]
     }
+
+    /// Returns the bitboard with all the pieces currently present on the board.
+    ///
+    /// # Returns
+    /// * `BitBoard` - the bitboard with all the pieces currently present on the board
     #[inline(always)]
     #[must_use]
     pub fn get_occupance(&self) -> BitBoard {
         self.get_color(Color::White) | self.get_color(Color::Black)
     }
+
+    /// Returns the bitboard with all the unoccupied squares.
+    ///
+    /// # Returns
+    /// * `BitBoard` - the bitboard with all the unoccupied squares
     #[inline(always)]
     #[must_use]
     pub fn get_empty(&self) -> BitBoard {
         !self.get_occupance()
     }
+
+    /// Returns the bitboard with all the pieces of the given piece type.
+    ///
+    /// # Arguments
+    /// * `piece` - the given piece type
+    ///
+    /// # Returns
+    /// * `BitBoard` - the bitboard with all the pieces of the given piece type
     #[inline(always)]
     #[must_use]
     pub fn get_piece(&self, piece: Piece) -> BitBoard {
         self.boards[piece as usize + 2]
     }
+
+    /// Returns the bitboard with all the pieces that are BOTH the of given piece type and of the given color.
+    ///
+    /// # Arguments
+    /// * `color` - the given color
+    /// * `piece` - the given piece type
+    ///
+    /// # Returns
+    /// * `BitBoard` - the bitboard with all the pieces that are BOTH the of given piece type and of the given color
     #[inline(always)]
     #[must_use]
     pub fn get_color_piece(&self, color: Color, piece: Piece) -> BitBoard {
         self.get_color(color) & self.get_piece(piece)
     }
+
+    /// Returns the piece type placed on the given square (or `None` if the square is empty).
+    ///
+    /// # Arguments
+    /// * `sq` - the given square
+    ///
+    /// # Returns
+    /// `Option<Piece>`:
+    /// - `Some(piece: Piece)` - the piece type placed on the given square
+    /// - `None` - if the square is empty
     #[inline(always)]
     #[must_use]
     pub fn get_piece_at(&self, sq: Square) -> Option<Piece> {
@@ -73,6 +123,16 @@ impl Board {
             None
         }
     }
+
+    /// Returns the color of the piece placed on the given square (or `None` if the square is empty).
+    ///
+    /// # Arguments
+    /// * `sq` - the given square
+    ///
+    /// # Returns
+    /// `Option<Color>`:
+    /// - `Some(piece: Color)` - the color of the piece placed on the given square
+    /// - `None` - if the square is empty
     #[inline(always)]
     #[must_use]
     pub fn get_color_at(&self, sq: Square) -> Option<Color> {
@@ -85,6 +145,14 @@ impl Board {
             None
         }
     }
+
+    /// Returns the bitboard with all the pieces that attack (put pressure on) the given square.
+    ///
+    /// # Arguments
+    /// * `sq` - the given square
+    ///
+    /// # Returns
+    /// `BitBoard` - the bitboard with all the pieces that attack (put pressure on) the given square
     #[inline(always)]
     #[must_use]
     pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
@@ -98,6 +166,15 @@ impl Board {
             | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
             | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
     }
+
+    /// Returns the bitboard with all the pieces of a given color that attack (put pressure on) the given square.
+    ///
+    /// # Arguments
+    /// * `sq` - the given square
+    /// * `color` - the given color
+    ///
+    /// # Returns
+    /// `BitBoard` - the bitboard with all the pieces of a given color that attack (put pressure on) the given square
     #[inline(always)]
     #[must_use]
     pub fn get_color_attackers_to(&self, sq: Square, color: Color) -> BitBoard {
@@ -113,27 +190,60 @@ impl Board {
 }
 
 impl Board {
+    /// Returns the bitboard with all the queens and bishops.
+    ///
+    /// # Returns
+    /// `BitBoard` - the bitboard with all the queens and bishops
     #[inline(always)]
     #[must_use]
     pub fn get_bishop_sliders(&self) -> BitBoard {
         self.get_piece(Piece::Queen) | self.get_piece(Piece::Bishop)
     }
+
+    /// Returns the bitboard with all the queens and bishops of the given color.
+    ///
+    /// # Arguments
+    /// * `color` - the given color
+    ///
+    /// # Returns
+    /// `BitBoard` - the bitboard with all the queens and bishops of the given color
     #[inline(always)]
     #[must_use]
     pub fn get_color_bishop_sliders(&self, color: Color) -> BitBoard {
         self.get_color(color) & self.get_bishop_sliders()
     }
+
+    /// Returns the bitboard with all the queens and rooks.
+    ///
+    /// # Returns
+    /// `BitBoard` - the bitboard with all the queens and rooks
     #[inline(always)]
     #[must_use]
     pub fn get_rook_sliders(&self) -> BitBoard {
         self.get_piece(Piece::Queen) | self.get_piece(Piece::Rook)
     }
+
+    /// Returns the bitboard with all the rooks and bishops of the given color.
+    ///
+    /// # Arguments
+    /// * `color` - the given color
+    ///
+    /// # Returns
+    /// `BitBoard` - the bitboard with all the queens and rooks of the given color
     #[inline(always)]
     #[must_use]
     pub fn get_color_rook_sliders(&self, color: Color) -> BitBoard {
         self.get_color(color) & self.get_rook_sliders()
     }
+
     // TODO: This function relies on a failable assumtion that the king exists.
+    /// Returns whether the king of the given color is currently in check.
+    ///
+    /// # Arguments
+    /// * `color` - the given color
+    ///
+    /// # Returns
+    /// `bool` - whether the king of the given color is currently in check
     #[inline(always)]
     #[must_use]
     pub fn is_king_in_check(&self, color: Color) -> bool {
@@ -148,16 +258,55 @@ impl Board {
 }
 
 impl Board {
+    /// Places (or replaces) pieces of the given color on the squares specified by the mask with the given piece type.
+    ///
+    /// # Safety
+    /// The user of the function is responsible for not trying to overwrite the squares that contain
+    /// the opposite color, which will result in doubly colored pieces.
+    ///
+    /// # Arguments
+    /// * `color` - the color of pieces
+    /// * `piece` - the type of the pieces to place
+    /// * `mask` - the mask where to place (or replace) the pieces
     #[inline(always)]
     pub fn mask_or(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] |= mask;
         self.boards[color as usize] |= mask;
     }
+
+    /// Removes all pieces of the given color and type on the squares NOT specified by the mask.
+    ///
+    /// # Safety
+    /// The user of the function is responsible for not trying to remove the pieces of a different color
+    /// than specified by the mask, which will result in colored squares without a piece type.
+    ///
+    /// # Arguments
+    /// * `color` - the color of the pieces
+    /// * `piece` - the type of the pieces
+    /// * `mask` - the mask specifying what pieces to keep
     #[inline(always)]
     pub fn mask_and(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] &= mask;
         self.boards[color as usize] &= mask;
     }
+
+    /// Toggles all the pieces of the given color and type on the squares specified by the mask.
+    ///
+    /// # Safety
+    /// The user of the function is responsible for not trying to toggle the pieces of a different color
+    /// or a different piece type than specified by the mask, which will result in one of the following:
+    /// - multicolored pieces
+    /// - multityped pieces
+    /// - uncolored pieces
+    /// - colored squares without a piece type
+    /// - severe headaches and vomiting
+    /// - immediate heat death of the universe
+    /// - \[REDACTED\]
+    ///
+    /// # Arguments
+    /// * `color` - the color of the pieces
+    /// * `piece` - the type of the pieces
+    /// * `mask` - the mask specifying what pieces to toggle
     #[inline(always)]
     pub fn mask_xor(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] ^= mask;
@@ -166,6 +315,7 @@ impl Board {
 }
 
 impl std::fmt::Debug for Board {
+    /// Formats board for debug purposes.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(
             f,
@@ -192,6 +342,144 @@ impl std::fmt::Debug for Board {
 }
 
 impl BitBoard {
+    /// Returns the quiet move of the pawn of a given color from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    /// * `color` - color of the pawn
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn pawn_quiet(from: Square, color: Color) -> BitBoard {
+        let bb = BitBoard::from_square(from);
+        match color {
+            Color::White => bb.up(),
+            Color::Black => bb.down(),
+        }
+    }
+
+    /// Returns the attack move of the pawn of a given color from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    /// * `color` - color of the pawn
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn pawn_attacks(from: Square, color: Color) -> BitBoard {
+        let bb = Self::pawn_quiet(from, color);
+        bb.left().bitor(bb.right())
+    }
+
+    /// Returns the move of a kinght from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn knight_attacks(from: Square) -> BitBoard {
+        const MAGIC_L: BitBoard = BitBoard::EMPTY.not().left();
+        const MAGIC_LL: BitBoard = MAGIC_L.left();
+        const MAGIC_R: BitBoard = BitBoard::EMPTY.not().right();
+        const MAGIC_RR: BitBoard = MAGIC_R.right();
+        let bb = BitBoard::from_square(from);
+        let l1 = bb.shr(1).bitand(MAGIC_L);
+        let l2 = bb.shr(2).bitand(MAGIC_LL);
+        let r1 = bb.shl(1).bitand(MAGIC_R);
+        let r2 = bb.shl(2).bitand(MAGIC_RR);
+        let h1 = l1.bitor(r1);
+        let h2 = l2.bitor(r2);
+        h1.shl(16)
+            .bitor(h1.shr(16))
+            .bitor(h2.shl(8))
+            .bitor(h2.shr(8))
+    }
+
+    /// Returns the move of a king from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn king_attacks(from: Square) -> BitBoard {
+        let bb = BitBoard::from_square(from);
+        let tmp = bb.left().bitor(bb.right());
+        tmp.bitor(tmp.up())
+            .bitor(tmp.down())
+            .bitor(bb.up())
+            .bitor(bb.down())
+    }
+
+    /// Returns the move of a bishop from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    /// * `occupance` - the occupance to account for
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn bishop_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+        Self::pos_diag_attacks(from, occupance).bitor(Self::neg_diag_attacks(from, occupance))
+    }
+
+    /// Returns the move of a rook from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    /// * `occupance` - the occupance to account for
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn rook_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+        Self::rank_attacks(from, occupance).bitor(Self::file_attack(from, occupance))
+    }
+
+    /// Returns the move of a queen from a given square.
+    ///
+    /// # Arguments
+    /// * `from` - the square from which the move is generated
+    /// * `occupance` - the occupance to account for
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn queen_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+        Self::bishop_attacks(occupance, from).bitor(Self::rook_attacks(occupance, from))
+    }
+
+    /// Returns the combined quiet moves of pawns from a given square.
+    ///
+    /// # Arguments
+    /// * `pawns` - the squares from which the move is generated
+    /// * `empty` - the unoccupied squares
+    /// * `color` - the color of the pawns
+    ///
+    /// # Returns
+    /// `BitBoard` - the resulting move
+    #[inline(always)]
+    #[must_use]
+    pub const fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
+        match color {
+            Color::White => pawns.up(),
+            Color::Black => pawns.down(),
+        }
+        .bitand(empty)
+    }
     #[inline(always)]
     #[must_use]
     const fn up(self) -> Self {
@@ -343,74 +631,7 @@ impl BitBoard {
         };
         LOOKUP[rank as usize][kg_occupancy_rev as usize]
     }
-    #[inline(always)]
-    #[must_use]
-    pub const fn pawn_quiet(from: Square, color: Color) -> BitBoard {
-        let bb = BitBoard::from_square(from);
-        match color {
-            Color::White => bb.up(),
-            Color::Black => bb.down(),
-        }
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn pawn_attacks(from: Square, color: Color) -> BitBoard {
-        let bb = Self::pawn_quiet(from, color);
-        bb.left().bitor(bb.right())
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn knight_attacks(from: Square) -> BitBoard {
-        const MAGIC_L: BitBoard = BitBoard::EMPTY.not().left();
-        const MAGIC_LL: BitBoard = MAGIC_L.left();
-        const MAGIC_R: BitBoard = BitBoard::EMPTY.not().right();
-        const MAGIC_RR: BitBoard = MAGIC_R.right();
-        let bb = BitBoard::from_square(from);
-        let l1 = bb.shr(1).bitand(MAGIC_L);
-        let l2 = bb.shr(2).bitand(MAGIC_LL);
-        let r1 = bb.shl(1).bitand(MAGIC_R);
-        let r2 = bb.shl(2).bitand(MAGIC_RR);
-        let h1 = l1.bitor(r1);
-        let h2 = l2.bitor(r2);
-        h1.shl(16)
-            .bitor(h1.shr(16))
-            .bitor(h2.shl(8))
-            .bitor(h2.shr(8))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn king_attacks(from: Square) -> BitBoard {
-        let bb = BitBoard::from_square(from);
-        let tmp = bb.left().bitor(bb.right());
-        tmp.bitor(tmp.up())
-            .bitor(tmp.down())
-            .bitor(bb.up())
-            .bitor(bb.down())
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn bishop_attacks(occupance: BitBoard, from: Square) -> BitBoard {
-        Self::pos_diag_attacks(from, occupance).bitor(Self::neg_diag_attacks(from, occupance))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn rook_attacks(occupance: BitBoard, from: Square) -> BitBoard {
-        Self::rank_attacks(from, occupance).bitor(Self::file_attack(from, occupance))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn queen_attacks(occupance: BitBoard, from: Square) -> BitBoard {
-        Self::bishop_attacks(occupance, from).bitor(Self::rook_attacks(occupance, from))
-    }
-    #[inline(always)]
-    #[must_use]
-    pub const fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
-        match color {
-            Color::White => pawns.up(),
-            Color::Black => pawns.down(),
-        }
-        .bitand(empty)
-    }
+
     #[inline(always)]
     #[must_use]
     const fn pos_diag_attacks(from: Square, occupance: BitBoard) -> BitBoard {
