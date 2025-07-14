@@ -1,11 +1,7 @@
 pub mod perft;
 
-use crate::game::move_generator::position::{
-    board::bitboard::{BitBoard, Square},
-    *,
-};
 use perft::*;
-use strum::VariantArray;
+use position::prelude::*;
 
 const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const KIWIPETE_FEN: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
@@ -463,88 +459,4 @@ fn initial_position_perft_depth_6() {
             checkmates: 10_828,
         },
     )
-}
-
-#[test]
-fn test_rank_composite_bitboard_conversion() {
-    for &square in Square::VARIANTS {
-        let rank = square.into_rank();
-        let square_bb = BitBoard::from(square);
-        let rank_bb = BitBoard::from(rank);
-        assert!(
-            !BitBoard::bitand(square_bb, rank_bb).is_empty(),
-            concat!(
-                "Bitboard generated from square's rank does not contain the original square!\n",
-                "rank ({:?}):\n{:?}\n",
-                "square ({:?}):\n{:?}\n"
-            ),
-            rank,
-            rank_bb,
-            square,
-            square_bb
-        )
-    }
-}
-
-#[test]
-fn test_file_composite_bitboard_conversion() {
-    for &square in Square::VARIANTS {
-        let file = square.into_file();
-        let square_bb = BitBoard::from(square);
-        let file_bb = BitBoard::from(file);
-        assert!(
-            !BitBoard::bitand(square_bb, file_bb).is_empty(),
-            concat!(
-                "Bitboard generated from square's file does not contain the original square!\n",
-                "file ({:?}):\n{:?}\n",
-                "square ({:?}):\n{:?}\n"
-            ),
-            file,
-            file_bb,
-            square,
-            square_bb
-        )
-    }
-}
-
-#[test]
-fn test_pos_diag_composite_bitboard_conversion() {
-    for &square in Square::VARIANTS {
-        let diagonal = square.into_pos_diag();
-        let square_bb = BitBoard::from(square);
-        let diagonal_bb = BitBoard::from(diagonal);
-        assert!(
-            !BitBoard::bitand(square_bb, diagonal_bb).is_empty(),
-            concat!(
-                "Bitboard generated from square's positive diagonal does not contain the original square!\n",
-                "diagonal ({:?}):\n{:?}\n",
-                "square ({:?}):\n{:?}\n"
-            ),
-            diagonal,
-            diagonal_bb,
-            square,
-            square_bb
-        )
-    }
-}
-
-#[test]
-fn test_neg_diag_composite_bitboard_conversion() {
-    for &square in Square::VARIANTS {
-        let diagonal = square.into_neg_diag();
-        let square_bb = BitBoard::from(square);
-        let diagonal_bb = BitBoard::from(diagonal);
-        assert!(
-            !BitBoard::bitand(square_bb, diagonal_bb).is_empty(),
-            concat!(
-                "Bitboard generated from square's negative diagonal does not contain the original square!\n",
-                "diagonal ({:?}):\n{:?}\n",
-                "square ({:?}):\n{:?}\n"
-            ),
-            diagonal,
-            diagonal_bb,
-            square,
-            square_bb
-        )
-    }
 }

@@ -1,13 +1,8 @@
-pub mod position;
-
 use strum::{EnumCount, VariantArray};
 
 use strum::FromRepr;
 
-use crate::game::move_generator::position::board::bitboard::Rank;
-use crate::game::position::board::bitboard::{BitBoard, File, Square};
-use crate::game::position::board::{Color, Piece};
-use crate::game::position::{CastlingRights, Position};
+use position::prelude::{BitBoard, CastlingRights, Color, File, Piece, Position, Rank, Square};
 
 #[repr(u8)]
 #[derive(
@@ -150,11 +145,11 @@ impl MoveGenerator {
             .expect("king does not exist");
         let attacks = BitBoard::king_attacks(from);
 
-        for to in (pos.board().get_color(!pos.turn()) & attacks).serialize() {
+        for to in pos.board().get_color(!pos.turn()) & attacks {
             self.push_move(MoveConcept::new(from, to, MoveHint::Caputre));
         }
 
-        for to in (!pos.board().get_occupance() & attacks).serialize() {
+        for to in !pos.board().get_occupance() & attacks {
             self.push_move(MoveConcept::new(from, to, MoveHint::Quiet));
         }
     }
@@ -162,18 +157,14 @@ impl MoveGenerator {
         let opp = pos.board().get_color(!pos.turn());
         let empty = !pos.board().get_occupance();
 
-        for from in pos
-            .board()
-            .get_color_piece(pos.turn(), Piece::Knight)
-            .serialize()
-        {
+        for from in pos.board().get_color_piece(pos.turn(), Piece::Knight) {
             let attacks = BitBoard::knight_attacks(from);
 
-            for to in (attacks & opp).serialize() {
+            for to in attacks & opp {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Caputre));
             }
 
-            for to in (attacks & empty).serialize() {
+            for to in attacks & empty {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Quiet));
             }
         }
@@ -182,14 +173,14 @@ impl MoveGenerator {
         let opp = pos.board().get_color(!pos.turn());
         let occ = pos.board().get_occupance();
 
-        for from in pos.board().get_color_bishop_sliders(pos.turn()).serialize() {
+        for from in pos.board().get_color_bishop_sliders(pos.turn()) {
             let attacks = BitBoard::bishop_attacks(occ, from);
 
-            for to in (attacks & opp).serialize() {
+            for to in attacks & opp {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Caputre));
             }
 
-            for to in (attacks & !occ).serialize() {
+            for to in attacks & !occ {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Quiet));
             }
         }
@@ -198,14 +189,14 @@ impl MoveGenerator {
         let opp = pos.board().get_color(!pos.turn());
         let occ = pos.board().get_occupance();
 
-        for from in pos.board().get_color_rook_sliders(pos.turn()).serialize() {
+        for from in pos.board().get_color_rook_sliders(pos.turn()) {
             let attacks = BitBoard::rook_attacks(occ, from);
 
-            for to in (attacks & opp).serialize() {
+            for to in attacks & opp {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Caputre));
             }
 
-            for to in (attacks & !occ).serialize() {
+            for to in attacks & !occ {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Quiet));
             }
         }
@@ -236,7 +227,7 @@ impl MoveGenerator {
         single_pushes &= !promotion_pushes;
         let push_offset = if pos.turn() == Color::White { -8 } else { 8 };
 
-        for to in single_pushes.serialize() {
+        for to in single_pushes {
             self.push_move(MoveConcept::new(
                 to.shifted(push_offset),
                 to,
@@ -244,7 +235,7 @@ impl MoveGenerator {
             ));
         }
 
-        for to in double_pushes.serialize() {
+        for to in double_pushes {
             self.push_move(MoveConcept::new(
                 to.shifted(push_offset * 2),
                 to,
@@ -252,7 +243,7 @@ impl MoveGenerator {
             ));
         }
 
-        for to in promotion_pushes.serialize() {
+        for to in promotion_pushes {
             let from = to.shifted(push_offset);
             self.push_move(MoveConcept::new(from, to, MoveHint::BishopPromotion));
             self.push_move(MoveConcept::new(from, to, MoveHint::KnightPromotion));
@@ -271,8 +262,8 @@ impl MoveGenerator {
                 BitBoard::from_rank(Rank::R2)
             };
         pawns &= !promoters;
-        for from in promoters.serialize() {
-            for to in (BitBoard::pawn_attacks(from, pos.turn()) & opp).serialize() {
+        for from in promoters {
+            for to in BitBoard::pawn_attacks(from, pos.turn()) & opp {
                 self.push_move(MoveConcept::new(from, to, MoveHint::BishopPromotionCapture));
                 self.push_move(MoveConcept::new(from, to, MoveHint::KnightPromotionCapture));
                 self.push_move(MoveConcept::new(from, to, MoveHint::RookPromotionCapture));
@@ -281,14 +272,14 @@ impl MoveGenerator {
         }
 
         if pos.en_passant().is_some() {
-            let to = Square::new(pos.en_passant().unwrap(), pos.turn().en_passant_dest_rank());
-            for from in (pawns & BitBoard::pawn_attacks(to, !pos.turn())).serialize() {
+            let to = Square::new(pos.turn().en_passant_dest_rank(), pos.en_passant().unwrap());
+            for from in pawns & BitBoard::pawn_attacks(to, !pos.turn()) {
                 self.push_move(MoveConcept::new(from, to, MoveHint::EnPassantCapture));
             }
         }
 
-        for from in pawns.serialize() {
-            for to in (BitBoard::pawn_attacks(from, pos.turn()) & opp).serialize() {
+        for from in pawns {
+            for to in BitBoard::pawn_attacks(from, pos.turn()) & opp {
                 self.push_move(MoveConcept::new(from, to, MoveHint::Caputre));
             }
         }
@@ -398,7 +389,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         },
         MoveHint::DoublePawn => {
             piece == Piece::Pawn
-                && from.into_rank() == color.pawn_rank()
+                && from.rank() == color.pawn_rank()
                 && BitBoard::pawn_pushes(
                     BitBoard::pawn_pushes(BitBoard::from(from), empty, color),
                     empty,
@@ -414,8 +405,8 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
                 Some(file) => file,
                 None => return false,
             };
-            let target_sq = Square::new(to.into_file(), from.into_rank());
-            Square::new(file, color.en_passant_dest_rank()) == to
+            let target_sq = Square::new(from.rank(), to.file());
+            Square::new(color.en_passant_dest_rank(), file) == to
                 && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
                 && pos.board().get_piece_at(target_sq) == Some(Piece::Pawn)
                 && pos.board().get_color_at(target_sq) == Some(!color)
@@ -425,7 +416,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         | MoveHint::RookPromotion
         | MoveHint::QueenPromotion => {
             piece == Piece::Pawn
-                && to.into_rank() == color.promotion_rank()
+                && to.rank() == color.promotion_rank()
                 && BitBoard::pawn_pushes(BitBoard::from(from), BitBoard::FILLED, color)
                     == BitBoard::from(to)
         }
@@ -434,7 +425,7 @@ pub fn can_make_move(pos: &Position, move_concept: MoveConcept) -> bool {
         | MoveHint::RookPromotionCapture
         | MoveHint::QueenPromotionCapture => {
             piece == Piece::Pawn
-                && to.into_rank() == color.promotion_rank()
+                && to.rank() == color.promotion_rank()
                 && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
         }
     }
@@ -503,7 +494,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         }
         MoveHint::DoublePawn => {
             capture = None;
-            pos.set_en_passant(Some(from.into_file()));
+            pos.set_en_passant(Some(from.file()));
             pos.set_halfmove_clock(0);
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
@@ -596,7 +587,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
             pos.remove_color_piece(
                 !pos.turn(),
                 Piece::Pawn,
-                Square::new(to.into_file(), from.into_rank()),
+                Square::new(from.rank(), to.file()),
             );
             pos.add_color_piece(pos.turn(), Piece::Pawn, to);
         }
@@ -787,7 +778,7 @@ pub fn unmake_move(board: &mut Position, unmove_concept: UnmoveConcept) {
             board.add_color_piece(
                 !board.turn(),
                 Piece::Pawn,
-                Square::new(to.into_file(), from.into_rank()),
+                Square::new(from.rank(), to.file()),
             );
             board.add_color_piece(board.turn(), Piece::Pawn, from);
         }
