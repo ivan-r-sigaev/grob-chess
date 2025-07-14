@@ -1,9 +1,9 @@
 pub mod move_generator;
 
-use crate::position::{ParseFenError, Position};
 use move_generator::{
     can_make_move, make_move, unmake_move, MoveConcept, MoveGenerator, UnmoveConcept,
 };
+use position::prelude::{ParseFenError, Position};
 
 #[derive(Debug, Clone)]
 pub struct Game {

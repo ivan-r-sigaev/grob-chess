@@ -2,9 +2,7 @@ use strum::{EnumCount, VariantArray};
 
 use strum::FromRepr;
 
-use crate::bitboard::{BitBoard, File, Rank, Square};
-use crate::board::{Color, Piece};
-use crate::position::{CastlingRights, Position};
+use position::prelude::{BitBoard, CastlingRights, Color, File, Piece, Position, Rank, Square};
 
 #[repr(u8)]
 #[derive(
