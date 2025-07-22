@@ -6,8 +6,8 @@
 Another fast chess engine written in Rust (UCI support).
 
 ## Overview
-- **Position crate**: FEN position (see crate [README](./crates/position/README.md))
-- **Game crate**: PGN game (see crate [README](./crates/game/README.md))
+- **Position crate**: FEN position (see crate [README](./position/README.md))
+- **Game crate**: PGN game (see crate [README](./game/README.md))
 - **TODO**: UCI support, search, evaluation
 
 ## Getting Started
