@@ -1,4 +1,4 @@
-# Pice Chess (WIP)
+# Pico Chess (WIP)
 
 [![Build Status](https://github.com/ivan-r-sigaev/pico_chess/actions/workflows/rust.yml/badge.svg)](https://github.com/ivan-r-sigaev/pico_chess/actions)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
