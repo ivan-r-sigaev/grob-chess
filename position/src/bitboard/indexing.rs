@@ -1,6 +1,6 @@
 use std::fmt;
 
-use strum::{EnumCount, FromRepr, VariantArray};
+use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
 /// Index of a file on a chess board.
 ///
@@ -22,7 +22,7 @@ use strum::{EnumCount, FromRepr, VariantArray};
 /// # See Also
 /// [Square]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
 pub enum File {
     A,
     B,
@@ -73,7 +73,7 @@ impl fmt::Display for File {
 /// # See Also
 /// [Square]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
 pub enum Rank {
     R1,
     R2,
@@ -131,7 +131,7 @@ impl fmt::Display for Rank {
 /// # See Also
 /// [Square]
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
 pub enum PosDiag {
     H1H1 = -(Rank::COUNT as i8) + 1,
     G1H2,
@@ -203,7 +203,7 @@ impl fmt::Display for PosDiag {
 /// # See Also
 /// [Square]
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
 pub enum NegDiag {
     A1A1 = -(Rank::COUNT as i8) + 1,
     A2B1,
@@ -252,22 +252,22 @@ impl fmt::Display for NegDiag {
 ///
 /// # Examples
 /// ```rust
-/// use strum::{FromRepr, VariantArray};
+/// use strum::{FromRepr, IntoEnumIterator};
 /// use position::prelude::{Square, Rank, File};
 ///
 /// // Conversion rule to rank/file
-/// for &square in Square::VARIANTS {
+/// for square in Square::iter() {
 ///     assert_eq!(Some(square.rank()), Rank::from_repr(square as u8 / 8));
 ///     assert_eq!(Some(square.file()), File::from_repr(square as u8 % 8));
 /// }
 /// ```
 ///
 /// ```rust
-/// use strum::{FromRepr, VariantArray};
+/// use strum::{FromRepr, IntoEnumIterator};
 /// use position::prelude::{Square, PosDiag, NegDiag};
 ///
 /// // Conversion rule to positive/negative diagonals
-/// for &square in Square::VARIANTS {
+/// for square in Square::iter() {
 ///     let rank = square.rank();
 ///     let file = square.file();
 ///     assert_eq!(Some(square.pos_diag()), PosDiag::from_repr(rank as i8 - file as i8));
@@ -281,7 +281,7 @@ impl fmt::Display for NegDiag {
 /// [PosDiag]
 /// [NegDiag]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
 pub enum Square {
     A1,
     B1,
@@ -445,11 +445,12 @@ impl fmt::Display for Square {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use strum::IntoEnumIterator;
 
     #[test]
     fn test_square_constructor() {
-        for &rank in Rank::VARIANTS {
-            for &file in File::VARIANTS {
+        for rank in Rank::iter() {
+            for file in File::iter() {
                 let square = Square::new(rank, file);
                 assert_eq!(square.rank(), rank);
                 assert_eq!(square.file(), file);

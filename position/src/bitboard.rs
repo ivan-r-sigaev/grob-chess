@@ -652,13 +652,13 @@ impl fmt::Display for BitBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use strum::VariantArray;
+    use strum::IntoEnumIterator;
 
     #[test]
     fn test_rank_composite_bitboard_conversion() {
-        for &rank in Rank::VARIANTS {
+        for rank in Rank::iter() {
             let rank_bb = BitBoard::from(rank);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -684,9 +684,9 @@ mod tests {
 
     #[test]
     fn test_file_composite_bitboard_conversion() {
-        for &file in File::VARIANTS {
+        for file in File::iter() {
             let file_bb = BitBoard::from(file);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -712,9 +712,9 @@ mod tests {
 
     #[test]
     fn test_pos_diag_composite_bitboard_conversion() {
-        for &diagonal in PosDiag::VARIANTS {
+        for diagonal in PosDiag::iter() {
             let diagonal_bb = BitBoard::from(diagonal);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -740,9 +740,9 @@ mod tests {
 
     #[test]
     fn test_neg_diag_composite_bitboard_conversion() {
-        for &diagonal in NegDiag::VARIANTS {
+        for diagonal in NegDiag::iter() {
             let diagonal_bb = BitBoard::from(diagonal);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;

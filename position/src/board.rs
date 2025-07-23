@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::bitboard::{BitBoard, File, PosDiag, Rank, Square};
 pub use indexing::{Color, Piece};
-use strum::{EnumCount, VariantArray};
+use strum::{EnumCount, IntoEnumIterator, VariantArray};
 
 mod indexing;
 
@@ -346,9 +346,9 @@ impl std::fmt::Debug for Board {
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut drawing = String::new();
-        for &rank in Rank::VARIANTS.iter().rev() {
+        for rank in Rank::iter().rev() {
             drawing += "  ";
-            for &file in File::VARIANTS {
+            for file in File::iter() {
                 let sq = Square::new(rank, file);
                 let piece = self.get_piece_at(sq);
                 let color = self.get_color_at(sq);
