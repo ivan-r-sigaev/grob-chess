@@ -3,7 +3,7 @@ use crate::board::{Board, Color, Piece};
 pub use castling_rights::CastlingRights;
 
 use std::error::Error;
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::mem::size_of;
 use std::ops::Rem;
 
@@ -76,7 +76,7 @@ impl Position {
     /// use position::prelude::{Position, ParseFenError};
     ///
     /// let initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    /// let _initial_position = Position::try_from_fen(initial_position_fen)?;
+    /// _ = Position::try_from_fen(initial_position_fen)?;
     /// Ok::<(), ParseFenError>(())
     /// ```
     ///
@@ -254,6 +254,12 @@ impl Rem<usize> for PositionHash {
             u64::MAX
         };
         (self.0 & MAX) as usize % rhs
+    }
+}
+
+impl fmt::Display for PositionHash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -525,5 +531,32 @@ impl Position {
                 !color,
             ))
             .is_empty()
+    }
+}
+
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            concat!(
+                "Chess position {{\n",
+                "  turn: {}\n",
+                "  castling rights: {}\n",
+                "  available en passant: {}\n",
+                "  moves since last capture/pawn move/check: {}\n",
+                "  hash: {}\n",
+                "  board: {}\n}}"
+            ),
+            self.turn,
+            self.castling_rights,
+            if let Some(en_passant) = self.en_passant {
+                &format!("on {en_passant} file")
+            } else {
+                "N/A"
+            },
+            self.halfmove_clock,
+            self.zobrist_hash,
+            self.board,
+        )
     }
 }
