@@ -1,6 +1,7 @@
 pub use indexing::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
+    hash::Hash,
     ops::{
         BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, MulAssign, Not, Shl,
         ShlAssign, Shr, ShrAssign,
@@ -624,6 +625,12 @@ impl PartialEq for BitBoard {
     }
 }
 impl Eq for BitBoard {}
+
+impl Hash for BitBoard {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
 
 impl fmt::Display for BitBoard {
     /// Formats the bitboard for debug purposes.

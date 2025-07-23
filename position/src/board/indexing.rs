@@ -13,7 +13,7 @@ use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 /// assert_eq!(Color::from_repr(1), Some(Color::Black));
 /// ```
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Color {
     White,
     Black,
@@ -120,7 +120,7 @@ impl fmt::Display for Color {
 
 /// A type of a chess piece.
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Piece {
     Pawn,
     Bishop,

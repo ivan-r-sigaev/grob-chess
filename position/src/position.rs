@@ -4,6 +4,7 @@ pub use castling_rights::CastlingRights;
 
 use std::error::Error;
 use std::fmt::{self, Display};
+use std::hash::Hash;
 use std::mem::size_of;
 use std::ops::Rem;
 
@@ -36,6 +37,17 @@ impl PartialEq for Position {
 }
 
 impl Eq for Position {}
+
+impl Hash for Position {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.board.hash(state);
+        self.turn.hash(state);
+        self.castling_rights.hash(state);
+        self.en_passant.hash(state);
+        self.halfmove_clock.hash(state);
+        self.zobrist_hash.hash(state);
+    }
+}
 
 /// An error that had occured while parsing [FEN].
 ///
@@ -241,7 +253,7 @@ impl Position {
 }
 
 /// Unique hash generated from a chess position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PositionHash(u64);
 
 impl Rem<usize> for PositionHash {

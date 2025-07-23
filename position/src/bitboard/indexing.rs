@@ -22,7 +22,7 @@ use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 /// # See Also
 /// [Square]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum File {
     A,
     B,
@@ -73,7 +73,7 @@ impl fmt::Display for File {
 /// # See Also
 /// [Square]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Rank {
     R1,
     R2,
@@ -131,7 +131,7 @@ impl fmt::Display for Rank {
 /// # See Also
 /// [Square]
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum PosDiag {
     H1H1 = -(Rank::COUNT as i8) + 1,
     G1H2,
@@ -203,7 +203,7 @@ impl fmt::Display for PosDiag {
 /// # See Also
 /// [Square]
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum NegDiag {
     A1A1 = -(Rank::COUNT as i8) + 1,
     A2B1,
@@ -281,7 +281,7 @@ impl fmt::Display for NegDiag {
 /// [PosDiag]
 /// [NegDiag]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Square {
     A1,
     B1,
