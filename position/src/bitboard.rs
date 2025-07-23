@@ -1,7 +1,11 @@
 pub use indexing::{File, NegDiag, PosDiag, Rank, Square};
-use std::ops::{
-    BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, MulAssign, Not, Shl,
-    ShlAssign, Shr, ShrAssign,
+use std::{
+    fmt,
+    hash::Hash,
+    ops::{
+        BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Mul, MulAssign, Not, Shl,
+        ShlAssign, Shr, ShrAssign,
+    },
 };
 use strum::EnumCount;
 
@@ -11,7 +15,7 @@ mod indexing;
 ///
 /// # See Also
 /// [bitboard]: https://www.chessprogramming.org/Bitboard_Board-Definition
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct BitBoard(pub u64);
 
 impl BitBoard {
@@ -622,39 +626,46 @@ impl PartialEq for BitBoard {
 }
 impl Eq for BitBoard {}
 
-impl std::fmt::Debug for BitBoard {
+impl Hash for BitBoard {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl fmt::Display for BitBoard {
     /// Formats the bitboard for debug purposes.
     ///
     /// The result is a coarse ASCII drawing of the bitboard's occupancy.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut bb = self.0;
-        let mut ret = String::new();
+        let mut drawing = String::new();
         for _y in 0..8 {
-            let mut row = String::new();
+            let mut row = String::from("  ");
             for _x in 0..8 {
                 if bb & 1 != 0 {
-                    row += "1 ";
+                    row += "1";
                 } else {
-                    row += "_ ";
+                    row += "_";
                 }
+                row += " ";
                 bb >>= 1;
             }
-            ret = row + "\n" + &ret;
+            drawing = row + "\n" + &drawing;
         }
-        f.write_str(&ret)
+        write!(f, "Bitboard (white side view) {{\n{drawing}}}")
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use strum::VariantArray;
+    use strum::IntoEnumIterator;
 
     #[test]
     fn test_rank_composite_bitboard_conversion() {
-        for &rank in Rank::VARIANTS {
+        for rank in Rank::iter() {
             let rank_bb = BitBoard::from(rank);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -669,8 +680,8 @@ mod tests {
                     is_passed,
                     concat!(
                         "Bitboard generated from rank {}!\n",
-                        "rank ({:?}):\n{:?}\n",
-                        "square ({:?}):\n{:?}\n"
+                        "rank ({}):\n{}\n",
+                        "square ({}):\n{}\n"
                     ),
                     phrasing, rank, rank_bb, square, square_bb
                 )
@@ -680,9 +691,9 @@ mod tests {
 
     #[test]
     fn test_file_composite_bitboard_conversion() {
-        for &file in File::VARIANTS {
+        for file in File::iter() {
             let file_bb = BitBoard::from(file);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -697,8 +708,8 @@ mod tests {
                     is_passed,
                     concat!(
                         "Bitboard generated from file {}!\n",
-                        "file ({:?}):\n{:?}\n",
-                        "square ({:?}):\n{:?}\n"
+                        "file ({}):\n{}\n",
+                        "square ({}):\n{}\n"
                     ),
                     phrasing, file, file_bb, square, square_bb
                 )
@@ -708,9 +719,9 @@ mod tests {
 
     #[test]
     fn test_pos_diag_composite_bitboard_conversion() {
-        for &diagonal in PosDiag::VARIANTS {
+        for diagonal in PosDiag::iter() {
             let diagonal_bb = BitBoard::from(diagonal);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -725,8 +736,8 @@ mod tests {
                     is_passed,
                     concat!(
                         "Bitboard generated from positive diagonal {}!\n",
-                        "diagonal ({:?}):\n{:?}\n",
-                        "square ({:?}):\n{:?}\n"
+                        "diagonal ({}):\n{}\n",
+                        "square ({}):\n{}\n"
                     ),
                     phrasing, diagonal, diagonal_bb, square, square_bb
                 )
@@ -736,9 +747,9 @@ mod tests {
 
     #[test]
     fn test_neg_diag_composite_bitboard_conversion() {
-        for &diagonal in NegDiag::VARIANTS {
+        for diagonal in NegDiag::iter() {
             let diagonal_bb = BitBoard::from(diagonal);
-            for &square in Square::VARIANTS {
+            for square in Square::iter() {
                 let square_bb = BitBoard::from_square(square);
                 let is_passed;
                 let phrasing;
@@ -753,8 +764,8 @@ mod tests {
                     is_passed,
                     concat!(
                         "Bitboard generated from negative diagonal {}!\n",
-                        "diagonal ({:?}):\n{:?}\n",
-                        "square ({:?}):\n{:?}\n"
+                        "diagonal ({}):\n{}\n",
+                        "square ({}):\n{}\n"
                     ),
                     phrasing, diagonal, diagonal_bb, square, square_bb
                 )

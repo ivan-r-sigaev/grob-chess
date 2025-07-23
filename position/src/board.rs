@@ -1,11 +1,13 @@
+use std::fmt;
+
 use crate::bitboard::{BitBoard, File, PosDiag, Rank, Square};
 pub use indexing::{Color, Piece};
-use strum::{EnumCount, VariantArray};
+use strum::{EnumCount, IntoEnumIterator, VariantArray};
 
 mod indexing;
 
 /// Current state of all the pieces on the chess board.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Board {
     /*
     White  = 0,
@@ -320,14 +322,14 @@ impl std::fmt::Debug for Board {
         writeln!(
             f,
             "{{\
-                white: {{\n{:?}}},\n\
-                black: {{\n{:?}}},\n\
-                pawn: {{\n{:?}}},\n\
-                bishop: {{\n{:?}}},\n\
-                knight: {{\n{:?}}},\n\
-                rook: {{\n{:?}}},\n\
-                queen: {{\n{:?}}},\n\
-                king: {{\n{:?}}},\n\
+                white: {{\n{}}},\n\
+                black: {{\n{}}},\n\
+                pawn: {{\n{}}},\n\
+                bishop: {{\n{}}},\n\
+                knight: {{\n{}}},\n\
+                rook: {{\n{}}},\n\
+                queen: {{\n{}}},\n\
+                king: {{\n{}}},\n\
             }}",
             self.get_color(Color::White),
             self.get_color(Color::Black),
@@ -338,6 +340,28 @@ impl std::fmt::Debug for Board {
             self.get_piece(Piece::Queen),
             self.get_piece(Piece::King),
         )
+    }
+}
+
+impl fmt::Display for Board {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut drawing = String::new();
+        for rank in Rank::iter().rev() {
+            drawing += "  ";
+            for file in File::iter() {
+                let sq = Square::new(rank, file);
+                let piece = self.get_piece_at(sq);
+                let color = self.get_color_at(sq);
+                if let Some((color, piece)) = color.zip(piece) {
+                    drawing += &format!("{color}{piece}");
+                } else {
+                    drawing += "__";
+                }
+                drawing += " ";
+            }
+            drawing += "\n"
+        }
+        write!(f, "Chess board {{\n{drawing}}}")
     }
 }
 

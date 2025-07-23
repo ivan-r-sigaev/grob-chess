@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::board::Color;
 use bitflags::bitflags;
 
@@ -83,5 +85,34 @@ impl CastlingRights {
         } else {
             Self::BLACK_QUEEN | Self::BLACK_KING
         }
+    }
+}
+
+impl fmt::Display for CastlingRights {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{}{}",
+            if self.contains(Self::WHITE_KING) {
+                "K"
+            } else {
+                ""
+            },
+            if self.contains(Self::WHITE_QUEEN) {
+                "Q"
+            } else {
+                ""
+            },
+            if self.contains(Self::BLACK_KING) {
+                "k"
+            } else {
+                ""
+            },
+            if self.contains(Self::WHITE_QUEEN) {
+                "q"
+            } else {
+                ""
+            }
+        )
     }
 }

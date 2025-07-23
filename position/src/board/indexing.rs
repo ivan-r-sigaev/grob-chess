@@ -1,6 +1,6 @@
 use crate::bitboard::Rank;
-use std::ops::Not;
-use strum::{EnumCount, FromRepr, VariantArray};
+use std::{fmt, ops::Not};
+use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
 /// Color of a chess piece.
 ///
@@ -13,7 +13,7 @@ use strum::{EnumCount, FromRepr, VariantArray};
 /// assert_eq!(Color::from_repr(1), Some(Color::Black));
 /// ```
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Color {
     White,
     Black,
@@ -105,9 +105,22 @@ impl Not for Color {
     }
 }
 
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Color::White => "w",
+                Color::Black => "b",
+            }
+        )
+    }
+}
+
 /// A type of a chess piece.
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Piece {
     Pawn,
     Bishop,
@@ -115,4 +128,21 @@ pub enum Piece {
     Rook,
     Queen,
     King,
+}
+
+impl fmt::Display for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Piece::Pawn => "p",
+                Piece::Bishop => "b",
+                Piece::Knight => "n",
+                Piece::Rook => "r",
+                Piece::Queen => "q",
+                Piece::King => "k",
+            }
+        )
+    }
 }

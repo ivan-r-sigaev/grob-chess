@@ -1,4 +1,6 @@
-use strum::{EnumCount, FromRepr, VariantArray};
+use std::fmt;
+
+use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
 /// Index of a file on a chess board.
 ///
@@ -20,7 +22,7 @@ use strum::{EnumCount, FromRepr, VariantArray};
 /// # See Also
 /// [Square]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum File {
     A,
     B,
@@ -30,6 +32,25 @@ pub enum File {
     F,
     G,
     H,
+}
+
+impl fmt::Display for File {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                File::A => "a",
+                File::B => "b",
+                File::C => "c",
+                File::D => "d",
+                File::E => "e",
+                File::F => "f",
+                File::G => "g",
+                File::H => "h",
+            }
+        )
+    }
 }
 
 ///  Index of a rank on a chess board.
@@ -52,7 +73,7 @@ pub enum File {
 /// # See Also
 /// [Square]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Rank {
     R1,
     R2,
@@ -62,6 +83,25 @@ pub enum Rank {
     R6,
     R7,
     R8,
+}
+
+impl fmt::Display for Rank {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Rank::R1 => "1",
+                Rank::R2 => "2",
+                Rank::R3 => "3",
+                Rank::R4 => "4",
+                Rank::R5 => "5",
+                Rank::R6 => "6",
+                Rank::R7 => "7",
+                Rank::R8 => "8",
+            }
+        )
+    }
 }
 
 /// Index of a positive (bottom left to top right) diagonal on a chess board.
@@ -91,7 +131,7 @@ pub enum Rank {
 /// # See Also
 /// [Square]
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum PosDiag {
     H1H1 = -(Rank::COUNT as i8) + 1,
     G1H2,
@@ -108,6 +148,32 @@ pub enum PosDiag {
     A6C8,
     A7B8,
     A8A8,
+}
+
+impl fmt::Display for PosDiag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                PosDiag::H1H1 => "h1-h1",
+                PosDiag::G1H2 => "g1-h2",
+                PosDiag::F1H3 => "f1-h3",
+                PosDiag::E1H4 => "e1-h4",
+                PosDiag::D1H5 => "d1-h5",
+                PosDiag::C1H6 => "c1-h6",
+                PosDiag::B1H7 => "b1-h7",
+                PosDiag::A1H8 => "a1-h8",
+                PosDiag::A2G8 => "a2-g8",
+                PosDiag::A3F8 => "a3-f8",
+                PosDiag::A4E8 => "a4-e8",
+                PosDiag::A5D8 => "a5-d8",
+                PosDiag::A6C8 => "a6-c8",
+                PosDiag::A7B8 => "a7-b8",
+                PosDiag::A8A8 => "a8-a8",
+            }
+        )
+    }
 }
 
 /// Index of a negative (top left to bottom right) diagonal on a chess board.
@@ -137,7 +203,7 @@ pub enum PosDiag {
 /// # See Also
 /// [Square]
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum NegDiag {
     A1A1 = -(Rank::COUNT as i8) + 1,
     A2B1,
@@ -156,26 +222,52 @@ pub enum NegDiag {
     H8H8,
 }
 
+impl fmt::Display for NegDiag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                NegDiag::A1A1 => "a1-a1",
+                NegDiag::A2B1 => "a2-b1",
+                NegDiag::A3C1 => "a3-c1",
+                NegDiag::A4D1 => "a4-d1",
+                NegDiag::A5E1 => "a5-e1",
+                NegDiag::A6F1 => "a6-f1",
+                NegDiag::A7G1 => "a7-g1",
+                NegDiag::A8H1 => "a8-h1",
+                NegDiag::B8H2 => "b8-h2",
+                NegDiag::C8H3 => "c8-h3",
+                NegDiag::D8H4 => "d8-h4",
+                NegDiag::E8H5 => "e8-h5",
+                NegDiag::F8H6 => "f8-h6",
+                NegDiag::G8H7 => "g8-h7",
+                NegDiag::H8H8 => "h8-h8",
+            }
+        )
+    }
+}
+
 /// Index of a square on a chess board.
 ///
 /// # Examples
 /// ```rust
-/// use strum::{FromRepr, VariantArray};
+/// use strum::{FromRepr, IntoEnumIterator};
 /// use position::prelude::{Square, Rank, File};
 ///
 /// // Conversion rule to rank/file
-/// for &square in Square::VARIANTS {
+/// for square in Square::iter() {
 ///     assert_eq!(Some(square.rank()), Rank::from_repr(square as u8 / 8));
 ///     assert_eq!(Some(square.file()), File::from_repr(square as u8 % 8));
 /// }
 /// ```
 ///
 /// ```rust
-/// use strum::{FromRepr, VariantArray};
+/// use strum::{FromRepr, IntoEnumIterator};
 /// use position::prelude::{Square, PosDiag, NegDiag};
 ///
 /// // Conversion rule to positive/negative diagonals
-/// for &square in Square::VARIANTS {
+/// for square in Square::iter() {
 ///     let rank = square.rank();
 ///     let file = square.file();
 ///     assert_eq!(Some(square.pos_diag()), PosDiag::from_repr(rank as i8 - file as i8));
@@ -189,7 +281,7 @@ pub enum NegDiag {
 /// [PosDiag]
 /// [NegDiag]
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, VariantArray, FromRepr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Square {
     A1,
     B1,
@@ -344,14 +436,21 @@ impl Square {
     }
 }
 
+impl fmt::Display for Square {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.file(), self.rank())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use strum::IntoEnumIterator;
 
     #[test]
     fn test_square_constructor() {
-        for &rank in Rank::VARIANTS {
-            for &file in File::VARIANTS {
+        for rank in Rank::iter() {
+            for file in File::iter() {
                 let square = Square::new(rank, file);
                 assert_eq!(square.rank(), rank);
                 assert_eq!(square.file(), file);
