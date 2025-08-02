@@ -1,6 +1,4 @@
-pub mod move_list;
-
-use move_list::MoveList;
+use crate::move_list::MoveList;
 use position::prelude::{ChessMove, ChessUnmove};
 use position::prelude::{ParseFenError, Position};
 

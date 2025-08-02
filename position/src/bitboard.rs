@@ -744,7 +744,7 @@ mod tests {
             }
         }
     }
-    
+
     #[test]
     fn test_bitscan() {
         assert_eq!(BitBoard::EMPTY.bit_scan_forward(), None);

@@ -1,10 +1,10 @@
+use super::*;
 use perft::{count_leaves, perft_leaves, PerftValues};
 use position::prelude::Position;
 
 mod perft {
+    use super::*;
     use position::prelude::{ChessMoveHint, Position};
-
-    use crate::game::move_list::MoveList;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct PerftValues {
