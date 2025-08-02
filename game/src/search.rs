@@ -1,14 +1,14 @@
-use crate::game::move_generator::MoveConcept;
 use crate::game::{Game, GameEnding};
 use crate::transposition_table::TranspositionTable;
+use position::prelude::ChessMove;
 
 pub fn evaluate<const TT_SIZE: usize>(game: &mut Game, depth: u8) -> i32 {
-    let mut tt = TranspositionTable::<TT_SIZE, MoveConcept>::new();
+    let mut tt = TranspositionTable::<TT_SIZE, ChessMove>::new();
     negamax(&mut tt, game, -100, 100, depth)
 }
 
 fn negamax<const TT_SIZE: usize>(
-    tt: &mut TranspositionTable<TT_SIZE, MoveConcept>,
+    tt: &mut TranspositionTable<TT_SIZE, ChessMove>,
     game: &mut Game,
     mut alpha: i32,
     beta: i32,
@@ -25,7 +25,7 @@ fn negamax<const TT_SIZE: usize>(
             return alpha;
         }
     }
-    let mut best_move: Option<MoveConcept> = None;
+    let mut best_move: Option<ChessMove> = None;
     match game.for_each_legal_child_node(|node, move_concept| {
         let score = -negamax(tt, node, -beta, -alpha, depth - 1);
         if score >= alpha {

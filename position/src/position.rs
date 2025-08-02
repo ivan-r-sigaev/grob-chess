@@ -451,7 +451,7 @@ impl Position {
     }
 
     /// Sets the amount of moves in the position.
-    /// 
+    ///
     /// # Arguments
     /// `move_index` - the amount of moves in the position
     pub fn set_move_index(&mut self, move_index: u32) {
@@ -459,7 +459,7 @@ impl Position {
     }
 
     /// Sets the move index when 50 move rule was lat broken.
-    /// 
+    ///
     /// # Arguments
     /// `move_index` - the amount of moves in the position
     pub fn set_move_index_rule_50(&mut self, move_index: u32) {
