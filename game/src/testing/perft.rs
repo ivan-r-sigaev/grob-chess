@@ -87,7 +87,7 @@ mod data {
     }
 }
 
-use crate::game::move_generator::*;
+use crate::game::move_list::*;
 
 use position::prelude::*;
 

@@ -1,6 +1,6 @@
-pub mod move_generator;
+pub mod move_list;
 
-use move_generator::MoveList;
+use move_list::MoveList;
 use position::prelude::{ChessMove, ChessUnmove};
 use position::prelude::{ParseFenError, Position};
 
