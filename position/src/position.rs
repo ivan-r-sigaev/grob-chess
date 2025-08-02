@@ -1,7 +1,7 @@
 use crate::bitboard::BitBoard;
 use crate::board::Board;
+use crate::castling_rights::CastlingRights;
 use crate::indexing::{Color, File, Piece, Square};
-pub use castling_rights::CastlingRights;
 
 use std::error::Error;
 use std::fmt::{self, Display};
@@ -11,7 +11,6 @@ use std::ops::Rem;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
 
-mod castling_rights;
 mod zobrist;
 
 /// A chess position.

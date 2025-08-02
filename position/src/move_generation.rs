@@ -2,8 +2,9 @@ use strum::{EnumCount, FromRepr, VariantArray};
 
 use crate::{
     bitboard::BitBoard,
+    castling_rights::CastlingRights,
     indexing::{Color, File, Piece, Rank, Square},
-    position::{CastlingRights, Position},
+    position::Position,
 };
 
 #[repr(u8)]
