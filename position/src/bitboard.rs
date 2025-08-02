@@ -265,14 +265,6 @@ impl BitBoard {
     /// - `Some(square: Square)` - the square with the lowest index
     /// - `None` - if the bitboard is empty
     ///
-    /// # Examples
-    /// ```rust
-    /// use position::prelude::{BitBoard, Square};
-    ///
-    /// assert_eq!(BitBoard::EMPTY.bit_scan_forward(), None);
-    /// assert_eq!(BitBoard::FILLED.bit_scan_forward(), Some(Square::A1));
-    /// ```
-    ///
     /// # See Also
     /// [Square] - to see square's indexes
     #[inline(always)]
@@ -751,5 +743,11 @@ mod tests {
                 )
             }
         }
+    }
+    
+    #[test]
+    fn test_bitscan() {
+        assert_eq!(BitBoard::EMPTY.bit_scan_forward(), None);
+        assert_eq!(BitBoard::FILLED.bit_scan_forward(), Some(Square::A1));
     }
 }
