@@ -1,10 +1,8 @@
 use std::fmt;
 
-use crate::bitboard::{BitBoard, File, PosDiag, Rank, Square};
-pub use indexing::{Color, Piece};
+use crate::bitboard::BitBoard;
+use crate::indexing::{Color, File, Piece, PosDiag, Rank, Square};
 use strum::{EnumCount, IntoEnumIterator, VariantArray};
-
-mod indexing;
 
 /// Current state of all the pieces on the chess board.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]

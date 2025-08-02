@@ -1,8 +1,8 @@
 use strum::{EnumCount, FromRepr, VariantArray};
 
 use crate::{
-    bitboard::{BitBoard, File, Rank, Square},
-    board::{Color, Piece},
+    bitboard::BitBoard,
+    indexing::{Color, File, Piece, Rank, Square},
     position::{CastlingRights, Position},
 };
 

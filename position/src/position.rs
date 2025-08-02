@@ -1,5 +1,6 @@
-use crate::bitboard::{BitBoard, File, Square};
-use crate::board::{Board, Color, Piece};
+use crate::bitboard::BitBoard;
+use crate::board::Board;
+use crate::indexing::{Color, File, Piece, Square};
 pub use castling_rights::CastlingRights;
 
 use std::error::Error;

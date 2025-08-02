@@ -1,4 +1,4 @@
-pub use indexing::{File, NegDiag, PosDiag, Rank, Square};
+use crate::indexing::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,
@@ -8,8 +8,6 @@ use std::{
     },
 };
 use strum::EnumCount;
-
-mod indexing;
 
 /// A [bitboard]. Wraps u64 occupancy mask.
 ///
