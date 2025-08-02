@@ -20,7 +20,8 @@ pub struct Position {
     turn: Color,
     castling_rights: CastlingRights,
     en_passant: Option<File>,
-    halfmove_clock: u32,
+    move_index_rule_50: u32,
+    move_index: u32,
     zobrist_hash: u64,
     //piece_scores: [PieceScore; 2],
 }
@@ -33,6 +34,7 @@ impl PartialEq for Position {
         && self.turn == other.turn
         && self.castling_rights == other.castling_rights
         && self.en_passant == other.en_passant
+        // Should this compare move_index and halfmove_index?
     }
 }
 
@@ -44,7 +46,8 @@ impl Hash for Position {
         self.turn.hash(state);
         self.castling_rights.hash(state);
         self.en_passant.hash(state);
-        self.halfmove_clock.hash(state);
+        self.move_index_rule_50.hash(state);
+        self.move_index.hash(state);
         self.zobrist_hash.hash(state);
     }
 }
@@ -234,6 +237,8 @@ impl Position {
         if fm.is_err() {
             return Err(ParseFenError::BadFullmoveClock);
         }
+        let move_index = fm.unwrap();
+        let halfmove_index = move_index - halfmove_clock;
 
         // let piece_scores: [PieceScore; 2] = [
         //     board.get_piece_score(Color::try_from(0)),
@@ -245,7 +250,8 @@ impl Position {
             turn,
             castling_rights,
             en_passant,
-            halfmove_clock,
+            move_index,
+            move_index_rule_50: halfmove_index,
             zobrist_hash,
             //piece_scores,
         })
@@ -328,16 +334,24 @@ impl Position {
         self.turn
     }
 
-    /// Returns the current state of the [halfmove clock].
+    /// Returns number of moves when 50 move rule was last broken.
     ///
     /// # Returns
-    /// `u32` - the current amount of halfmoves
-    ///
-    /// [halfmove clock]: https://www.chessprogramming.org/Halfmove_Clock
+    /// `u32` - the number of moves
     #[inline(always)]
     #[must_use]
-    pub fn halfmove_clock(&self) -> u32 {
-        self.halfmove_clock
+    pub fn move_index_rule_50(&self) -> u32 {
+        self.move_index_rule_50
+    }
+
+    /// Returns the number of moves in position so far.
+    ///
+    /// # Returns
+    /// `u32` - the number of moves in position
+    #[inline(always)]
+    #[must_use]
+    pub fn move_index(&self) -> u32 {
+        self.move_index
     }
 }
 
@@ -436,15 +450,20 @@ impl Position {
         self.turn = turn;
     }
 
-    /// Sets the current state of [halfmove clock].
-    ///
+    /// Sets the amount of moves in the position.
+    /// 
     /// # Arguments
-    /// `halfmove_clock` - the amount of halfmoves
-    ///
-    /// [halfmove clock]: https://www.chessprogramming.org/Halfmove_Clock
-    #[inline(always)]
-    pub fn set_halfmove_clock(&mut self, halfmove_clock: u32) {
-        self.halfmove_clock = halfmove_clock;
+    /// `move_index` - the amount of moves in the position
+    pub fn set_move_index(&mut self, move_index: u32) {
+        self.move_index = move_index;
+    }
+
+    /// Sets the move index when 50 move rule was lat broken.
+    /// 
+    /// # Arguments
+    /// `move_index` - the amount of moves in the position
+    pub fn set_move_index_rule_50(&mut self, move_index: u32) {
+        self.move_index_rule_50 = move_index;
     }
 }
 
@@ -457,7 +476,7 @@ impl fmt::Display for Position {
                 "  turn: {}\n",
                 "  castling rights: {}\n",
                 "  available en passant: {}\n",
-                "  moves since last capture/pawn move/check: {}\n",
+                "  moves since last capture/pawn move: {}\n",
                 "  hash: {}\n",
                 "  board: {}\n}}"
             ),
@@ -468,7 +487,7 @@ impl fmt::Display for Position {
             } else {
                 "N/A"
             },
-            self.halfmove_clock,
+            self.move_index - self.move_index_rule_50,
             self.zobrist_hash,
             self.board,
         )

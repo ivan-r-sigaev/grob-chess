@@ -90,7 +90,7 @@ pub struct UnmoveConcept {
     capture: Option<Piece>,
     en_passant: Option<File>,
     castling_rights: CastlingRights,
-    halfmove_clock: u32,
+    move_index_rule_50: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -444,7 +444,8 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
     let capture;
     let en_passant = pos.en_passant();
     let castling_rights = pos.castling_rights();
-    let halfmove_clock = pos.halfmove_clock();
+    let halfmove_index = pos.move_index_rule_50();
+    pos.set_move_index(pos.move_index() + 1);
 
     match hint {
         MoveHint::Quiet => {
@@ -455,11 +456,9 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(if piece == Piece::Pawn {
-                0
-            } else {
-                pos.halfmove_clock() + 1
-            });
+            if piece == Piece::Pawn {
+                pos.set_move_index_rule_50(pos.move_index());
+            }
 
             if piece == Piece::King {
                 pos.set_castling_rights(
@@ -495,7 +494,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::DoublePawn => {
             capture = None;
             pos.set_en_passant(Some(from.file()));
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.add_color_piece(pos.turn(), Piece::Pawn, to);
@@ -503,7 +502,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::BishopPromotion => {
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.add_color_piece(pos.turn(), Piece::Bishop, to);
@@ -511,7 +510,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::KnightPromotion => {
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.add_color_piece(pos.turn(), Piece::Knight, to);
@@ -519,7 +518,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::RookPromotion => {
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.add_color_piece(pos.turn(), Piece::Rook, to);
@@ -527,7 +526,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::QueenPromotion => {
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.add_color_piece(pos.turn(), Piece::Queen, to);
@@ -544,7 +543,6 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = Some(captured_piece);
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(pos.halfmove_clock() + 1);
 
             if piece == Piece::King {
                 pos.set_castling_rights(
@@ -581,7 +579,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::EnPassantCapture => {
             capture = Some(Piece::Pawn);
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.remove_color_piece(
@@ -599,7 +597,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = Some(captured_piece);
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.remove_color_piece(!pos.turn(), captured_piece, to);
@@ -613,7 +611,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = Some(captured_piece);
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.remove_color_piece(!pos.turn(), captured_piece, to);
@@ -627,7 +625,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = Some(captured_piece);
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.remove_color_piece(!pos.turn(), captured_piece, to);
@@ -641,7 +639,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
 
             capture = Some(captured_piece);
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(0);
+            pos.set_move_index_rule_50(pos.move_index());
 
             pos.remove_color_piece(pos.turn(), Piece::Pawn, from);
             pos.remove_color_piece(!pos.turn(), captured_piece, to);
@@ -650,7 +648,6 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::KingCastle => {
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(pos.halfmove_clock() + 1);
             pos.set_castling_rights(
                 pos.castling_rights() & !CastlingRights::both_sides(pos.turn()),
             );
@@ -680,7 +677,6 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         MoveHint::QueenCastle => {
             capture = None;
             pos.set_en_passant(None);
-            pos.set_halfmove_clock(pos.halfmove_clock() + 1);
             pos.set_castling_rights(
                 pos.castling_rights() & !CastlingRights::both_sides(pos.turn()),
             );
@@ -716,7 +712,7 @@ pub fn make_move(pos: &mut Position, move_concept: MoveConcept) -> UnmoveConcept
         capture,
         en_passant,
         castling_rights,
-        halfmove_clock,
+        move_index_rule_50: halfmove_index,
     }
 }
 
@@ -724,7 +720,8 @@ pub fn unmake_move(board: &mut Position, unmove_concept: UnmoveConcept) {
     board.set_turn(!board.turn());
     board.set_castling_rights(unmove_concept.castling_rights);
     board.set_en_passant(unmove_concept.en_passant);
-    board.set_halfmove_clock(unmove_concept.halfmove_clock);
+    board.set_move_index_rule_50(unmove_concept.move_index_rule_50);
+    board.set_move_index(board.move_index() - 1);
 
     let from = unmove_concept.move_concept.from();
     let to = unmove_concept.move_concept.to();
