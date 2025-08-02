@@ -82,3 +82,6 @@ impl MoveList {
         self.len = 0;
     }
 }
+
+#[cfg(test)]
+mod tests;
