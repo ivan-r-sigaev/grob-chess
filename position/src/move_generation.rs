@@ -7,6 +7,7 @@ use crate::{
     position::Position,
 };
 
+/// A hint for the move generator as to what kind of move is happening.
 #[repr(u8)]
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, FromRepr, EnumCount, VariantArray,
@@ -29,11 +30,19 @@ pub enum ChessMoveHint {
 }
 
 impl ChessMoveHint {
+    /// Is this move a capture.
+    /// 
+    /// # Returns
+    /// `bool` - is this move a capture.
     #[inline(always)]
     #[must_use]
     pub fn is_capture(self) -> bool {
         self as u8 & 0b100 != 0
     }
+    /// Is this move a promotion.
+    /// 
+    /// # Returns
+    /// `bool` - is this move a promotion.
     #[inline(always)]
     #[must_use]
     pub fn is_promotion(self) -> bool {
@@ -41,6 +50,7 @@ impl ChessMoveHint {
     }
 }
 
+/// Contains data needed to make a move from a given position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChessMove {
     pub to: Square,
@@ -48,6 +58,7 @@ pub struct ChessMove {
     pub hint: ChessMoveHint,
 }
 
+/// Contains data needed to rollback a move from after making it.
 #[derive(Debug, Clone, Copy)]
 pub struct ChessUnmove {
     chess_move: ChessMove,
@@ -60,6 +71,10 @@ pub struct ChessUnmove {
 }
 
 impl Position {
+    /// Generate pseudo-legal king moves from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_king_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let from = self
             .board()
@@ -84,6 +99,10 @@ impl Position {
             });
         }
     }
+    /// Generate pseudo-legal knight moves from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_knight_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
         let empty = !self.board().get_occupance();
@@ -108,6 +127,10 @@ impl Position {
             }
         }
     }
+    /// Generate pseudo-legal bishop-like moves from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_bishop_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
         let occ = self.board().get_occupance();
@@ -132,6 +155,10 @@ impl Position {
             }
         }
     }
+    /// Generate pseudo-legal rook-like moves from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_rook_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
         let occ = self.board().get_occupance();
@@ -156,6 +183,10 @@ impl Position {
             }
         }
     }
+    /// Generate pseudo-legal quiet pawn moves from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_pawn_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let empty = !self.board().get_occupance();
         let mut single_pushes = BitBoard::pawn_pushes(
@@ -222,6 +253,10 @@ impl Position {
             });
         }
     }
+    /// Generate pseudo-legal pawn captures from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_pawn_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
 
@@ -282,6 +317,10 @@ impl Position {
             }
         }
     }
+    /// Generate pseudo-legal castling moves from this position.
+    /// 
+    /// # Arguments
+    /// `push_move` - a closure that accepts generated moves.
     pub fn push_castlings(&self, push_move: &mut impl FnMut(ChessMove)) {
         if self.board().is_king_in_check(self.turn()) {
             return;
@@ -321,8 +360,15 @@ impl Position {
 }
 
 impl Position {
+    /// Returns whether a given chess move is at least pseudo-legal in this position.
+    /// 
+    /// # Arguments
+    /// `chess_move` - the move to check.
+    /// 
+    /// # Returns
+    /// `bool` - whether the move is at least pseudo-legal.
     #[must_use]
-    pub fn can_make_move(&self, chess_move: ChessMove) -> bool {
+    pub fn is_move_applicable(&self, chess_move: ChessMove) -> bool {
         let from = chess_move.from;
         let to = chess_move.to;
         let hint = chess_move.hint;
@@ -425,9 +471,23 @@ impl Position {
         }
     }
 
+    /// Makes a chess move.
+    /// 
+    /// # Preconditions
+    /// 
+    /// - `chess_move` must be at least pseduo-legal for this position.
+    /// 
+    /// WARNING: Violating the preconditions may silently corrupt position state!
+    /// 
+    /// # Arguments
+    /// `chess_move` - the move to make.
+    /// 
+    /// # Returns
+    /// `ChessUnmove` - the data to rollback the move
     #[must_use]
     pub fn make_move(&mut self, chess_move: ChessMove) -> ChessUnmove {
-        debug_assert!(self.can_make_move(chess_move), "buerak -> {chess_move:?}");
+        // TODO: this check may slow the program down.
+        debug_assert!(self.is_move_applicable(chess_move), "{chess_move:?} is not applicable!");
 
         let from = chess_move.from;
         let to = chess_move.to;
@@ -707,17 +767,26 @@ impl Position {
             move_index_rule_50: halfmove_index,
         }
     }
-
-    pub fn unmake_move(&mut self, unmove_concept: ChessUnmove) {
+    /// Rolls back a move.
+    /// 
+    /// # Preconditions
+    /// 
+    /// - `chess_unmove` must have had been generated from the same move as this position.
+    /// 
+    /// WARNING: Violating the preconditions may silently corrupt position state!
+    /// 
+    /// # Arguments
+    /// `chess_unmove` - the data to rollback the move
+    pub fn unmake_move(&mut self, chess_unmove: ChessUnmove) {
         self.set_turn(!self.turn());
-        self.set_castling_rights(unmove_concept.castling_rights);
-        self.set_en_passant(unmove_concept.en_passant);
-        self.set_move_index_rule_50(unmove_concept.move_index_rule_50);
+        self.set_castling_rights(chess_unmove.castling_rights);
+        self.set_en_passant(chess_unmove.en_passant);
+        self.set_move_index_rule_50(chess_unmove.move_index_rule_50);
         self.set_move_index(self.move_index() - 1);
 
-        let from = unmove_concept.chess_move.from;
-        let to = unmove_concept.chess_move.to;
-        let hint = unmove_concept.chess_move.hint;
+        let from = chess_unmove.chess_move.from;
+        let to = chess_unmove.chess_move.to;
+        let hint = chess_unmove.chess_move.hint;
 
         match hint {
             ChessMoveHint::Quiet => {
@@ -754,7 +823,7 @@ impl Position {
                     .board()
                     .get_piece_at(to)
                     .expect("faulty unmove concept: to is empty");
-                let captured_piece = unmove_concept
+                let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
@@ -772,7 +841,7 @@ impl Position {
                 self.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::KnightPromotionCapture => {
-                let captured_piece = unmove_concept
+                let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
@@ -781,7 +850,7 @@ impl Position {
                 self.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::BishopPromotionCapture => {
-                let captured_piece = unmove_concept
+                let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
@@ -790,7 +859,7 @@ impl Position {
                 self.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::RookPromotionCapture => {
-                let captured_piece = unmove_concept
+                let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
@@ -799,7 +868,7 @@ impl Position {
                 self.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::QueenPromotionCapture => {
-                let captured_piece = unmove_concept
+                let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 

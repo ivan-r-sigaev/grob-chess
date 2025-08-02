@@ -41,7 +41,7 @@ impl Game {
     where
         F: FnMut(&mut Self, ChessMove),
     {
-        if !self.pos.can_make_move(move_concept) {
+        if !self.pos.is_move_applicable(move_concept) {
             return false;
         }
 
@@ -93,7 +93,7 @@ impl Game {
     }
     #[must_use]
     pub fn try_make_move(mut self, move_concept: ChessMove) -> (Self, bool) {
-        if !self.pos.can_make_move(move_concept) {
+        if !self.pos.is_move_applicable(move_concept) {
             return (self, false);
         }
 
