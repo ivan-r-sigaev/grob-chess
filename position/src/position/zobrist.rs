@@ -1,6 +1,5 @@
-use crate::bitboard::{File, Square};
-use crate::board::{Color, Piece};
-use crate::position::CastlingRights;
+use crate::castling_rights::CastlingRights;
+use crate::indexing::{Color, File, Piece, Square};
 
 use const_random::const_random;
 

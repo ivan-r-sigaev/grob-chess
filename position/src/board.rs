@@ -1,14 +1,12 @@
 use std::fmt;
 
-use crate::bitboard::{BitBoard, File, PosDiag, Rank, Square};
-pub use indexing::{Color, Piece};
+use crate::bitboard::BitBoard;
+use crate::indexing::{Color, File, Piece, PosDiag, Rank, Square};
 use strum::{EnumCount, IntoEnumIterator, VariantArray};
-
-mod indexing;
 
 /// Current state of all the pieces on the chess board.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Board {
+pub(crate) struct Board {
     /*
     White  = 0,
     Black  = 1,
@@ -148,26 +146,26 @@ impl Board {
         }
     }
 
-    /// Returns the bitboard with all the pieces that attack (put pressure on) the given square.
-    ///
-    /// # Arguments
-    /// * `sq` - the given square
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the pieces that attack (put pressure on) the given square
-    #[inline(always)]
-    #[must_use]
-    pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
-        let occ = self.get_occupance();
+    // /// Returns the bitboard with all the pieces that attack (put pressure on) the given square.
+    // ///
+    // /// # Arguments
+    // /// * `sq` - the given square
+    // ///
+    // /// # Returns
+    // /// `BitBoard` - the bitboard with all the pieces that attack (put pressure on) the given square
+    // #[inline(always)]
+    // #[must_use]
+    // pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
+    //     let occ = self.get_occupance();
 
-        BitBoard::pawn_attacks(sq, Color::White) & self.get_color_piece(Color::Black, Piece::Pawn)
-            | BitBoard::pawn_attacks(sq, Color::Black)
-                & self.get_color_piece(Color::White, Piece::Pawn)
-            | BitBoard::knight_attacks(sq) & self.get_piece(Piece::Knight)
-            | BitBoard::king_attacks(sq) & self.get_piece(Piece::King)
-            | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
-            | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
-    }
+    //     BitBoard::pawn_attacks(sq, Color::White) & self.get_color_piece(Color::Black, Piece::Pawn)
+    //         | BitBoard::pawn_attacks(sq, Color::Black)
+    //             & self.get_color_piece(Color::White, Piece::Pawn)
+    //         | BitBoard::knight_attacks(sq) & self.get_piece(Piece::Knight)
+    //         | BitBoard::king_attacks(sq) & self.get_piece(Piece::King)
+    //         | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
+    //         | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
+    // }
 
     /// Returns the bitboard with all the pieces of a given color that attack (put pressure on) the given square.
     ///
@@ -262,7 +260,8 @@ impl Board {
 impl Board {
     /// Places (or replaces) pieces of the given color on the squares specified by the mask with the given piece type.
     ///
-    /// # Safety
+    /// # Preconditions
+    ///
     /// The user of the function is responsible for not trying to overwrite the squares that contain
     /// the opposite color, which will result in doubly colored pieces.
     ///
@@ -278,7 +277,8 @@ impl Board {
 
     /// Removes all pieces of the given color and type on the squares NOT specified by the mask.
     ///
-    /// # Safety
+    /// # Preconditions
+    ///
     /// The user of the function is responsible for not trying to remove the pieces of a different color
     /// than specified by the mask, which will result in colored squares without a piece type.
     ///
@@ -294,7 +294,8 @@ impl Board {
 
     /// Toggles all the pieces of the given color and type on the squares specified by the mask.
     ///
-    /// # Safety
+    /// # Preconditions
+    ///
     /// The user of the function is responsible for not trying to toggle the pieces of a different color
     /// or a different piece type than specified by the mask, which will result in one of the following:
     /// - multicolored pieces

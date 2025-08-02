@@ -1,6 +1,7 @@
-use crate::bitboard::{BitBoard, File, Square};
-use crate::board::{Board, Color, Piece};
-pub use castling_rights::CastlingRights;
+use crate::bitboard::BitBoard;
+use crate::board::Board;
+use crate::castling_rights::CastlingRights;
+use crate::indexing::{Color, File, Piece, Square};
 
 use std::error::Error;
 use std::fmt::{self, Display};
@@ -10,7 +11,6 @@ use std::ops::Rem;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
 
-mod castling_rights;
 mod zobrist;
 
 /// A chess position.
@@ -20,7 +20,8 @@ pub struct Position {
     turn: Color,
     castling_rights: CastlingRights,
     en_passant: Option<File>,
-    halfmove_clock: u32,
+    move_index_rule_50: u32,
+    move_index: u32,
     zobrist_hash: u64,
     //piece_scores: [PieceScore; 2],
 }
@@ -33,6 +34,7 @@ impl PartialEq for Position {
         && self.turn == other.turn
         && self.castling_rights == other.castling_rights
         && self.en_passant == other.en_passant
+        // Should this compare move_index and halfmove_index?
     }
 }
 
@@ -44,7 +46,8 @@ impl Hash for Position {
         self.turn.hash(state);
         self.castling_rights.hash(state);
         self.en_passant.hash(state);
-        self.halfmove_clock.hash(state);
+        self.move_index_rule_50.hash(state);
+        self.move_index.hash(state);
         self.zobrist_hash.hash(state);
     }
 }
@@ -234,6 +237,8 @@ impl Position {
         if fm.is_err() {
             return Err(ParseFenError::BadFullmoveClock);
         }
+        let move_index = fm.unwrap();
+        let halfmove_index = move_index - halfmove_clock;
 
         // let piece_scores: [PieceScore; 2] = [
         //     board.get_piece_score(Color::try_from(0)),
@@ -245,7 +250,8 @@ impl Position {
             turn,
             castling_rights,
             en_passant,
-            halfmove_clock,
+            move_index,
+            move_index_rule_50: halfmove_index,
             zobrist_hash,
             //piece_scores,
         })
@@ -314,7 +320,7 @@ impl Position {
     /// `Board` - a reference to the position's board
     #[inline(always)]
     #[must_use]
-    pub fn board(&self) -> &Board {
+    pub(crate) fn board(&self) -> &Board {
         &self.board
     }
 
@@ -328,16 +334,38 @@ impl Position {
         self.turn
     }
 
-    /// Returns the current state of the [halfmove clock].
+    /// Returns number of moves when 50 move rule was last broken.
     ///
     /// # Returns
-    /// `u32` - the current amount of halfmoves
-    ///
-    /// [halfmove clock]: https://www.chessprogramming.org/Halfmove_Clock
+    /// `u32` - the number of moves
     #[inline(always)]
     #[must_use]
-    pub fn halfmove_clock(&self) -> u32 {
-        self.halfmove_clock
+    pub fn move_index_rule_50(&self) -> u32 {
+        self.move_index_rule_50
+    }
+
+    /// Returns the number of moves in position so far.
+    ///
+    /// # Returns
+    /// `u32` - the number of moves in position
+    #[inline(always)]
+    #[must_use]
+    pub fn move_index(&self) -> u32 {
+        self.move_index
+    }
+
+    /// Returns whether the king of the playing player is currently in check.
+    ///
+    /// `bool` - whether the king is currently in check
+    pub fn is_check(&self) -> bool {
+        self.board.is_king_in_check(self.turn())
+    }
+
+    /// Returns whether the king of the opponent player is currently in check.
+    ///
+    /// `bool` - whether the king is currently in check
+    pub fn was_check_ignored(&self) -> bool {
+        self.board.is_king_in_check(!self.turn())
     }
 }
 
@@ -436,113 +464,20 @@ impl Position {
         self.turn = turn;
     }
 
-    /// Sets the current state of [halfmove clock].
+    /// Sets the amount of moves in the position.
     ///
     /// # Arguments
-    /// `halfmove_clock` - the amount of halfmoves
-    ///
-    /// [halfmove clock]: https://www.chessprogramming.org/Halfmove_Clock
-    #[inline(always)]
-    pub fn set_halfmove_clock(&mut self, halfmove_clock: u32) {
-        self.halfmove_clock = halfmove_clock;
-    }
-}
-
-impl Position {
-    /// Returns whether kingside castling is NOT allowed for a given color.
-    ///
-    /// # Returns
-    /// `bool` - whether kingside castling is NOT allowed for a given color
-    #[inline(always)]
-    #[must_use]
-    pub fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
-        // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty = BitBoard::from(Square::F1) | BitBoard::from(Square::G1);
-        let b_empty = BitBoard::from(Square::F8) | BitBoard::from(Square::G8);
-        !self
-            .castling_rights
-            .contains(CastlingRights::kingside(self.turn))
-            || (self.board.get_color_piece(color, Piece::Rook)
-                & BitBoard::from(if color == Color::White {
-                    Square::H1
-                } else {
-                    Square::H8
-                }))
-            .is_empty()
-            || !(self.board.get_occupance()
-                & if color == Color::White {
-                    w_empty
-                } else {
-                    b_empty
-                })
-            .is_empty()
-            || !(self.board.get_color_attackers_to(
-                if color == Color::White {
-                    Square::F1
-                } else {
-                    Square::F8
-                },
-                !color,
-            ))
-            .is_empty()
-            || !(self.board.get_color_attackers_to(
-                if color == Color::White {
-                    Square::G1
-                } else {
-                    Square::G8
-                },
-                !color,
-            ))
-            .is_empty()
+    /// `move_index` - the amount of moves in the position
+    pub fn set_move_index(&mut self, move_index: u32) {
+        self.move_index = move_index;
     }
 
-    /// Returns whether queenside castling is NOT allowed for a given color.
+    /// Sets the move index when 50 move rule was lat broken.
     ///
-    /// # Returns
-    /// `bool` - whether queenside castling is NOT allowed for a given color
-    #[inline(always)]
-    #[must_use]
-    pub fn is_queenside_castling_prohibited(&self, color: Color) -> bool {
-        // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty =
-            BitBoard::from(Square::B1) | BitBoard::from(Square::C1) | BitBoard::from(Square::D1);
-        let b_empty =
-            BitBoard::from(Square::B8) | BitBoard::from(Square::C8) | BitBoard::from(Square::D8);
-        !self
-            .castling_rights
-            .contains(CastlingRights::queenside(self.turn))
-            || (self.board.get_color_piece(color, Piece::Rook)
-                & BitBoard::from(if color == Color::White {
-                    Square::A1
-                } else {
-                    Square::A8
-                }))
-            .is_empty()
-            || !(self.board.get_occupance()
-                & if color == Color::White {
-                    w_empty
-                } else {
-                    b_empty
-                })
-            .is_empty()
-            || !(self.board.get_color_attackers_to(
-                if color == Color::White {
-                    Square::C1
-                } else {
-                    Square::C8
-                },
-                !color,
-            ))
-            .is_empty()
-            || !(self.board.get_color_attackers_to(
-                if color == Color::White {
-                    Square::D1
-                } else {
-                    Square::D8
-                },
-                !color,
-            ))
-            .is_empty()
+    /// # Arguments
+    /// `move_index` - the amount of moves in the position
+    pub fn set_move_index_rule_50(&mut self, move_index: u32) {
+        self.move_index_rule_50 = move_index;
     }
 }
 
@@ -555,7 +490,7 @@ impl fmt::Display for Position {
                 "  turn: {}\n",
                 "  castling rights: {}\n",
                 "  available en passant: {}\n",
-                "  moves since last capture/pawn move/check: {}\n",
+                "  moves since last capture/pawn move: {}\n",
                 "  hash: {}\n",
                 "  board: {}\n}}"
             ),
@@ -566,7 +501,7 @@ impl fmt::Display for Position {
             } else {
                 "N/A"
             },
-            self.halfmove_clock,
+            self.move_index - self.move_index_rule_50,
             self.zobrist_hash,
             self.board,
         )

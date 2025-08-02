@@ -1,4 +1,4 @@
-pub use indexing::{File, NegDiag, PosDiag, Rank, Square};
+use crate::indexing::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,
@@ -9,14 +9,12 @@ use std::{
 };
 use strum::EnumCount;
 
-mod indexing;
-
 /// A [bitboard]. Wraps u64 occupancy mask.
 ///
 /// # See Also
 /// [bitboard]: https://www.chessprogramming.org/Bitboard_Board-Definition
 #[derive(Debug, Clone, Copy)]
-pub struct BitBoard(pub u64);
+pub(crate) struct BitBoard(pub u64);
 
 impl BitBoard {
     /// Empty bitboard.
@@ -100,15 +98,6 @@ impl BitBoard {
             .bitor(BitBoard::from_square(Square::G2))
             .bitor(BitBoard::from_square(Square::H1));
         DIAG_A8H1.genshift(diag as i8 * File::COUNT as i8)
-    }
-
-    /// `const` version of `IntoIterator::into_iter`.
-    ///
-    /// Behaves exactly the same as `<Self as IntoIterator>::into_iter`.
-    #[inline(always)]
-    #[must_use]
-    pub const fn into_iter(self) -> <Self as IntoIterator>::IntoIter {
-        self
     }
 
     /// `const` version of `Iterator::next`.
@@ -198,15 +187,6 @@ impl BitBoard {
         self.0 == rhs.0
     }
 
-    /// `const` version of `std::ops::PartialEq::mul`.
-    ///
-    /// Behaves exactly the same as `<Self as PartialEq>::ne`.
-    #[inline(always)]
-    #[must_use]
-    pub const fn ne(&self, rhs: &Self) -> bool {
-        !self.eq(rhs)
-    }
-
     /// `const` version of `std::ops::BitAndAssign<Self>::bitand_assign`.
     ///
     /// Behaves exactly the same as `<Self as BitAndAssign<Self>>::bitand_assign`.
@@ -284,14 +264,6 @@ impl BitBoard {
     /// `Option<Square>`:
     /// - `Some(square: Square)` - the square with the lowest index
     /// - `None` - if the bitboard is empty
-    ///
-    /// # Examples
-    /// ```rust
-    /// use position::prelude::{BitBoard, Square};
-    ///
-    /// assert_eq!(BitBoard::EMPTY.bit_scan_forward(), None);
-    /// assert_eq!(BitBoard::FILLED.bit_scan_forward(), Some(Square::A1));
-    /// ```
     ///
     /// # See Also
     /// [Square] - to see square's indexes
@@ -771,5 +743,11 @@ mod tests {
                 )
             }
         }
+    }
+
+    #[test]
+    fn test_bitscan() {
+        assert_eq!(BitBoard::EMPTY.bit_scan_forward(), None);
+        assert_eq!(BitBoard::FILLED.bit_scan_forward(), Some(Square::A1));
     }
 }

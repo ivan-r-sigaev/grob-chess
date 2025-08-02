@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::board::Color;
+use crate::indexing::Color;
 use bitflags::bitflags;
 
 bitflags! {
