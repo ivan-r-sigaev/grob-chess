@@ -153,7 +153,7 @@ fn can_move(position: &mut Position, move_list: &mut MoveGenerator) -> bool {
     while let Some(next_move) = move_list.pop_move() {
         let unmove = position.make_move(next_move);
 
-        if !position.board().is_king_in_check(!position.turn()) {
+        if !position.was_check_ignored() {
             position.unmake_move(unmove);
             move_list.pop_group();
             return true;
@@ -173,7 +173,7 @@ fn count_legal_moves(position: &mut Position, move_list: &mut MoveGenerator, dep
     while let Some(next_move) = move_list.pop_move() {
         let unmove = position.make_move(next_move);
 
-        if !position.board().is_king_in_check(!position.turn()) {
+        if !position.was_check_ignored() {
             if depth == 0 {
                 count += 1;
             } else {
@@ -234,10 +234,10 @@ fn collect_perft(
     while let Some(next_move) = move_list.pop_move() {
         let unmove = position.make_move(next_move);
 
-        if !position.board().is_king_in_check(!position.turn()) {
+        if !position.was_check_ignored() {
             if depth == 0 {
                 data.add_move(next_move.hint);
-                if position.board().is_king_in_check(position.turn()) {
+                if position.is_check() {
                     data.add_check();
                     if !can_move(position, move_list) {
                         data.add_checkmate();

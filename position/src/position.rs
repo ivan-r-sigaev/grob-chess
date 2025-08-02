@@ -320,7 +320,7 @@ impl Position {
     /// `Board` - a reference to the position's board
     #[inline(always)]
     #[must_use]
-    pub fn board(&self) -> &Board {
+    pub(crate) fn board(&self) -> &Board {
         &self.board
     }
 
@@ -352,6 +352,20 @@ impl Position {
     #[must_use]
     pub fn move_index(&self) -> u32 {
         self.move_index
+    }
+
+    /// Returns whether the king of the playing player is currently in check.
+    ///
+    /// `bool` - whether the king is currently in check
+    pub fn is_check(&self) -> bool {
+        self.board.is_king_in_check(self.turn())
+    }
+
+    /// Returns whether the king of the opponent player is currently in check.
+    ///
+    /// `bool` - whether the king is currently in check
+    pub fn was_check_ignored(&self) -> bool {
+        self.board.is_king_in_check(!self.turn())
     }
 }
 

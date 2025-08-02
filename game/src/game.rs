@@ -46,7 +46,7 @@ impl Game {
         }
 
         let unmove = self.pos.make_move(move_concept);
-        let is_legal = !self.pos.board().is_king_in_check(!self.pos.turn());
+        let is_legal = !self.pos.was_check_ignored();
         if is_legal {
             op(self, move_concept);
         }
@@ -65,7 +65,7 @@ impl Game {
         while let Some(next_move) = self.move_list.pop_move() {
             let unmove = self.pos.make_move(next_move);
 
-            if !self.pos.board().is_king_in_check(!self.pos.turn()) {
+            if !self.pos.was_check_ignored() {
                 has_moves = true;
                 op(self, next_move);
             }
@@ -77,7 +77,7 @@ impl Game {
 
         if has_moves {
             None
-        } else if self.pos.board().is_king_in_check(self.pos.turn()) {
+        } else if self.pos.is_check() {
             Some(GameEnding::Checkmate)
         } else {
             Some(GameEnding::Stalemate)
@@ -98,7 +98,7 @@ impl Game {
         }
 
         let unmove = self.pos.make_move(move_concept);
-        if self.pos.board().is_king_in_check(!self.pos.turn()) {
+        if self.pos.was_check_ignored() {
             self.pos.unmake_move(unmove);
             return (self, false);
         }

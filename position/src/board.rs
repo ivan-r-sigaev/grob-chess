@@ -6,7 +6,7 @@ use strum::{EnumCount, IntoEnumIterator, VariantArray};
 
 /// Current state of all the pieces on the chess board.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Board {
+pub(crate) struct Board {
     /*
     White  = 0,
     Black  = 1,
@@ -146,26 +146,26 @@ impl Board {
         }
     }
 
-    /// Returns the bitboard with all the pieces that attack (put pressure on) the given square.
-    ///
-    /// # Arguments
-    /// * `sq` - the given square
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the pieces that attack (put pressure on) the given square
-    #[inline(always)]
-    #[must_use]
-    pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
-        let occ = self.get_occupance();
+    // /// Returns the bitboard with all the pieces that attack (put pressure on) the given square.
+    // ///
+    // /// # Arguments
+    // /// * `sq` - the given square
+    // ///
+    // /// # Returns
+    // /// `BitBoard` - the bitboard with all the pieces that attack (put pressure on) the given square
+    // #[inline(always)]
+    // #[must_use]
+    // pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
+    //     let occ = self.get_occupance();
 
-        BitBoard::pawn_attacks(sq, Color::White) & self.get_color_piece(Color::Black, Piece::Pawn)
-            | BitBoard::pawn_attacks(sq, Color::Black)
-                & self.get_color_piece(Color::White, Piece::Pawn)
-            | BitBoard::knight_attacks(sq) & self.get_piece(Piece::Knight)
-            | BitBoard::king_attacks(sq) & self.get_piece(Piece::King)
-            | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
-            | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
-    }
+    //     BitBoard::pawn_attacks(sq, Color::White) & self.get_color_piece(Color::Black, Piece::Pawn)
+    //         | BitBoard::pawn_attacks(sq, Color::Black)
+    //             & self.get_color_piece(Color::White, Piece::Pawn)
+    //         | BitBoard::knight_attacks(sq) & self.get_piece(Piece::Knight)
+    //         | BitBoard::king_attacks(sq) & self.get_piece(Piece::King)
+    //         | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
+    //         | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
+    // }
 
     /// Returns the bitboard with all the pieces of a given color that attack (put pressure on) the given square.
     ///
