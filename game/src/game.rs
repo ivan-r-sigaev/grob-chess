@@ -1,13 +1,13 @@
 pub mod move_generator;
 
-use move_generator::MoveGenerator;
+use move_generator::MoveList;
 use position::prelude::{ChessMove, ChessUnmove};
 use position::prelude::{ParseFenError, Position};
 
 #[derive(Debug, Clone)]
 pub struct Game {
     pos: Position,
-    move_list: MoveGenerator,
+    move_list: MoveList,
     history: Vec<PlyHistory>,
 }
 
@@ -27,7 +27,7 @@ impl Game {
     pub fn try_from_fen(fen: &str) -> Result<Game, ParseFenError> {
         Ok(Game {
             pos: Position::try_from_fen(fen)?,
-            move_list: MoveGenerator::empty(),
+            move_list: MoveList::empty(),
             history: Vec::new(),
         })
     }

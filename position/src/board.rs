@@ -261,7 +261,7 @@ impl Board {
     /// Places (or replaces) pieces of the given color on the squares specified by the mask with the given piece type.
     ///
     /// # Preconditions
-    /// 
+    ///
     /// The user of the function is responsible for not trying to overwrite the squares that contain
     /// the opposite color, which will result in doubly colored pieces.
     ///
@@ -278,7 +278,7 @@ impl Board {
     /// Removes all pieces of the given color and type on the squares NOT specified by the mask.
     ///
     /// # Preconditions
-    /// 
+    ///
     /// The user of the function is responsible for not trying to remove the pieces of a different color
     /// than specified by the mask, which will result in colored squares without a piece type.
     ///
@@ -295,7 +295,7 @@ impl Board {
     /// Toggles all the pieces of the given color and type on the squares specified by the mask.
     ///
     /// # Preconditions
-    /// 
+    ///
     /// The user of the function is responsible for not trying to toggle the pieces of a different color
     /// or a different piece type than specified by the mask, which will result in one of the following:
     /// - multicolored pieces

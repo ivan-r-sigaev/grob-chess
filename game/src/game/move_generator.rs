@@ -26,17 +26,17 @@ impl PackedChessMove {
 }
 
 #[derive(Debug, Clone)]
-pub struct MoveGenerator {
+pub struct MoveList {
     moves: Vec<PackedChessMove>,
     lens: Vec<usize>,
     len: usize,
 }
 
-impl MoveGenerator {
+impl MoveList {
     #[inline(always)]
     #[must_use]
-    pub fn empty() -> MoveGenerator {
-        MoveGenerator {
+    pub fn empty() -> MoveList {
+        MoveList {
             moves: Vec::new(),
             lens: Vec::new(),
             len: 0,

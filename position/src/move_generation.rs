@@ -31,7 +31,7 @@ pub enum ChessMoveHint {
 
 impl ChessMoveHint {
     /// Is this move a capture.
-    /// 
+    ///
     /// # Returns
     /// `bool` - is this move a capture.
     #[inline(always)]
@@ -40,7 +40,7 @@ impl ChessMoveHint {
         self as u8 & 0b100 != 0
     }
     /// Is this move a promotion.
-    /// 
+    ///
     /// # Returns
     /// `bool` - is this move a promotion.
     #[inline(always)]
@@ -72,7 +72,7 @@ pub struct ChessUnmove {
 
 impl Position {
     /// Generate pseudo-legal king moves from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_king_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -100,7 +100,7 @@ impl Position {
         }
     }
     /// Generate pseudo-legal knight moves from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_knight_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -128,7 +128,7 @@ impl Position {
         }
     }
     /// Generate pseudo-legal bishop-like moves from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_bishop_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -156,7 +156,7 @@ impl Position {
         }
     }
     /// Generate pseudo-legal rook-like moves from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_rook_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -184,7 +184,7 @@ impl Position {
         }
     }
     /// Generate pseudo-legal quiet pawn moves from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_pawn_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -254,7 +254,7 @@ impl Position {
         }
     }
     /// Generate pseudo-legal pawn captures from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_pawn_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -318,7 +318,7 @@ impl Position {
         }
     }
     /// Generate pseudo-legal castling moves from this position.
-    /// 
+    ///
     /// # Arguments
     /// `push_move` - a closure that accepts generated moves.
     pub fn push_castlings(&self, push_move: &mut impl FnMut(ChessMove)) {
@@ -361,10 +361,10 @@ impl Position {
 
 impl Position {
     /// Returns whether a given chess move is at least pseudo-legal in this position.
-    /// 
+    ///
     /// # Arguments
     /// `chess_move` - the move to check.
-    /// 
+    ///
     /// # Returns
     /// `bool` - whether the move is at least pseudo-legal.
     #[must_use]
@@ -472,22 +472,25 @@ impl Position {
     }
 
     /// Makes a chess move.
-    /// 
+    ///
     /// # Preconditions
-    /// 
+    ///
     /// - `chess_move` must be at least pseduo-legal for this position.
-    /// 
+    ///
     /// WARNING: Violating the preconditions may silently corrupt position state!
-    /// 
+    ///
     /// # Arguments
     /// `chess_move` - the move to make.
-    /// 
+    ///
     /// # Returns
     /// `ChessUnmove` - the data to rollback the move
     #[must_use]
     pub fn make_move(&mut self, chess_move: ChessMove) -> ChessUnmove {
         // TODO: this check may slow the program down.
-        debug_assert!(self.is_move_applicable(chess_move), "{chess_move:?} is not applicable!");
+        debug_assert!(
+            self.is_move_applicable(chess_move),
+            "{chess_move:?} is not applicable!"
+        );
 
         let from = chess_move.from;
         let to = chess_move.to;
@@ -768,13 +771,13 @@ impl Position {
         }
     }
     /// Rolls back a move.
-    /// 
+    ///
     /// # Preconditions
-    /// 
+    ///
     /// - `chess_unmove` must have had been generated from the same move as this position.
-    /// 
+    ///
     /// WARNING: Violating the preconditions may silently corrupt position state!
-    /// 
+    ///
     /// # Arguments
     /// `chess_unmove` - the data to rollback the move
     pub fn unmake_move(&mut self, chess_unmove: ChessUnmove) {
