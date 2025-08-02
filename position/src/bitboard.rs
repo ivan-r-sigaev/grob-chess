@@ -100,15 +100,6 @@ impl BitBoard {
         DIAG_A8H1.genshift(diag as i8 * File::COUNT as i8)
     }
 
-    /// `const` version of `IntoIterator::into_iter`.
-    ///
-    /// Behaves exactly the same as `<Self as IntoIterator>::into_iter`.
-    #[inline(always)]
-    #[must_use]
-    pub const fn into_iter(self) -> <Self as IntoIterator>::IntoIter {
-        self
-    }
-
     /// `const` version of `Iterator::next`.
     ///
     /// Behaves exactly the same as `<Self as Iterator>::next`.
@@ -194,15 +185,6 @@ impl BitBoard {
     #[must_use]
     pub const fn eq(&self, rhs: &BitBoard) -> bool {
         self.0 == rhs.0
-    }
-
-    /// `const` version of `std::ops::PartialEq::mul`.
-    ///
-    /// Behaves exactly the same as `<Self as PartialEq>::ne`.
-    #[inline(always)]
-    #[must_use]
-    pub const fn ne(&self, rhs: &Self) -> bool {
-        !self.eq(rhs)
     }
 
     /// `const` version of `std::ops::BitAndAssign<Self>::bitand_assign`.
