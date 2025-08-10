@@ -3,11 +3,31 @@ use std::num::NonZeroU64;
 use std::ops::Rem;
 
 /// Unique hash generated from a chess position.
+///
+/// This type is optimized so that `Option<PositionHash>`
+/// is the same size as `PositionHash`.
+///
+/// # Examples
+///
+/// ```rust
+/// use position::prelude::PositionHash;
+///
+/// assert_eq!(size_of::<PositionHash>(), size_of::<Option<PositionHash>>())
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PositionHash(NonZeroU64);
 
 impl PositionHash {
-    pub fn new(hash: u64) -> Self {
+    /// Constructs a `PositionHash` from a `u64`.
+    ///
+    /// # Arguments
+    ///
+    /// `hash` - the unboxed `u64` hash
+    ///
+    /// # Returns
+    ///
+    /// `Self` - resulting `PositionHash`
+    pub(crate) fn new(hash: u64) -> Self {
         NonZeroU64::new(hash).map(Self).unwrap_or_default()
     }
 }
