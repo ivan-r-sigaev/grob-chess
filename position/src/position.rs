@@ -2,12 +2,11 @@ use crate::bitboard::BitBoard;
 use crate::board::Board;
 use crate::castling_rights::CastlingRights;
 use crate::indexing::{Color, File, Piece, Square};
+pub use crate::position::zobrist::PositionHash;
 
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::hash::Hash;
-use std::mem::size_of;
-use std::ops::Rem;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
 
@@ -258,29 +257,6 @@ impl Position {
     }
 }
 
-/// Unique hash generated from a chess position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct PositionHash(u64);
-
-impl Rem<usize> for PositionHash {
-    type Output = usize;
-
-    fn rem(self, rhs: usize) -> Self::Output {
-        const MAX: u64 = if size_of::<u64>() > size_of::<usize>() {
-            usize::MAX as u64
-        } else {
-            u64::MAX
-        };
-        (self.0 & MAX) as usize % rhs
-    }
-}
-
-impl fmt::Display for PositionHash {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 impl Position {
     /// Returns a hash for the current position.
     ///
@@ -289,7 +265,7 @@ impl Position {
     #[inline(always)]
     #[must_use]
     pub fn position_hash(&self) -> PositionHash {
-        PositionHash(self.zobrist_hash)
+        PositionHash::new(self.zobrist_hash)
     }
 
     /// Returns the currently available en passant file (or `None` if not available).
