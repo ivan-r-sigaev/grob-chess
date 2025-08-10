@@ -2,7 +2,7 @@ use crate::bitboard::BitBoard;
 use crate::board::Board;
 use crate::castling_rights::CastlingRights;
 use crate::indexing::{Color, File, Piece, Square};
-pub use crate::position::zobrist::PositionHash;
+use crate::position_hash::PositionHash;
 
 use std::error::Error;
 use std::fmt::{self, Display};

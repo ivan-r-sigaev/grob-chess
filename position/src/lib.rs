@@ -9,4 +9,5 @@ pub mod castling_rights;
 pub mod indexing;
 pub mod move_generation;
 pub mod position;
+pub mod position_hash;
 pub mod prelude;
