@@ -1,4 +1,4 @@
-use position::prelude::PositionHash;
+use position::position::PositionHash;
 
 pub struct TranspositionTable<const N: usize, V: Copy> {
     values: [Option<(PositionHash, V)>; N],

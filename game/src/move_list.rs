@@ -1,4 +1,4 @@
-use position::prelude::{ChessMove, PackedChessMove, Position};
+use position::position::{ChessMove, PackedChessMove, Position};
 
 #[derive(Debug, Clone)]
 pub struct MoveList {

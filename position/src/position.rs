@@ -92,7 +92,7 @@ impl Position {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{Position, ParseFenError};
+    /// use position::position::{Position, ParseFenError};
     ///
     /// const INITIAL_POSITION_FEN: &str =
     ///     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

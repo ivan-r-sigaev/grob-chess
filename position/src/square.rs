@@ -220,7 +220,7 @@ impl fmt::Display for NegDiag {
 /// # Examples
 /// ```rust
 /// use strum::{FromRepr, IntoEnumIterator};
-/// use position::prelude::{Square, Rank, File};
+/// use position::board::{Square, Rank, File};
 ///
 /// // Conversion rule to rank/file
 /// for square in Square::iter() {
@@ -231,7 +231,7 @@ impl fmt::Display for NegDiag {
 ///
 /// ```rust
 /// use strum::{FromRepr, IntoEnumIterator};
-/// use position::prelude::{Square, PosDiag, NegDiag};
+/// use position::board::{Square, PosDiag, NegDiag};
 ///
 /// // Conversion rule to positive/negative diagonals
 /// for square in Square::iter() {
@@ -350,7 +350,7 @@ impl Square {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::Square;
+    /// use position::board::Square;
     ///
     /// assert_eq!(Square::A1.shifted(1), Square::B1);
     /// assert_eq!(Square::A1.shifted(-1), Square::H8);

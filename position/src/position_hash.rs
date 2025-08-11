@@ -10,7 +10,7 @@ use std::ops::Rem;
 /// # Examples
 ///
 /// ```rust
-/// use position::prelude::PositionHash;
+/// use position::position::PositionHash;
 ///
 /// assert_eq!(size_of::<PositionHash>(), size_of::<Option<PositionHash>>())
 /// ```

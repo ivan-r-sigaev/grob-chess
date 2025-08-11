@@ -6,7 +6,7 @@ use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 ///
 /// # Examples
 /// ```rust
-/// use position::prelude::Color;
+/// use position::board::Color;
 /// use strum::FromRepr;
 ///
 /// assert_eq!(Color::from_repr(0), Some(Color::White));
@@ -26,7 +26,7 @@ impl Color {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{Color, Rank};
+    /// use position::board::{Color, Rank};
     ///
     /// assert_eq!(Color::White.promotion_rank(), Rank::R8);
     /// assert_eq!(Color::Black.promotion_rank(), Rank::R1);
@@ -44,7 +44,7 @@ impl Color {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{Color, Rank};
+    /// use position::board::{Color, Rank};
     ///
     /// assert_eq!(Color::White.pawn_rank(), Rank::R2);
     /// assert_eq!(Color::Black.pawn_rank(), Rank::R7);
@@ -62,7 +62,7 @@ impl Color {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{Color, Rank};
+    /// use position::board::{Color, Rank};
     ///
     /// assert_eq!(Color::White.en_passant_dest_rank(), Rank::R6);
     /// assert_eq!(Color::Black.en_passant_dest_rank(), Rank::R3);
@@ -84,7 +84,7 @@ impl Not for Color {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::Color;
+    /// use position::board::Color;
     ///
     /// assert_eq!(!Color::White, Color::Black);
     /// assert_eq!(!Color::Black, Color::White);

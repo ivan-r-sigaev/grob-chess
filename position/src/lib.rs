@@ -6,8 +6,6 @@
     - inlining (???)
 */
 
-pub mod prelude;
-
 pub mod board;
 pub mod position;
 

@@ -44,7 +44,8 @@ impl CastlingRights {
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{CastlingRights, Color};
+    /// use position::position::CastlingRights;
+    /// use position::board::Color;
     ///
     /// let white = CastlingRights::both_sides(Color::White);
     /// let white_king = CastlingRights::WHITE_KING;
