@@ -105,7 +105,7 @@ impl BitBoard {
     /// This is a const version of [`Iterator::next`].
     #[inline(always)]
     #[must_use]
-    const fn iterator_next(&mut self) -> Option<<Self as Iterator>::Item> {
+    pub const fn iterator_next(&mut self) -> Option<<Self as Iterator>::Item> {
         match self.bit_scan_forward() {
             Some(sq) => {
                 *self = self.with_reset_lsb();
@@ -287,7 +287,7 @@ impl BitBoard {
     /// [BitBoard::shr], [BitBoard::shl] - bitshifting
     #[inline(always)]
     #[must_use]
-    const fn genshift(self, x: i8) -> Self {
+    pub const fn genshift(self, x: i8) -> Self {
         if x >= 0 {
             self.shl(x as u8)
         } else {
@@ -300,7 +300,7 @@ impl BitBoard {
     /// [isolates]: https://www.chessprogramming.org/General_Setwise_Operations#Isolation
     #[inline(always)]
     #[must_use]
-    const fn with_isolated_lsb(self) -> BitBoard {
+    pub const fn with_isolated_lsb(self) -> BitBoard {
         BitBoard(self.0 & self.0.wrapping_neg())
     }
 
@@ -309,7 +309,7 @@ impl BitBoard {
     /// [resets]: https://www.chessprogramming.org/General_Setwise_Operations#Reset
     #[inline(always)]
     #[must_use]
-    const fn with_reset_lsb(self) -> BitBoard {
+    pub const fn with_reset_lsb(self) -> BitBoard {
         BitBoard(self.0 & self.0.wrapping_sub(1))
     }
 }
