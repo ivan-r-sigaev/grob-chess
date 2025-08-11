@@ -1,3 +1,7 @@
-pub use crate::move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
-pub use crate::position::{CastlingRights, ParseFenError, Position};
-pub use crate::position_hash::PositionHash;
+pub use crate::board::{
+    BitBoard, Board, Color, File, NegDiag, Piece, PosDiag, Promotion, Rank, Square,
+};
+pub use crate::position::{
+    CastlingRights, ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove, ParseFenError,
+    Position, PositionHash,
+};

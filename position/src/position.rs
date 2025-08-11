@@ -1,8 +1,10 @@
+pub use crate::castling_rights::CastlingRights;
+pub use crate::move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
+pub use crate::position_hash::PositionHash;
+
 use crate::bitboard::BitBoard;
 use crate::board::Board;
-pub use crate::castling_rights::CastlingRights;
 use crate::pieces::{Color, Piece};
-use crate::position_hash::PositionHash;
 use crate::square::{File, Square};
 
 use std::error::Error;
@@ -307,7 +309,7 @@ impl Position {
     /// `Board` - a reference to the position's board
     #[inline(always)]
     #[must_use]
-    pub(crate) fn board(&self) -> &Board {
+    pub fn board(&self) -> &Board {
         &self.board
     }
 

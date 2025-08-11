@@ -3,12 +3,15 @@
     - bitboard representation (classical / denser)
     - inlining (???)
 */
-mod bitboard;
-mod board;
-mod castling_rights;
-pub mod move_generation;
-mod pieces;
-pub mod position;
-pub mod position_hash;
 pub mod prelude;
-mod square;
+
+pub mod board;
+pub mod pieces;
+pub mod position;
+pub mod square;
+
+mod bitboard;
+mod castling_rights;
+mod move_calculation;
+mod move_generation;
+mod position_hash;
