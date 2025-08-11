@@ -1,29 +1,4 @@
-use position::prelude::{ChessMove, ChessMoveHint, Position, Square};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct PackedChessMove {
-    data: u16,
-}
-
-impl PackedChessMove {
-    #[inline(always)]
-    #[must_use]
-    fn new(chess_move: ChessMove) -> Self {
-        Self {
-            data: (((chess_move.hint as u16) & 0xf) << 12)
-                | (((chess_move.from as u16) & 0x3f) << 6)
-                | ((chess_move.to as u16) & 0x3f),
-        }
-    }
-    #[inline(always)]
-    #[must_use]
-    fn get(self) -> ChessMove {
-        let to = Square::from_repr((self.data & 0x3f) as u8).unwrap();
-        let from = Square::from_repr(((self.data >> 6) & 0x3f) as u8).unwrap();
-        let hint = ChessMoveHint::from_repr(((self.data >> 12) & 0x0f) as u8).unwrap();
-        ChessMove { to, from, hint }
-    }
-}
+use position::prelude::{ChessMove, PackedChessMove, Position};
 
 #[derive(Debug, Clone)]
 pub struct MoveList {

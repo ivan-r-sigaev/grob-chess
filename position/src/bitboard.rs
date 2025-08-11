@@ -1,4 +1,4 @@
-use crate::indexing::{File, NegDiag, PosDiag, Rank, Square};
+use crate::square::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,

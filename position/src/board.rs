@@ -1,7 +1,8 @@
 use std::fmt;
 
 use crate::bitboard::BitBoard;
-use crate::indexing::{Color, File, Piece, PosDiag, Rank, Square};
+use crate::pieces::{Color, Piece};
+use crate::square::{File, PosDiag, Rank, Square};
 use strum::{EnumCount, IntoEnumIterator, VariantArray};
 
 /// Current state of all the pieces on the chess board.

@@ -115,7 +115,7 @@ mod perft {
 
             if !position.was_check_ignored() {
                 if depth == 0 {
-                    data.add_move(next_move.hint);
+                    data.add_move(next_move.hint());
                     if position.is_check() {
                         data.add_check();
                         if !can_move(position, move_list) {

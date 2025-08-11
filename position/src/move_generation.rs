@@ -1,8 +1,7 @@
-use crate::{
-    bitboard::BitBoard,
-    indexing::{CastlingRights, Color, File, Piece, Promotion, Rank, Square},
-    position::Position,
-};
+use crate::castling_rights::CastlingRights;
+use crate::pieces::{Color, Piece, Promotion};
+use crate::square::{File, Rank, Square};
+use crate::{bitboard::BitBoard, position::Position};
 use std::{fmt, str::FromStr};
 use strum::{EnumCount, FromRepr, VariantArray};
 
@@ -67,9 +66,49 @@ impl ChessMoveHint {
 /// Contains data needed to make a move from a given position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChessMove {
-    pub to: Square,
-    pub from: Square,
-    pub hint: ChessMoveHint,
+    to: Square,
+    from: Square,
+    hint: ChessMoveHint,
+}
+
+impl ChessMove {
+    pub fn dest_square(&self) -> Square {
+        self.to
+    }
+    pub fn orig_square(&self) -> Square {
+        self.from
+    }
+    pub fn hint(&self) -> ChessMoveHint {
+        self.hint
+    }
+}
+
+/// Compact form of a [`ChessMove`]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PackedChessMove {
+    data: u16,
+}
+
+impl PackedChessMove {
+    /// Converts [`ChessMove`] to it's compact form.
+    #[inline(always)]
+    #[must_use]
+    pub fn new(chess_move: ChessMove) -> Self {
+        Self {
+            data: (((chess_move.hint as u16) & 0xf) << 12)
+                | (((chess_move.from as u16) & 0x3f) << 6)
+                | ((chess_move.to as u16) & 0x3f),
+        }
+    }
+    /// Unpacks the [`ChessMove`] from a compact form.
+    #[inline(always)]
+    #[must_use]
+    pub fn get(self) -> ChessMove {
+        let to = Square::from_repr((self.data & 0x3f) as u8).unwrap();
+        let from = Square::from_repr(((self.data >> 6) & 0x3f) as u8).unwrap();
+        let hint = ChessMoveHint::from_repr(((self.data >> 12) & 0x0f) as u8).unwrap();
+        ChessMove { to, from, hint }
+    }
 }
 
 /// Contains data needed to rollback a move from after making it.

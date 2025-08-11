@@ -1,4 +1,6 @@
-use crate::indexing::{CastlingRights, Color, File, Piece, Square};
+use crate::castling_rights::CastlingRights;
+use crate::pieces::{Color, Piece};
+use crate::square::{File, Square};
 
 use const_random::const_random;
 

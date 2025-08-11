@@ -5,8 +5,10 @@
 */
 mod bitboard;
 mod board;
-pub mod indexing;
+mod castling_rights;
 pub mod move_generation;
+mod pieces;
 pub mod position;
 pub mod position_hash;
 pub mod prelude;
+mod square;
