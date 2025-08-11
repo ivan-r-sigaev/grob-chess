@@ -1,4 +1,4 @@
-use std::{fmt, ops::Not};
+use std::{fmt, ops::Not, str::FromStr};
 use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
 /// Index of a file on a chess board.
@@ -31,6 +31,24 @@ pub enum File {
     F,
     G,
     H,
+}
+
+impl FromStr for File {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "a" => File::A,
+            "b" => File::B,
+            "c" => File::C,
+            "d" => File::D,
+            "e" => File::E,
+            "f" => File::F,
+            "g" => File::G,
+            "h" => File::H,
+            _ => return Err(()),
+        })
+    }
 }
 
 impl fmt::Display for File {
@@ -100,6 +118,24 @@ impl fmt::Display for Rank {
                 Rank::R8 => "8",
             }
         )
+    }
+}
+
+impl FromStr for Rank {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "1" => Rank::R1,
+            "2" => Rank::R2,
+            "3" => Rank::R3,
+            "4" => Rank::R4,
+            "5" => Rank::R5,
+            "6" => Rank::R6,
+            "7" => Rank::R7,
+            "8" => Rank::R8,
+            _ => return Err(()),
+        })
     }
 }
 
@@ -435,6 +471,17 @@ impl Square {
     }
 }
 
+impl FromStr for Square {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (file_str, rank_str) = s.split_at_checked(2).ok_or(())?;
+        let file = file_str.parse::<File>()?;
+        let rank = rank_str.parse::<Rank>()?;
+        Ok(Square::new(rank, file))
+    }
+}
+
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.file(), self.rank())
@@ -544,6 +591,18 @@ impl Not for Color {
     }
 }
 
+impl FromStr for Color {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "w" => Color::White,
+            "b" => Color::Black,
+            _ => return Err(()),
+        })
+    }
+}
+
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -588,6 +647,22 @@ impl Piece {
     }
 }
 
+impl FromStr for Piece {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "p" => Piece::Pawn,
+            "b" => Piece::Bishop,
+            "n" => Piece::Knight,
+            "r" => Piece::Rook,
+            "q" => Piece::Queen,
+            "k" => Piece::King,
+            _ => return Err(()),
+        })
+    }
+}
+
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -627,6 +702,15 @@ impl Promotion {
             Promotion::Rook => Piece::Rook,
             Promotion::Queen => Piece::Queen,
         }
+    }
+}
+
+impl FromStr for Promotion {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let piece = s.parse::<Piece>()?;
+        piece.promotion().ok_or(())
     }
 }
 
