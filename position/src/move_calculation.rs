@@ -5,13 +5,6 @@ use strum::{EnumCount, VariantArray};
 
 impl BitBoard {
     /// Returns the quiet move of the pawn of a given color from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    /// * `color` - color of the pawn
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn pawn_quiet(from: Square, color: Color) -> BitBoard {
@@ -23,13 +16,6 @@ impl BitBoard {
     }
 
     /// Returns the attack move of the pawn of a given color from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    /// * `color` - color of the pawn
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn pawn_attacks(from: Square, color: Color) -> BitBoard {
@@ -38,12 +24,6 @@ impl BitBoard {
     }
 
     /// Returns the move of a kinght from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn knight_attacks(from: Square) -> BitBoard {
@@ -65,12 +45,6 @@ impl BitBoard {
     }
 
     /// Returns the move of a king from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn king_attacks(from: Square) -> BitBoard {
@@ -83,13 +57,6 @@ impl BitBoard {
     }
 
     /// Returns the move of a bishop from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    /// * `occupance` - the occupance to account for
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn bishop_attacks(occupance: BitBoard, from: Square) -> BitBoard {
@@ -97,13 +64,6 @@ impl BitBoard {
     }
 
     /// Returns the move of a rook from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    /// * `occupance` - the occupance to account for
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn rook_attacks(occupance: BitBoard, from: Square) -> BitBoard {
@@ -111,13 +71,6 @@ impl BitBoard {
     }
 
     /// Returns the move of a queen from a given square.
-    ///
-    /// # Arguments
-    /// * `from` - the square from which the move is generated
-    /// * `occupance` - the occupance to account for
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn queen_attacks(occupance: BitBoard, from: Square) -> BitBoard {
@@ -125,14 +78,6 @@ impl BitBoard {
     }
 
     /// Returns the combined quiet moves of pawns from a given square.
-    ///
-    /// # Arguments
-    /// * `pawns` - the squares from which the move is generated
-    /// * `empty` - the unoccupied squares
-    /// * `color` - the color of the pawns
-    ///
-    /// # Returns
-    /// `BitBoard` - the resulting move
     #[inline(always)]
     #[must_use]
     pub(crate) const fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {

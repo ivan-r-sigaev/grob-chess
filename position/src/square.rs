@@ -5,13 +5,21 @@ use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum File {
+    /// The 'A' file.
     A,
+    /// The 'B' file.
     B,
+    /// The 'C' file.
     C,
+    /// The 'D' file.
     D,
+    /// The 'E' file.
     E,
+    /// The 'F' file.
     F,
+    /// The 'G' file.
     G,
+    /// The 'H' file.
     H,
 }
 
@@ -56,13 +64,21 @@ impl fmt::Display for File {
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Rank {
+    /// The first rank.
     R1,
+    /// The second rank.
     R2,
+    /// The third rank.
     R3,
+    /// The fourth rank.
     R4,
+    /// The fifth rank.
     R5,
+    /// The sixth rank.
     R6,
+    /// The seventh rank.
     R7,
+    /// The eighth rank.
     R8,
 }
 
@@ -114,6 +130,7 @@ pub enum PosDiag {
     D1H5,
     C1H6,
     B1H7,
+    /// The main diagonal.
     A1H8,
     A2G8,
     A3F8,
@@ -161,6 +178,7 @@ pub enum NegDiag {
     A5E1,
     A6F1,
     A7G1,
+    /// The main antidiagonal.
     A8H1,
     B8H2,
     C8H3,
@@ -223,12 +241,6 @@ impl fmt::Display for NegDiag {
 ///     assert_eq!(Some(square.neg_diag()), NegDiag::from_repr(rank as i8 + file as i8 - 7));
 /// }
 /// ```
-///
-/// # See Also
-/// [Rank]
-/// [File]
-/// [PosDiag]
-/// [NegDiag]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Square {
@@ -334,7 +346,7 @@ impl Square {
         NegDiag::from_repr(self.rank() as i8 + self.file() as i8 + NegDiag::A1A1 as i8).unwrap()
     }
 
-    /// Cycles throug the [`Square`]'s enum several steps in a given direction.
+    /// Cycles through the [`Square`]'s enum several steps in a given direction.
     ///
     /// # Examples
     /// ```rust

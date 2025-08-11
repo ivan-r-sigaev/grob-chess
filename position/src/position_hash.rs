@@ -19,14 +19,6 @@ pub struct PositionHash(NonZeroU64);
 
 impl PositionHash {
     /// Constructs a `PositionHash` from a `u64`.
-    ///
-    /// # Arguments
-    ///
-    /// `hash` - the unboxed `u64` hash
-    ///
-    /// # Returns
-    ///
-    /// `Self` - resulting `PositionHash`
     pub(crate) fn new(hash: u64) -> Self {
         NonZeroU64::new(hash).map(Self).unwrap_or_default()
     }

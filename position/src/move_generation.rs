@@ -5,53 +5,56 @@ use crate::{bitboard::BitBoard, position::Position};
 use std::{fmt, str::FromStr};
 use strum::{EnumCount, FromRepr, VariantArray};
 
-/// A hint for the move generator as to what kind of move is happening.
+/// A hint specifying what kind of move to perform.
 #[repr(u8)]
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, FromRepr, EnumCount, VariantArray,
 )]
 pub enum ChessMoveHint {
+    /// Normal quiet move.
     Quiet = 0,
+    /// Pawn push that moves two squares.
     DoublePawn = 1,
+    /// Kingside castling.
     KingCastle = 2,
+    /// Queenside castling.
     QueenCastle = 3,
+    /// Normal capture move.
     Caputre = 4,
+    /// En passant.
     EnPassantCapture = 5,
+    /// Quiet promotion to knight.
     KnightPromotion = 8,
+    /// Quiet promotion to bishop.
     BishopPromotion = 9,
+    /// Quiet promotion to rook.
     RookPromotion = 10,
+    /// Quiet promotion to queen.
     QueenPromotion = 11,
+    /// Promotion to knight with capture.
     KnightPromotionCapture = 12,
+    /// Promotion to bishop with capture.
     BishopPromotionCapture = 13,
+    /// Promotion to rook with capture.
     RookPromotionCapture = 14,
+    /// Promotion to queen with capture.
     QueenPromotionCapture = 15,
 }
 
 impl ChessMoveHint {
     /// Is this move a capture.
-    ///
-    /// # Returns
-    /// `bool` - is this move a capture.
     #[inline(always)]
     #[must_use]
     pub fn is_capture(self) -> bool {
         self as u8 & 0b100 != 0
     }
     /// Is this move a promotion.
-    ///
-    /// # Returns
-    /// `bool` - is this move a promotion.
     #[inline(always)]
     #[must_use]
     pub fn is_promotion(self) -> bool {
         self as u8 & 0b1000 != 0
     }
-    /// Returns promotion if this move is a promotion.
-    ///
-    /// # Returns
-    /// `Option<Promotion>`:
-    /// - `Some(promotion: Promotion)` - move's promotion
-    /// - `None` - if move isn't a promotion
+    /// Returns the kind of promotion if this move is a promotion.
     pub fn promotion(self) -> Option<Promotion> {
         Some(match self {
             Self::BishopPromotion | Self::BishopPromotionCapture => Promotion::Bishop,
@@ -63,7 +66,7 @@ impl ChessMoveHint {
     }
 }
 
-/// Contains data needed to make a move from a given position.
+/// Data needed to make a move.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChessMove {
     to: Square,
@@ -72,18 +75,21 @@ pub struct ChessMove {
 }
 
 impl ChessMove {
+    /// Returns the destination square of a move.
     pub fn dest_square(&self) -> Square {
         self.to
     }
+    /// Returns the origin square of a move.
     pub fn orig_square(&self) -> Square {
         self.from
     }
+    /// Returns the hint as to what kind of move is happening.
     pub fn hint(&self) -> ChessMoveHint {
         self.hint
     }
 }
 
-/// Compact form of a [`ChessMove`]
+/// Compact version of a [`ChessMove`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PackedChessMove {
     data: u16,
@@ -100,7 +106,7 @@ impl PackedChessMove {
                 | ((chess_move.to as u16) & 0x3f),
         }
     }
-    /// Unpacks the [`ChessMove`] from a compact form.
+    /// Unpacks the [`ChessMove`] from it's compact form.
     #[inline(always)]
     #[must_use]
     pub fn get(self) -> ChessMove {
@@ -111,7 +117,7 @@ impl PackedChessMove {
     }
 }
 
-/// Contains data needed to rollback a move from after making it.
+/// Data needed to rollback a move.
 #[derive(Debug, Clone, Copy)]
 pub struct ChessUnmove {
     chess_move: ChessMove,
@@ -125,9 +131,6 @@ pub struct ChessUnmove {
 
 impl Position {
     /// Generate pseudo-legal king moves from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_king_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let from = self
             .board()
@@ -153,9 +156,6 @@ impl Position {
         }
     }
     /// Generate pseudo-legal knight moves from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_knight_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
         let empty = !self.board().get_occupance();
@@ -181,9 +181,6 @@ impl Position {
         }
     }
     /// Generate pseudo-legal bishop-like moves from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_bishop_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
         let occ = self.board().get_occupance();
@@ -209,9 +206,6 @@ impl Position {
         }
     }
     /// Generate pseudo-legal rook-like moves from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_rook_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
         let occ = self.board().get_occupance();
@@ -237,9 +231,6 @@ impl Position {
         }
     }
     /// Generate pseudo-legal quiet pawn moves from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_pawn_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let empty = !self.board().get_occupance();
         let mut single_pushes = BitBoard::pawn_pushes(
@@ -307,9 +298,6 @@ impl Position {
         }
     }
     /// Generate pseudo-legal pawn captures from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_pawn_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
 
@@ -371,9 +359,6 @@ impl Position {
         }
     }
     /// Generate pseudo-legal castling moves from this position.
-    ///
-    /// # Arguments
-    /// `push_move` - a closure that accepts generated moves.
     pub fn push_castlings(&self, push_move: &mut impl FnMut(ChessMove)) {
         if self.board().is_king_in_check(self.turn()) {
             return;
@@ -418,8 +403,11 @@ impl Position {
 /// https://www.chessprogramming.org/Algebraic_Chess_Notation#Long_Algebraic_Notation_.28LAN.29
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct LanMove {
+    /// The origin square.
     pub from: Square,
+    /// The destination square.
     pub to: Square,
+    /// The kind of promotion (if move is a promotion) or `None`.
     pub promotion: Option<Promotion>,
 }
 
@@ -455,14 +443,6 @@ impl fmt::Display for LanMove {
 
 impl Position {
     /// Returns an equivalent `ChessMove` for a `LanMove` in this position.
-    ///
-    /// # Arguments
-    /// `lan_move` - the `LanMove` to check.
-    ///
-    /// # Returns
-    /// `Option<ChessMove>`:
-    /// - `Some(chess_move: ChessMove)` - equivalent pseduo-legal `ChessMove`
-    /// - `None` - if `LanMove` is illegal
     pub fn lan_move(&self, lan_move: LanMove) -> Option<ChessMove> {
         let piece = self.board().get_piece_at(lan_move.from)?;
         let mut result = None;
@@ -503,12 +483,6 @@ impl Position {
     }
 
     /// Returns whether a given chess move is at least pseudo-legal in this position.
-    ///
-    /// # Arguments
-    /// `chess_move` - the move to check.
-    ///
-    /// # Returns
-    /// `bool` - whether the move is at least pseudo-legal.
     #[must_use]
     pub fn is_move_applicable(&self, chess_move: ChessMove) -> bool {
         let from = chess_move.from;
@@ -616,16 +590,9 @@ impl Position {
     /// Makes a chess move.
     ///
     /// # Preconditions
-    ///
     /// - `chess_move` must be at least pseduo-legal for this position.
     ///
-    /// WARNING: Violating the preconditions may silently corrupt position state!
-    ///
-    /// # Arguments
-    /// `chess_move` - the move to make.
-    ///
-    /// # Returns
-    /// `ChessUnmove` - the data to rollback the move
+    /// Violating the preconditions may silently corrupt position state.
     #[must_use]
     pub fn make_move(&mut self, chess_move: ChessMove) -> ChessUnmove {
         // TODO: this check may slow the program down.
@@ -915,13 +882,9 @@ impl Position {
     /// Rolls back a move.
     ///
     /// # Preconditions
-    ///
     /// - `chess_unmove` must have had been generated from the same move as this position.
     ///
-    /// WARNING: Violating the preconditions may silently corrupt position state!
-    ///
-    /// # Arguments
-    /// `chess_unmove` - the data to rollback the move
+    /// Violating the preconditions may silently corrupt position state.
     pub fn unmake_move(&mut self, chess_unmove: ChessUnmove) {
         self.set_turn(!self.turn());
         self.set_castling_rights(chess_unmove.castling_rights);
@@ -1072,10 +1035,7 @@ impl Position {
 }
 
 impl Position {
-    /// Returns whether kingside castling is NOT allowed for a given color.
-    ///
-    /// # Returns
-    /// `bool` - whether kingside castling is NOT allowed for a given color
+    /// Returns `true` if the kingside castling is disallowed for a given color.
     #[inline(always)]
     #[must_use]
     fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
@@ -1119,10 +1079,7 @@ impl Position {
             .is_empty()
     }
 
-    /// Returns whether queenside castling is NOT allowed for a given color.
-    ///
-    /// # Returns
-    /// `bool` - whether queenside castling is NOT allowed for a given color
+    /// Returns `true` if the queenside castling is disallowed for a given color.
     #[inline(always)]
     #[must_use]
     fn is_queenside_castling_prohibited(&self, color: Color) -> bool {

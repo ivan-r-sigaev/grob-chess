@@ -1,3 +1,7 @@
+//! Board
+//!
+//! This module provides types related to board representation.
+
 pub use crate::bitboard::BitBoard;
 pub use crate::pieces::{Color, Piece, Promotion};
 pub use crate::square::{File, NegDiag, PosDiag, Rank, Square};
@@ -5,7 +9,7 @@ pub use crate::square::{File, NegDiag, PosDiag, Rank, Square};
 use std::fmt;
 use strum::IntoEnumIterator;
 
-/// Current state of all the pieces on the chess board.
+/// Pieces that are placed on the board.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Board {
     /*
@@ -23,10 +27,8 @@ pub struct Board {
 
 impl Board {
     // TODO: it may be better to add a constructor from FEN.
-    /// Constructs an empty board.
-    ///
-    /// # Returns
-    /// `Self` - an empty board.
+
+    /// Returns an empty board.
     #[inline(always)]
     #[must_use]
     pub fn empty() -> Self {
@@ -35,75 +37,43 @@ impl Board {
         }
     }
 
-    /// Returns the bitboard with all the pieces of the given color.
-    ///
-    /// # Arguments
-    /// * `color` - the given color
-    ///
-    /// # Returns
-    /// * `BitBoard` - the bitboard with all the pieces of the given color
+    /// Returns the bitboard with pieces of this color.
     #[inline(always)]
     #[must_use]
     pub fn get_color(&self, color: Color) -> BitBoard {
         self.boards[color as usize]
     }
 
-    /// Returns the bitboard with all the pieces currently present on the board.
-    ///
-    /// # Returns
-    /// * `BitBoard` - the bitboard with all the pieces currently present on the board
+    /// Returns the bitboard with all pieces.
     #[inline(always)]
     #[must_use]
     pub fn get_occupance(&self) -> BitBoard {
         self.get_color(Color::White) | self.get_color(Color::Black)
     }
 
-    /// Returns the bitboard with all the unoccupied squares.
-    ///
-    /// # Returns
-    /// * `BitBoard` - the bitboard with all the unoccupied squares
+    /// Returns the bitboard with the unoccupied squares.
     #[inline(always)]
     #[must_use]
     pub fn get_empty(&self) -> BitBoard {
         !self.get_occupance()
     }
 
-    /// Returns the bitboard with all the pieces of the given piece type.
-    ///
-    /// # Arguments
-    /// * `piece` - the given piece type
-    ///
-    /// # Returns
-    /// * `BitBoard` - the bitboard with all the pieces of the given piece type
+    /// Returns the bitboard with pieces of the given type.
     #[inline(always)]
     #[must_use]
     pub fn get_piece(&self, piece: Piece) -> BitBoard {
         self.boards[piece as usize + 2]
     }
 
-    /// Returns the bitboard with all the pieces that are BOTH the of given piece type and of the given color.
-    ///
-    /// # Arguments
-    /// * `color` - the given color
-    /// * `piece` - the given piece type
-    ///
-    /// # Returns
-    /// * `BitBoard` - the bitboard with all the pieces that are BOTH the of given piece type and of the given color
+    /// Returns the bitboard with pieces that all share
+    /// the given color and a given type.
     #[inline(always)]
     #[must_use]
     pub fn get_color_piece(&self, color: Color, piece: Piece) -> BitBoard {
         self.get_color(color) & self.get_piece(piece)
     }
 
-    /// Returns the piece type placed on the given square (or `None` if the square is empty).
-    ///
-    /// # Arguments
-    /// * `sq` - the given square
-    ///
-    /// # Returns
-    /// `Option<Piece>`:
-    /// - `Some(piece: Piece)` - the piece type placed on the given square
-    /// - `None` - if the square is empty
+    /// Returns the type of the piece on the given square if the piece is present.
     #[inline(always)]
     #[must_use]
     pub fn get_piece_at(&self, sq: Square) -> Option<Piece> {
@@ -125,15 +95,7 @@ impl Board {
         }
     }
 
-    /// Returns the color of the piece placed on the given square (or `None` if the square is empty).
-    ///
-    /// # Arguments
-    /// * `sq` - the given square
-    ///
-    /// # Returns
-    /// `Option<Color>`:
-    /// - `Some(piece: Color)` - the color of the piece placed on the given square
-    /// - `None` - if the square is empty
+    /// Returns the color of the piece on the given square if the piece is persent.
     #[inline(always)]
     #[must_use]
     pub fn get_color_at(&self, sq: Square) -> Option<Color> {
@@ -147,13 +109,7 @@ impl Board {
         }
     }
 
-    /// Returns the bitboard with all the pieces that attack (put pressure on) the given square.
-    ///
-    /// # Arguments
-    /// * `sq` - the given square
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the pieces that attack (put pressure on) the given square
+    /// Returns the bitboard with the pieces that attack (put pressure on) the given square.
     #[inline(always)]
     #[must_use]
     pub fn get_attackers_to(&self, sq: Square) -> BitBoard {
@@ -168,14 +124,7 @@ impl Board {
             | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders()
     }
 
-    /// Returns the bitboard with all the pieces of a given color that attack (put pressure on) the given square.
-    ///
-    /// # Arguments
-    /// * `sq` - the given square
-    /// * `color` - the given color
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the pieces of a given color that attack (put pressure on) the given square
+    /// Same as [`Board::get_attackers_to`], but only returns pieces of the given color.
     #[inline(always)]
     #[must_use]
     pub fn get_color_attackers_to(&self, sq: Square, color: Color) -> BitBoard {
@@ -188,60 +137,35 @@ impl Board {
                 | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
                 | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders())
     }
-    /// Returns the bitboard with all the queens and bishops.
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the queens and bishops
+    /// Returns the bitboard with queens and bishops.
     #[inline(always)]
     #[must_use]
     pub fn get_bishop_sliders(&self) -> BitBoard {
         self.get_piece(Piece::Queen) | self.get_piece(Piece::Bishop)
     }
 
-    /// Returns the bitboard with all the queens and bishops of the given color.
-    ///
-    /// # Arguments
-    /// * `color` - the given color
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the queens and bishops of the given color
+    /// Same as [`Board::get_bishop_sliders`], but only returns pieces of the given color.
     #[inline(always)]
     #[must_use]
     pub fn get_color_bishop_sliders(&self, color: Color) -> BitBoard {
         self.get_color(color) & self.get_bishop_sliders()
     }
 
-    /// Returns the bitboard with all the queens and rooks.
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the queens and rooks
+    /// Returns the bitboard with queens and rooks.
     #[inline(always)]
     #[must_use]
     pub fn get_rook_sliders(&self) -> BitBoard {
         self.get_piece(Piece::Queen) | self.get_piece(Piece::Rook)
     }
 
-    /// Returns the bitboard with all the rooks and bishops of the given color.
-    ///
-    /// # Arguments
-    /// * `color` - the given color
-    ///
-    /// # Returns
-    /// `BitBoard` - the bitboard with all the queens and rooks of the given color
+    /// Same as [`Board::get_rook_sliders`], but only returns pieces of the given color.
     #[inline(always)]
     #[must_use]
     pub fn get_color_rook_sliders(&self, color: Color) -> BitBoard {
         self.get_color(color) & self.get_rook_sliders()
     }
 
-    // TODO: This function relies on a failable assumtion that the king exists.
-    /// Returns whether the king of the given color is currently in check.
-    ///
-    /// # Arguments
-    /// * `color` - the given color
-    ///
-    /// # Returns
-    /// `bool` - whether the king of the given color is currently in check
+    /// Returns `true` if the king of the given color is currently in check.
     #[inline(always)]
     #[must_use]
     pub fn is_king_in_check(&self, color: Color) -> bool {
@@ -256,41 +180,34 @@ impl Board {
 }
 
 impl Board {
-    /// Places (or replaces) pieces of the given color on the squares specified by the mask with the given piece type.
+    /// Places (or replaces) pieces of the given color on the squares
+    /// specified by the mask with the given piece type.
     ///
     /// # Preconditions
     ///
     /// The user of the function is responsible for not trying to overwrite the squares that contain
     /// the opposite color, which will result in doubly colored pieces.
-    ///
-    /// # Arguments
-    /// * `color` - the color of pieces
-    /// * `piece` - the type of the pieces to place
-    /// * `mask` - the mask where to place (or replace) the pieces
     #[inline(always)]
     pub(crate) fn mask_or(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] |= mask;
         self.boards[color as usize] |= mask;
     }
 
-    /// Removes all pieces of the given color and type on the squares NOT specified by the mask.
+    /// Removes all pieces of the given color and type
+    /// on the squares NOT specified by the mask.
     ///
     /// # Preconditions
     ///
     /// The user of the function is responsible for not trying to remove the pieces of a different color
     /// than specified by the mask, which will result in colored squares without a piece type.
-    ///
-    /// # Arguments
-    /// * `color` - the color of the pieces
-    /// * `piece` - the type of the pieces
-    /// * `mask` - the mask specifying what pieces to keep
     #[inline(always)]
     pub(crate) fn mask_and(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] &= mask;
         self.boards[color as usize] &= mask;
     }
 
-    /// Toggles all the pieces of the given color and type on the squares specified by the mask.
+    /// Toggles all the pieces of the given color and type
+    /// on the squares specified by the mask.
     ///
     /// # Preconditions
     ///
@@ -303,11 +220,6 @@ impl Board {
     /// - severe headaches and vomiting
     /// - immediate heat death of the universe
     /// - \[REDACTED\]
-    ///
-    /// # Arguments
-    /// * `color` - the color of the pieces
-    /// * `piece` - the type of the pieces
-    /// * `mask` - the mask specifying what pieces to toggle
     #[inline(always)]
     pub(crate) fn mask_xor(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] ^= mask;
@@ -316,7 +228,6 @@ impl Board {
 }
 
 impl std::fmt::Debug for Board {
-    /// Formats board for debug purposes.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(
             f,
