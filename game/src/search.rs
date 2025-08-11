@@ -1,5 +1,5 @@
 use crate::game::{Game, GameEnding};
-use crate::transposition_table::TranspositionTable;
+use crate::transposition_table::{Entry, TranspositionTable};
 use position::position::ChessMove;
 
 pub fn evaluate<const TT_SIZE: usize>(game: &mut Game, depth: u8) -> i32 {
@@ -18,8 +18,9 @@ fn negamax<const TT_SIZE: usize>(
         return 0;
     }
     let hash = game.get_position().position_hash();
-    if let Some(move_concept) = tt.get(hash) {
-        if game.map_move_if_legal(*move_concept, |node, _| {
+    if let Ok(Entry::Occupied(occupied)) = tt.entry(hash) {
+        let &chess_move = occupied.get();
+        if game.map_move_if_legal(chess_move, |node, _| {
             alpha = beta.min(-negamax(tt, node, -beta, -alpha, depth - 1));
         }) {
             return alpha;
@@ -39,7 +40,9 @@ fn negamax<const TT_SIZE: usize>(
     }) {
         None => {
             if let Some(move_concept) = best_move {
-                tt.insert(hash, move_concept);
+                tt.entry(hash)
+                    .unwrap_or_else(|collision| Entry::Occupied(collision.keep_key()))
+                    .insert_entry(move_concept);
             }
             alpha
         }
