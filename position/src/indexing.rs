@@ -569,6 +569,25 @@ pub enum Piece {
     King,
 }
 
+impl Piece {
+    /// Get promotion to given piece if possible.
+    ///
+    /// # Returns
+    ///
+    /// `Option<Promotion>`:
+    /// - `Some(promotion: Promotion)` - promotion to piece
+    /// - `None` - it's not possible to promote to this piece
+    pub fn promotion(self) -> Option<Promotion> {
+        Some(match self {
+            Piece::Bishop => Promotion::Bishop,
+            Piece::Knight => Promotion::Knight,
+            Piece::Rook => Promotion::Rook,
+            Piece::Queen => Promotion::Queen,
+            _ => return None,
+        })
+    }
+}
+
 impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -583,6 +602,37 @@ impl fmt::Display for Piece {
                 Piece::King => "k",
             }
         )
+    }
+}
+
+/// A type of possible pawn promotion.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+pub enum Promotion {
+    Bishop,
+    Knight,
+    Rook,
+    Queen,
+}
+
+impl Promotion {
+    /// Converts promotion to unerlying piece.
+    ///
+    /// # Returns
+    ///
+    /// `Piece` - the piece to promote to
+    pub fn piece(self) -> Piece {
+        match self {
+            Promotion::Bishop => Piece::Bishop,
+            Promotion::Knight => Piece::Knight,
+            Promotion::Rook => Piece::Rook,
+            Promotion::Queen => Piece::Queen,
+        }
+    }
+}
+
+impl fmt::Display for Promotion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.piece())
     }
 }
 
