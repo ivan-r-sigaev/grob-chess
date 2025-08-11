@@ -54,7 +54,7 @@ impl Hash for Position {
 /// An error that had occured while parsing [FEN].
 ///
 /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParseFenError {
     BadFenSize,
     BadRowCount,
@@ -75,6 +75,15 @@ impl Display for ParseFenError {
 impl Error for ParseFenError {}
 
 impl Position {
+    /// Returns the initial position for a normal chess game.
+    ///
+    /// # Returns
+    /// `Self` - initial chess game position
+    pub fn initial_position() -> Self {
+        const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        Self::try_from_fen(INITIAL_FEN).unwrap()
+    }
+
     /// Try to construct a new position from [FEN].
     ///
     /// # Arguments
@@ -89,9 +98,10 @@ impl Position {
     /// ```rust
     /// use position::prelude::{Position, ParseFenError};
     ///
-    /// let initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    /// _ = Position::try_from_fen(initial_position_fen)?;
-    /// Ok::<(), ParseFenError>(())
+    /// const INITIAL_POSITION_FEN: &str =
+    ///     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    /// let initial_position_from_fen = Position::try_from_fen(INITIAL_POSITION_FEN);
+    /// assert_eq!(initial_position_from_fen, Ok(Position::initial_position()))
     /// ```
     ///
     /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
