@@ -6,7 +6,7 @@ use strum::{EnumCount, IntoEnumIterator, VariantArray};
 
 /// Current state of all the pieces on the chess board.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct Board {
+pub struct Board {
     /*
     White  = 0,
     Black  = 1,

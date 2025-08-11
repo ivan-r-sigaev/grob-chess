@@ -14,7 +14,7 @@ use strum::EnumCount;
 /// # See Also
 /// [bitboard]: https://www.chessprogramming.org/Bitboard_Board-Definition
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct BitBoard(pub u64);
+pub struct BitBoard(pub u64);
 
 impl BitBoard {
     /// Empty bitboard.

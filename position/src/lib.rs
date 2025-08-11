@@ -3,8 +3,8 @@
     - bitboard representation (classical / denser)
     - inlining (???)
 */
-pub mod bitboard;
-pub mod board;
+mod bitboard;
+mod board;
 pub mod castling_rights;
 pub mod indexing;
 pub mod move_generation;
