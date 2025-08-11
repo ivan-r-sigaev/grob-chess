@@ -1,7 +1,6 @@
 use crate::bitboard::BitBoard;
 use crate::board::Board;
-use crate::castling_rights::CastlingRights;
-use crate::indexing::{Color, File, Piece, Square};
+use crate::indexing::{CastlingRights, Color, File, Piece, Square};
 use crate::position_hash::PositionHash;
 
 use std::error::Error;

@@ -1,7 +1,6 @@
 use crate::{
     bitboard::BitBoard,
-    castling_rights::CastlingRights,
-    indexing::{Color, File, Piece, Promotion, Rank, Square},
+    indexing::{CastlingRights, Color, File, Piece, Promotion, Rank, Square},
     position::Position,
 };
 use std::{fmt, str::FromStr};
