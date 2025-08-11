@@ -1,11 +1,11 @@
-use strum::{EnumCount, FromRepr, VariantArray};
-
 use crate::{
     bitboard::BitBoard,
     castling_rights::CastlingRights,
     indexing::{Color, File, Piece, Promotion, Rank, Square},
     position::Position,
 };
+use std::{fmt, str::FromStr};
+use strum::{EnumCount, FromRepr, VariantArray};
 
 /// A hint for the move generator as to what kind of move is happening.
 #[repr(u8)]
@@ -374,7 +374,96 @@ impl Position {
     }
 }
 
+/// A chess move in a [LAN (Long Algebraic Notation)].
+///
+/// [LAN (Long Algebraic Notation)]:
+/// https://www.chessprogramming.org/Algebraic_Chess_Notation#Long_Algebraic_Notation_.28LAN.29
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LanMove {
+    pub from: Square,
+    pub to: Square,
+    pub promotion: Option<Promotion>,
+}
+
+impl FromStr for LanMove {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (from_str, rest) = s.split_at_checked(2).ok_or(())?;
+        let (to_str, maybe_promotion_str) = rest.split_at_checked(2).ok_or(())?;
+        let from = from_str.parse::<Square>()?;
+        let to = to_str.parse::<Square>()?;
+        let promotion = match maybe_promotion_str {
+            "" => None,
+            promotion_str => Some(promotion_str.parse::<Promotion>()?),
+        };
+        Ok(LanMove {
+            from,
+            to,
+            promotion,
+        })
+    }
+}
+
+impl fmt::Display for LanMove {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.from, self.to)?;
+        if let Some(promotion) = self.promotion {
+            write!(f, "{promotion}")?;
+        }
+        Ok(())
+    }
+}
+
 impl Position {
+    /// Returns an equivalent `ChessMove` for a `LanMove` in this position.
+    ///
+    /// # Arguments
+    /// `lan_move` - the `LanMove` to check.
+    ///
+    /// # Returns
+    /// `Option<ChessMove>`:
+    /// - `Some(chess_move: ChessMove)` - equivalent pseduo-legal `ChessMove`
+    /// - `None` - if `LanMove` is illegal
+    pub fn lan_move(&self, lan_move: LanMove) -> Option<ChessMove> {
+        let piece = self.board().get_piece_at(lan_move.from)?;
+        let mut result = None;
+        let mut test_move = |chess_move: ChessMove| {
+            if chess_move.from != lan_move.from
+                || chess_move.to != lan_move.to
+                || chess_move.hint.promotion() != lan_move.promotion
+            {
+                return;
+            }
+            result = Some(chess_move);
+        };
+        match piece {
+            Piece::Pawn => {
+                self.push_pawn_quiets(&mut test_move);
+                self.push_pawn_attacks(&mut test_move);
+            }
+            Piece::Bishop => {
+                self.push_bishop_moves(&mut test_move);
+            }
+            Piece::Knight => {
+                self.push_knight_moves(&mut test_move);
+            }
+            Piece::Rook => {
+                self.push_rook_moves(&mut test_move);
+            }
+            Piece::Queen => {
+                self.push_bishop_moves(&mut test_move);
+                self.push_rook_moves(&mut test_move);
+            }
+            Piece::King => {
+                self.push_castlings(&mut test_move);
+                self.push_king_moves(&mut test_move);
+            }
+        }
+
+        result
+    }
+
     /// Returns whether a given chess move is at least pseudo-legal in this position.
     ///
     /// # Arguments
