@@ -3,7 +3,7 @@ use strum::{EnumCount, FromRepr, VariantArray};
 use crate::{
     bitboard::BitBoard,
     castling_rights::CastlingRights,
-    indexing::{Color, File, Piece, Rank, Square},
+    indexing::{Color, File, Piece, Promotion, Rank, Square},
     position::Position,
 };
 
@@ -47,6 +47,21 @@ impl ChessMoveHint {
     #[must_use]
     pub fn is_promotion(self) -> bool {
         self as u8 & 0b1000 != 0
+    }
+    /// Returns promotion if this move is a promotion.
+    ///
+    /// # Returns
+    /// `Option<Promotion>`:
+    /// - `Some(promotion: Promotion)` - move's promotion
+    /// - `None` - if move isn't a promotion
+    pub fn promotion(self) -> Option<Promotion> {
+        Some(match self {
+            Self::BishopPromotion | Self::BishopPromotionCapture => Promotion::Bishop,
+            Self::KnightPromotion | Self::KnightPromotionCapture => Promotion::Knight,
+            Self::RookPromotion | Self::RookPromotionCapture => Promotion::Rook,
+            Self::QueenPromotion | Self::QueenPromotionCapture => Promotion::Queen,
+            _ => return None,
+        })
     }
 }
 
