@@ -5,7 +5,7 @@ impl BitBoard {
     /// Returns the quiet move of the pawn of a given color from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn pawn_quiet(from: Square, color: Color) -> BitBoard {
+    pub const fn pawn_quiet(from: Square, color: Color) -> BitBoard {
         let bb = BitBoard::from_square(from);
         match color {
             Color::White => bb.up(),
@@ -16,7 +16,7 @@ impl BitBoard {
     /// Returns the attack move of the pawn of a given color from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn pawn_attacks(from: Square, color: Color) -> BitBoard {
+    pub const fn pawn_attacks(from: Square, color: Color) -> BitBoard {
         let bb = Self::pawn_quiet(from, color);
         bb.left().bitor(bb.right())
     }
@@ -24,7 +24,7 @@ impl BitBoard {
     /// Returns the move of a kinght from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn knight_attacks(from: Square) -> BitBoard {
+    pub const fn knight_attacks(from: Square) -> BitBoard {
         const MAGIC_L: BitBoard = BitBoard::EMPTY.not().left();
         const MAGIC_LL: BitBoard = MAGIC_L.left();
         const MAGIC_R: BitBoard = BitBoard::EMPTY.not().right();
@@ -57,28 +57,28 @@ impl BitBoard {
     /// Returns the move of a bishop from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn bishop_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+    pub const fn bishop_attacks(occupance: BitBoard, from: Square) -> BitBoard {
         Self::pos_diag_attacks(from, occupance).bitor(Self::neg_diag_attacks(from, occupance))
     }
 
     /// Returns the move of a rook from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn rook_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+    pub const fn rook_attacks(occupance: BitBoard, from: Square) -> BitBoard {
         Self::rank_attacks(from, occupance).bitor(Self::file_attack(from, occupance))
     }
 
     /// Returns the move of a queen from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn queen_attacks(occupance: BitBoard, from: Square) -> BitBoard {
+    pub const fn queen_attacks(occupance: BitBoard, from: Square) -> BitBoard {
         Self::bishop_attacks(occupance, from).bitor(Self::rook_attacks(occupance, from))
     }
 
     /// Returns the combined quiet moves of pawns from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
+    pub const fn pawn_pushes(pawns: BitBoard, empty: BitBoard, color: Color) -> BitBoard {
         match color {
             Color::White => pawns.up(),
             Color::Black => pawns.down(),
