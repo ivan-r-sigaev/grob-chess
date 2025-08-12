@@ -1,15 +1,15 @@
-use crate::game::{Game, GameEnding};
+use crate::game::{Game, GameEnding, GameSearch};
 use crate::transposition_table::{Entry, TranspositionTable};
 use position::position::ChessMove;
 
 pub fn evaluate<const TT_SIZE: usize>(game: &mut Game, depth: u8) -> i32 {
     let mut tt = TranspositionTable::<TT_SIZE, ChessMove>::new();
-    negamax(&mut tt, game, -100, 100, depth)
+    negamax(&mut tt, &mut game.search(), -100, 100, depth)
 }
 
 fn negamax<const TT_SIZE: usize>(
     tt: &mut TranspositionTable<TT_SIZE, ChessMove>,
-    game: &mut Game,
+    node: &mut GameSearch,
     mut alpha: i32,
     beta: i32,
     depth: u8,
@@ -17,17 +17,17 @@ fn negamax<const TT_SIZE: usize>(
     if depth == 0 {
         return 0;
     }
-    let hash = game.get_position().position_hash();
+    let hash = node.get().position().position_hash();
     if let Ok(Entry::Occupied(occupied)) = tt.entry(hash) {
         let &chess_move = occupied.get();
-        if game.map_move_if_legal(chess_move, |node, _| {
+        if node.map_move_if_legal(chess_move, |node| {
             alpha = beta.min(-negamax(tt, node, -beta, -alpha, depth - 1));
         }) {
             return alpha;
         }
     }
     let mut best_move: Option<ChessMove> = None;
-    match game.for_each_legal_child_node(|node, move_concept| {
+    match node.for_each_legal_child_node(|node, move_concept| {
         let score = -negamax(tt, node, -beta, -alpha, depth - 1);
         if score >= alpha {
             best_move = Some(move_concept);
