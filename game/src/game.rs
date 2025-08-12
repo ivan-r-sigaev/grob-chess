@@ -74,6 +74,9 @@ impl GameSearch<'_> {
     pub fn get(&self) -> &Game {
         self.0
     }
+    pub fn check_ending(&mut self) -> Option<GameEnding> {
+        self.for_each_legal_child_node(|node, _| node.exhaust_moves())
+    }
     #[inline(always)]
     pub fn map_move_if_legal<F>(&mut self, chess_move: ChessMove, op: F) -> bool
     where
