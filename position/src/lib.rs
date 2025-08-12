@@ -8,11 +8,3 @@
 
 pub mod board;
 pub mod position;
-
-mod bitboard;
-mod castling_rights;
-mod move_calculation;
-mod move_generation;
-mod pieces;
-mod position_hash;
-mod square;

@@ -1,4 +1,4 @@
-use crate::square::Rank;
+use crate::board::Rank;
 use std::{fmt, ops::Not, str::FromStr};
 use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 

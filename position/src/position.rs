@@ -2,18 +2,19 @@
 //!
 //! This module provedes types related to position representation and move generation.
 
-pub use crate::castling_rights::CastlingRights;
-pub use crate::move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
-pub use crate::position_hash::PositionHash;
+pub use castling_rights::CastlingRights;
+pub use move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
+pub use position_hash::PositionHash;
 
-use crate::bitboard::BitBoard;
-use crate::board::Board;
-use crate::pieces::{Color, Piece};
-use crate::square::{File, Square};
+use crate::board::{BitBoard, Board, Color, File, Piece, Square};
 
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::hash::Hash;
+
+mod castling_rights;
+mod move_generation;
+mod position_hash;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
 

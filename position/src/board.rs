@@ -2,12 +2,17 @@
 //!
 //! This module provides types related to board representation.
 
-pub use crate::bitboard::BitBoard;
-pub use crate::pieces::{Color, Piece, Promotion};
-pub use crate::square::{File, NegDiag, PosDiag, Rank, Square};
+pub use bitboard::BitBoard;
+pub use pieces::{Color, Piece, Promotion};
+pub use square::{File, NegDiag, PosDiag, Rank, Square};
 
 use std::fmt;
 use strum::IntoEnumIterator;
+
+mod bitboard;
+mod move_calculation;
+mod pieces;
+mod square;
 
 /// Pieces that are placed on the board.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]

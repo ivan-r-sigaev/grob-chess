@@ -1,7 +1,5 @@
-use crate::castling_rights::CastlingRights;
-use crate::pieces::{Color, Piece, Promotion};
-use crate::square::{File, Rank, Square};
-use crate::{bitboard::BitBoard, position::Position};
+use crate::board::{BitBoard, Color, File, Piece, Promotion, Rank, Square};
+use crate::position::{CastlingRights, Position};
 use std::{fmt, str::FromStr};
 use strum::{EnumCount, FromRepr, VariantArray};
 

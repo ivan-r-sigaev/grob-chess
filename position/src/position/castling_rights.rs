@@ -1,4 +1,4 @@
-use crate::pieces::Color;
+use crate::board::Color;
 use bitflags::bitflags;
 use std::fmt;
 

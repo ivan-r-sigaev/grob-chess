@@ -1,6 +1,4 @@
-use crate::bitboard::BitBoard;
-use crate::pieces::Color;
-use crate::square::{File, PosDiag, Rank, Square};
+use crate::board::{BitBoard, Color, File, PosDiag, Rank, Square};
 use strum::{EnumCount, VariantArray};
 
 impl BitBoard {
