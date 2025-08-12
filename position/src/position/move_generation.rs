@@ -135,6 +135,13 @@ pub struct ChessUnmove {
     move_index_rule_50: u32,
 }
 
+impl ChessUnmove {
+    /// Returns the move that is being rolled back.
+    pub fn original_move(self) -> ChessMove {
+        self.chess_move
+    }
+}
+
 impl Position {
     /// Generate pseudo-legal king moves from this position.
     pub fn push_king_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
