@@ -74,16 +74,24 @@ pub struct ChessMove {
 
 impl ChessMove {
     /// Returns the destination square of a move.
-    pub fn dest_square(&self) -> Square {
+    pub fn dest_square(self) -> Square {
         self.to
     }
     /// Returns the origin square of a move.
-    pub fn orig_square(&self) -> Square {
+    pub fn orig_square(self) -> Square {
         self.from
     }
     /// Returns the hint as to what kind of move is happening.
-    pub fn hint(&self) -> ChessMoveHint {
+    pub fn hint(self) -> ChessMoveHint {
         self.hint
+    }
+    /// Converts the move to [`LanMove`].
+    pub fn lan(self) -> LanMove {
+        LanMove {
+            to: self.to,
+            from: self.from,
+            promotion: self.hint.promotion(),
+        }
     }
 }
 
@@ -445,13 +453,9 @@ impl Position {
         let piece = self.board().get_piece_at(lan_move.from)?;
         let mut result = None;
         let mut test_move = |chess_move: ChessMove| {
-            if chess_move.from != lan_move.from
-                || chess_move.to != lan_move.to
-                || chess_move.hint.promotion() != lan_move.promotion
-            {
-                return;
+            if chess_move.lan() == lan_move {
+                result = Some(chess_move);
             }
-            result = Some(chess_move);
         };
         match piece {
             Piece::Pawn => {
