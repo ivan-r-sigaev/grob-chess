@@ -21,7 +21,7 @@ fn negamax<const TT_SIZE: usize>(
     if depth == 0 {
         return (evaluate_static(node), None);
     }
-    let hash = node.get().position().position_hash();
+    let hash = node.game().position().position_hash();
     if let Ok(Entry::Occupied(occupied)) = tt.entry(hash) {
         let &chess_move = occupied.get();
         if node.map_move_if_legal(chess_move, |node| {
@@ -60,7 +60,7 @@ fn evaluate_static(node: &mut GameSearch<'_>) -> i32 {
         return evaluate_ending(ending);
     }
 
-    let position = node.get().position();
+    let position = node.game().position();
     let board = position.board();
     let player = board.get_color(position.turn());
     let queens = board.get_piece(Piece::Queen);

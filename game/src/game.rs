@@ -4,7 +4,6 @@ use position::position::{ChessMove, ChessUnmove, PositionHash, ParseFenError, Po
 #[derive(Debug, Clone)]
 pub struct Game {
     pos: Position,
-    move_list: MoveList,
     history: Vec<PlyHistory>,
 }
 
@@ -13,7 +12,6 @@ impl Game {
     pub fn try_from_fen(fen: &str) -> Result<Game, ParseFenError> {
         Ok(Game {
             pos: Position::try_from_fen(fen)?,
-            move_list: MoveList::empty(),
             history: Vec::new(),
         })
     }
@@ -26,7 +24,7 @@ impl Game {
         self.history.iter().filter(|&ply| ply.hash == hash).count()
     }
     pub fn search(&mut self) -> GameSearch<'_> {
-        GameSearch(self)
+        todo!()
     }
     #[must_use]
     pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
@@ -62,7 +60,10 @@ impl Game {
 }
 
 #[derive(Debug)]
-pub struct GameSearch<'a>(&'a mut Game);
+pub struct GameSearch<'a> {
+    game: &'a mut Game,
+    move_list: MoveList,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameEnding {
@@ -70,9 +71,18 @@ pub enum GameEnding {
     Checkmate,
 }
 
+impl<'a> GameSearch<'a> {
+    pub fn new(game: &'a mut Game) -> Self {
+        Self {
+            game,
+            move_list: MoveList::empty(),
+        }
+    }
+}
+
 impl GameSearch<'_> {
-    pub fn get(&self) -> &Game {
-        self.0
+    pub fn game(&self) -> &Game {
+        self.game
     }
     pub fn check_ending(&mut self) -> Option<GameEnding> {
         self.for_each_legal_child_node(|node, _| node.exhaust_moves())
@@ -82,11 +92,11 @@ impl GameSearch<'_> {
     where
         F: FnOnce(&mut Self),
     {
-        if !self.0.try_make_move(chess_move) {
+        if !self.game.try_make_move(chess_move) {
             return false;
         }
         op(self);
-        self.0.unmake_move();
+        self.game.unmake_move();
         true
     }
     #[inline(always)]
@@ -94,22 +104,22 @@ impl GameSearch<'_> {
     where
         F: FnMut(&mut Self, ChessMove),
     {
-        self.0.move_list.generate_moves(&self.0.pos);
+        self.move_list.generate_moves(self.game.position());
 
         let mut has_moves = false;
-        while let Some(chess_move) = self.0.move_list.pop_move() {
-            if self.0.make_move(chess_move) {
+        while let Some(chess_move) = self.move_list.pop_move() {
+            if self.game.make_move(chess_move) {
                 has_moves = true;
                 op(self, chess_move);
-                self.0.unmake_move();
+                self.game.unmake_move();
             }
         }
 
-        self.0.move_list.pop_group();
+        self.move_list.pop_group();
 
         if has_moves {
             None
-        } else if self.0.pos.is_check() {
+        } else if self.game.position().is_check() {
             Some(GameEnding::Checkmate)
         } else {
             Some(GameEnding::Stalemate)
@@ -117,7 +127,7 @@ impl GameSearch<'_> {
     }
     pub fn exhaust_moves(&mut self) {
         loop {
-            if self.0.move_list.pop_move().is_none() {
+            if self.move_list.pop_move().is_none() {
                 break;
             }
         }
