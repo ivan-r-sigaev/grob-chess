@@ -19,6 +19,15 @@ fn main() -> Result<(), io::Error> {
                 println!("id author {AUTHOR_NAME}");
                 println!("uciok");
             }
+            Command::IsReady => {
+                println!("readyok");
+            }
+            Command::UciNewGame => todo!(),
+            Command::Position(_game) => todo!(),
+            Command::Go(_go) => todo!(),
+            Command::Stop => todo!(),
+            Command::PonderHit => todo!(),
+            Command::Quit => break,
         }
     }
     Ok(())
