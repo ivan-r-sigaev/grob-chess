@@ -1,0 +1,8 @@
+[package]
+name = "uci"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+position = { path = "../position" }
+game = { path = "../game" }
