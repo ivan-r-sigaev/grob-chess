@@ -19,7 +19,7 @@ fn negamax<const TT_SIZE: usize>(
     depth: u8,
 ) -> (i32, Option<ChessMove>) {
     if depth == 0 {
-        return (evaluate_static(node), None);
+        return evaluate_static(node);
     }
     let hash = node.game().position().position_hash();
     if let Ok(Entry::Occupied(occupied)) = tt.entry(hash) {
@@ -55,10 +55,12 @@ fn negamax<const TT_SIZE: usize>(
     (score, best_move)
 }
 
-fn evaluate_static(node: &mut GameSearch<'_>) -> i32 {
-    if let Some(ending) = node.check_ending() {
-        return evaluate_ending(ending);
-    }
+fn evaluate_static(node: &mut GameSearch<'_>) -> (i32, Option<ChessMove>) {
+    
+    let any_move = match node.check_ending() {
+        either::Either::Left(chess_move) => chess_move,
+        either::Either::Right(ending) => return (evaluate_ending(ending), None),
+    };
 
     let position = node.game().position();
     let board = position.board();
@@ -74,7 +76,7 @@ fn evaluate_static(node: &mut GameSearch<'_>) -> i32 {
     let n_score = (knights & player).count() as i32 - (knights & !player).count() as i32;
     let p_score = (pawns & player).count() as i32 - (pawns & !player).count() as i32;
 
-    p_score + (n_score + b_score) * 3 + r_score * 5 + q_score * 9
+    (p_score + (n_score + b_score) * 3 + r_score * 5 + q_score * 9, Some(any_move))
 }
 
 fn evaluate_ending(ending: GameEnding) -> i32 {

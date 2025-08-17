@@ -1,4 +1,5 @@
 use crate::move_list::MoveList;
+use either::Either;
 use position::position::{ChessMove, ChessUnmove, PositionHash, ParseFenError, Position};
 
 #[derive(Debug, Clone)]
@@ -84,8 +85,16 @@ impl GameSearch<'_> {
     pub fn game(&self) -> &Game {
         self.game
     }
-    pub fn check_ending(&mut self) -> Option<GameEnding> {
-        self.for_each_legal_child_node(|node, _| node.exhaust_moves())
+    pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
+        let mut any_move = None;
+        let ending = self.for_each_legal_child_node(|node, chess_move| {
+            any_move = Some(chess_move);
+            node.exhaust_moves();
+        });
+        match ending {
+            Some(ending) => Either::Right(ending),
+            None => Either::Left(any_move.unwrap())
+        }
     }
     #[inline(always)]
     pub fn map_move_if_legal<F>(&mut self, chess_move: ChessMove, op: F) -> bool
