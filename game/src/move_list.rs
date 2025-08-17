@@ -47,6 +47,12 @@ impl MoveList {
         self.len = self.lens.pop().expect("move list has no more groups");
     }
     #[inline(always)]
+    pub fn clear(&mut self) {
+        self.moves.clear();
+        self.lens.clear();
+        self.len = 0;
+    }
+    #[inline(always)]
     fn push_move(&mut self, chess_move: ChessMove) {
         self.moves.push(PackedChessMove::new(chess_move));
         self.len += 1;
