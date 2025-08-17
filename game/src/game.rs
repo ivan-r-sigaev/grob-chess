@@ -1,6 +1,6 @@
 use crate::move_list::MoveList;
 use either::Either;
-use position::position::{ChessMove, ChessUnmove, ParseFenError, Position, PositionHash};
+use position::position::{ChessMove, ChessUnmove, Position, PositionHash};
 
 #[derive(Debug, Clone)]
 pub struct Game {
@@ -10,11 +10,11 @@ pub struct Game {
 
 impl Game {
     #[inline(always)]
-    pub fn try_from_fen(fen: &str) -> Result<Game, ParseFenError> {
-        Ok(Game {
-            pos: Position::try_from_fen(fen)?,
+    pub fn from_position(position: Position) -> Game {
+        Game {
+            pos: position,
             history: Vec::new(),
-        })
+        }
     }
     #[inline(always)]
     #[must_use]
