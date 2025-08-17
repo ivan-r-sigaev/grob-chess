@@ -1,13 +1,20 @@
-use crate::bitboard::BitBoard;
-use crate::board::Board;
-use crate::castling_rights::CastlingRights;
-use crate::indexing::{Color, File, Piece, Square};
+//! Position
+//!
+//! This module provedes types related to position representation and move generation.
+
+pub use castling_rights::CastlingRights;
+pub use move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
+pub use position_hash::PositionHash;
+
+use crate::board::{BitBoard, Board, Color, File, Piece, Square};
 
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::hash::Hash;
-use std::mem::size_of;
-use std::ops::Rem;
+
+mod castling_rights;
+mod move_generation;
+mod position_hash;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
 
@@ -52,10 +59,10 @@ impl Hash for Position {
     }
 }
 
-/// An error that had occured while parsing [FEN].
+/// An error that originated from [FEN] parsing.
 ///
 /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParseFenError {
     BadFenSize,
     BadRowCount,
@@ -76,23 +83,22 @@ impl Display for ParseFenError {
 impl Error for ParseFenError {}
 
 impl Position {
-    /// Try to construct a new position from [FEN].
-    ///
-    /// # Arguments
-    /// * `fen` - FEN text
-    ///
-    /// # Returns
-    /// `Result<Self, ParseFenError>`:
-    /// - `Ok(position: Self)` - the parsed position
-    /// - `Error(error: ParseFenError)` - the error that occured while parsing
+    /// Returns the initial position for a normal chess game.
+    pub fn initial_position() -> Self {
+        const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        Self::try_from_fen(INITIAL_FEN).unwrap()
+    }
+
+    /// Tries to construct a new position from [FEN].
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{Position, ParseFenError};
+    /// use position::position::{Position, ParseFenError};
     ///
-    /// let initial_position_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    /// _ = Position::try_from_fen(initial_position_fen)?;
-    /// Ok::<(), ParseFenError>(())
+    /// const INITIAL_POSITION_FEN: &str =
+    ///     "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    /// let initial_position_from_fen = Position::try_from_fen(INITIAL_POSITION_FEN);
+    /// assert_eq!(initial_position_from_fen, Ok(Position::initial_position()))
     /// ```
     ///
     /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
@@ -258,56 +264,22 @@ impl Position {
     }
 }
 
-/// Unique hash generated from a chess position.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct PositionHash(u64);
-
-impl Rem<usize> for PositionHash {
-    type Output = usize;
-
-    fn rem(self, rhs: usize) -> Self::Output {
-        const MAX: u64 = if size_of::<u64>() > size_of::<usize>() {
-            usize::MAX as u64
-        } else {
-            u64::MAX
-        };
-        (self.0 & MAX) as usize % rhs
-    }
-}
-
-impl fmt::Display for PositionHash {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 impl Position {
     /// Returns a hash for the current position.
-    ///
-    /// # Returns
-    /// `PositionHash` - a hash for the current position
     #[inline(always)]
     #[must_use]
     pub fn position_hash(&self) -> PositionHash {
-        PositionHash(self.zobrist_hash)
+        PositionHash::new(self.zobrist_hash)
     }
 
-    /// Returns the currently available en passant file (or `None` if not available).
-    ///
-    /// # Returns
-    /// `Option<File>`:
-    /// - `Some(file: File)` - the file of the currently available en passant
-    /// - `None` - if en passant is not currently available
+    /// Returns the possible en passant target file if available or `None`.
     #[inline(always)]
     #[must_use]
     pub fn en_passant(&self) -> Option<File> {
         self.en_passant
     }
 
-    /// Returns the current castling rights of a position.
-    ///
-    /// # Returns
-    /// `CastlingRights` - the current castling rights of a position
+    /// Returns the state of castling rights.
     #[inline(always)]
     #[must_use]
     pub fn castling_rights(&self) -> CastlingRights {
@@ -315,39 +287,27 @@ impl Position {
     }
 
     /// Returns a reference to the position's board.
-    ///
-    /// # Returns
-    /// `Board` - a reference to the position's board
     #[inline(always)]
     #[must_use]
-    pub(crate) fn board(&self) -> &Board {
+    pub fn board(&self) -> &Board {
         &self.board
     }
 
     /// Returns the color of the player who is about to make a turn.
-    ///
-    /// # Returns
-    /// `Color` - the color of the player who is about to make a turn
     #[inline(always)]
     #[must_use]
     pub fn turn(&self) -> Color {
         self.turn
     }
 
-    /// Returns number of moves when 50 move rule was last broken.
-    ///
-    /// # Returns
-    /// `u32` - the number of moves
+    /// Returns the move index when the 50 move rule counter was last reset.
     #[inline(always)]
     #[must_use]
     pub fn move_index_rule_50(&self) -> u32 {
         self.move_index_rule_50
     }
 
-    /// Returns the number of moves in position so far.
-    ///
-    /// # Returns
-    /// `u32` - the number of moves in position
+    /// Returns the current move index.
     #[inline(always)]
     #[must_use]
     pub fn move_index(&self) -> u32 {
@@ -355,15 +315,11 @@ impl Position {
     }
 
     /// Returns whether the king of the playing player is currently in check.
-    ///
-    /// `bool` - whether the king is currently in check
     pub fn is_check(&self) -> bool {
         self.board.is_king_in_check(self.turn())
     }
 
     /// Returns whether the king of the opponent player is currently in check.
-    ///
-    /// `bool` - whether the king is currently in check
     pub fn was_check_ignored(&self) -> bool {
         self.board.is_king_in_check(!self.turn())
     }
@@ -371,9 +327,6 @@ impl Position {
 
 impl Position {
     /// Sets the currently available en passant file.
-    ///
-    /// # Arguments
-    /// * `en_passant` - the value to set
     #[inline(always)]
     pub fn set_en_passant(&mut self, en_passant: Option<File>) {
         self.zobrist_hash ^= get_en_passant_zobrist(self.en_passant);
@@ -381,10 +334,7 @@ impl Position {
         self.en_passant = en_passant;
     }
 
-    /// Sets the currently available castling rights.
-    ///
-    /// # Arguments
-    /// * `castling_rights` - the value to set
+    /// Sets the state of castling rights.
     #[inline(always)]
     pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
         self.zobrist_hash ^= get_castling_zobrist(self.castling_rights);
@@ -393,11 +343,6 @@ impl Position {
     }
 
     /// Adds a piece to the board.
-    ///
-    /// # Arguments
-    /// `color` - the color of the piece to add
-    /// `piece` - the type of the piece to add
-    /// `sq` - the square where to add the piece
     ///
     /// # Panics
     /// If trying to add the piece to an already occupied square
@@ -409,11 +354,6 @@ impl Position {
     }
 
     /// Removes a piece from the board.
-    ///
-    /// # Arguments
-    /// `color` - the color of the piece to remove
-    /// `piece` - the type of the piece to remove
-    /// `sq` - the square where to remove the piece
     ///
     /// # Panics
     /// - if trying to remove an unoccupied square
@@ -429,12 +369,6 @@ impl Position {
     }
 
     /// Moves a piece on the board.
-    ///
-    /// # Arguments
-    /// `color` - the color of the piece to move
-    /// `piece` - the type of the piece to move
-    /// `from` - the square from where to move the piece
-    /// `to` - the square where to move the piece
     ///
     /// # Panics
     /// - if trying to move a piece from an unoccupied square
@@ -454,9 +388,6 @@ impl Position {
     }
 
     /// Sets the color of the player that is about to make a turn.
-    ///
-    /// # Arguments
-    /// `turn` - the color of the player that is about to make a turn
     #[inline(always)]
     pub fn set_turn(&mut self, turn: Color) {
         self.zobrist_hash ^= get_turn_zobrist(self.turn);
@@ -464,18 +395,12 @@ impl Position {
         self.turn = turn;
     }
 
-    /// Sets the amount of moves in the position.
-    ///
-    /// # Arguments
-    /// `move_index` - the amount of moves in the position
+    /// Sets the current move index.
     pub fn set_move_index(&mut self, move_index: u32) {
         self.move_index = move_index;
     }
 
-    /// Sets the move index when 50 move rule was lat broken.
-    ///
-    /// # Arguments
-    /// `move_index` - the amount of moves in the position
+    /// Sets the move index when the 50 move rule was last reset.
     pub fn set_move_index_rule_50(&mut self, move_index: u32) {
         self.move_index_rule_50 = move_index;
     }

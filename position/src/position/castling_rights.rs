@@ -1,31 +1,24 @@
-use std::fmt;
-
-use crate::indexing::Color;
+use crate::board::Color;
 use bitflags::bitflags;
+use std::fmt;
 
 bitflags! {
     /// Castlight rights of a chess position.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
     pub struct CastlingRights: u8 {
-        /// The castling rights for white kingside castling.
+        /// White kingside castling.
         const WHITE_KING = 1 << 0;
-        /// The castling rights for white queenside castling.
+        /// White queenside castling.
         const WHITE_QUEEN = 1 << 1;
-        /// The castling rights for black kingside castling.
+        /// Black kingside castling.
         const BLACK_KING = 1 << 2;
-        /// The castling rights for black queenside castling.
+        /// Black queenside castling.
         const BLACK_QUEEN = 1 << 3;
     }
 }
 
 impl CastlingRights {
-    /// Constructs the king's castling rights for the given color.
-    ///
-    /// # Arguments
-    /// * `color`: Color
-    ///
-    /// # Returns
-    /// `Self` - the king's castling rights for the given color
+    /// Returns the kingside castling rights for the given color.
     #[inline(always)]
     #[must_use]
     pub fn kingside(color: Color) -> Self {
@@ -36,13 +29,7 @@ impl CastlingRights {
         }
     }
 
-    /// Constructs the queen's castling rights for the given color.
-    ///
-    /// # Arguments
-    /// * `color`: Color
-    ///
-    /// # Returns
-    /// `Self` - the queen's castling rights for the given color
+    /// Returns the queenside castling rights for the given color.
     #[inline(always)]
     #[must_use]
     pub fn queenside(color: Color) -> Self {
@@ -53,17 +40,12 @@ impl CastlingRights {
         }
     }
 
-    /// Constructs the castling rights for the given color.
-    ///
-    /// # Arguments
-    /// * `color`: Color
-    ///
-    /// # Returns
-    /// `Self` - the castling rights for the given color
+    /// Returns the full castling rights for the given color.
     ///
     /// # Examples
     /// ```rust
-    /// use position::prelude::{CastlingRights, Color};
+    /// use position::position::CastlingRights;
+    /// use position::board::Color;
     ///
     /// let white = CastlingRights::both_sides(Color::White);
     /// let white_king = CastlingRights::WHITE_KING;

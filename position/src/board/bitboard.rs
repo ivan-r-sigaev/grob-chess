@@ -1,4 +1,4 @@
-use crate::indexing::{File, NegDiag, PosDiag, Rank, Square};
+use crate::board::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,
@@ -11,20 +11,19 @@ use strum::EnumCount;
 
 /// A [bitboard]. Wraps u64 occupancy mask.
 ///
-/// # See Also
 /// [bitboard]: https://www.chessprogramming.org/Bitboard_Board-Definition
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct BitBoard(pub u64);
+pub struct BitBoard(pub u64);
 
 impl BitBoard {
     /// Empty bitboard.
     pub const EMPTY: BitBoard = BitBoard(0);
-    /// Completely filled bitboard.
+    /// Fully occupied bitboard.
     pub const FILLED: BitBoard = Self::EMPTY.not();
 
-    /// `const` version of `std::ops::From<Square>::from`.
+    /// Constructs a bitboard with only the given square occupied.
     ///
-    /// Behaves exactly the same as `<Self as From<Square>>::from`.
+    /// This is a const version of [`From<Square>::from`].
     #[inline(always)]
     #[must_use]
     pub const fn from_square(value: Square) -> Self {
@@ -32,9 +31,9 @@ impl BitBoard {
         SQUARE_A1.shl(value as u8)
     }
 
-    /// `const` version of `std::ops::From<Rank>::from`.
+    /// Constructs a bitboard with only the given rank occupied.
     ///
-    /// Behaves exactly the same as `<Self as From<Rank>>::from`.
+    /// This is a const version of [`From<Rank>::from`].
     #[inline(always)]
     #[must_use]
     pub const fn from_rank(value: Rank) -> Self {
@@ -49,9 +48,9 @@ impl BitBoard {
         RANK_ONE.shl(File::COUNT as u8 * value as u8)
     }
 
-    /// `const` version of `std::ops::From<File>::from`.
+    /// Constructs a bitboard with only the given file occupied.
     ///
-    /// Behaves exactly the same as `<Self as From<File>>::from`.
+    /// This is a const version of [`From<File>::from`].
     #[inline(always)]
     #[must_use]
     pub const fn from_file(value: File) -> Self {
@@ -66,9 +65,9 @@ impl BitBoard {
         FILE_A.shl(value as u8)
     }
 
-    /// `const` version of `std::ops::From<PosDiag>::from`.
+    /// Constructs a bitboard with only the given positive diagonal occupied.
     ///
-    /// Behaves exactly the same as `<Self as From<PosDiag>>::from`.
+    /// This is a const version of [`From<PosDiag>::from`].
     #[inline(always)]
     #[must_use]
     pub const fn from_pos_diag(diag: PosDiag) -> Self {
@@ -83,9 +82,9 @@ impl BitBoard {
         DIAG_A1H8.genshift(diag as i8 * File::COUNT as i8)
     }
 
-    /// `const` version of `std::ops::From<NegDiag>::from`.
+    /// Constructs a bitboard with only the given negative diagonal occupied.
     ///
-    /// Behaves exactly the same as `<Self as From<NegDiag>>::from`.
+    /// This is a const version of [`From<NegDiag>::from`].
     #[inline(always)]
     #[must_use]
     pub const fn from_neg_diag(diag: NegDiag) -> Self {
@@ -100,12 +99,13 @@ impl BitBoard {
         DIAG_A8H1.genshift(diag as i8 * File::COUNT as i8)
     }
 
-    /// `const` version of `Iterator::next`.
+    /// Returns the result of [`BitBoard::bit_scan_forward`] and removes this
+    /// square from the bitboard. Returns `None` if the bitboard is empty.
     ///
-    /// Behaves exactly the same as `<Self as Iterator>::next`.
+    /// This is a const version of [`Iterator::next`].
     #[inline(always)]
     #[must_use]
-    const fn next(&mut self) -> Option<<Self as Iterator>::Item> {
+    pub const fn iterator_next(&mut self) -> Option<<Self as Iterator>::Item> {
         match self.bit_scan_forward() {
             Some(sq) => {
                 *self = self.with_reset_lsb();
@@ -115,158 +115,159 @@ impl BitBoard {
         }
     }
 
-    /// `const` version of `std::ops::Not::not`.
+    /// Returns the [complement set] (`!`) of the bitboard.
     ///
-    /// Behaves exactly the same as `<Self as Not>::not`.
+    /// [complement set]: https://www.chessprogramming.org/General_Setwise_Operations#Complement_Set
+    ///
+    /// This is a const version of [`Not::not`].
     #[inline(always)]
     #[must_use]
     pub const fn not(self) -> Self {
         BitBoard(!self.0)
     }
 
-    /// `const` version of `std::ops::BitAnd<Self>::bitand`.
+    /// Computes the [intersection] (`&`) of two bitboards.
     ///
-    /// Behaves exactly the same as `<Self as BitAnd<Self>>::bitand`.
+    /// [intersection]: https://www.chessprogramming.org/General_Setwise_Operations#Intersection
+    ///
+    /// This is a const version of [`BitAnd::bitand`].
     #[inline(always)]
     #[must_use]
     pub const fn bitand(self, rhs: BitBoard) -> Self {
         BitBoard(self.0 & rhs.0)
     }
 
-    /// `const` version of `std::ops::BitOr<Self>::bitor`.
+    /// Computes the [union] (`|`) of two bitboards.
     ///
-    /// Behaves exactly the same as `<Self as BitOr<Self>>::bitor`.
+    /// [union]: https://www.chessprogramming.org/General_Setwise_Operations#Union
+    ///
+    /// This is a const version of [`BitOr::bitor`].
     #[inline(always)]
     #[must_use]
     pub const fn bitor(self, rhs: BitBoard) -> Self {
         BitBoard(self.0 | rhs.0)
     }
 
-    /// `const` version of `std::ops::BitXor<Self>::bitxor`.
+    /// Computes the [exclusive OR] (`^`) of two bitboards.
     ///
-    /// Behaves exactly the same as `<Self as BitXor<Self>>::bitxor`.
+    /// [exclusive OR]: https://www.chessprogramming.org/General_Setwise_Operations#Exclusive_Or
+    ///
+    /// This is a const version of [`BitXor::bitxor`].
     #[inline(always)]
     #[must_use]
     pub const fn bitxor(self, rhs: BitBoard) -> Self {
         BitBoard(self.0 ^ rhs.0)
     }
 
-    /// `const` version of `std::ops::Mul::mul`.
+    /// [Multiplies] the bitboard's occupancies.
+    /// Only use this if you know what you're doing.
     ///
-    /// Behaves exactly the same as `<Self as Mul>::mul`.
+    /// [multiplies]: https://www.chessprogramming.org/General_Setwise_Operations#Multiplication
+    ///
+    /// This is a const version of [`Mul::mul`].
     #[inline(always)]
     #[must_use]
     pub const fn mul(self, rhs: Self) -> Self {
         Self(self.0.wrapping_mul(rhs.0))
     }
 
-    /// `const` version of `std::ops::Shl<u8>::shl`.
+    /// [Bitshifts] the bitboard's occupancy towards higher values.
     ///
-    /// Behaves exactly the same as `<Self as Shl<u8>>::shl`.
+    /// [bitshifts]: https://www.chessprogramming.org/General_Setwise_Operations#Shifting_Bitboards
+    ///
+    /// This is a const version of [`Shl::shl`].
     #[inline(always)]
     #[must_use]
     pub const fn shl(self, rhs: u8) -> Self {
         BitBoard(self.0 << rhs)
     }
 
-    /// `const` version of `std::ops::Shr<u8>::shr`.
+    /// [Bitshifts] the bitboard's occupancy towards lower values.
     ///
-    /// Behaves exactly the same as `<Self as Shr<u8>>::shr`.
+    /// [bitshifts]: https://www.chessprogramming.org/General_Setwise_Operations#Shifting_Bitboards
+    ///
+    /// This is a const version of [`Shr::shr`].
     #[inline(always)]
     #[must_use]
     pub const fn shr(self, rhs: u8) -> Self {
         BitBoard(self.0 >> rhs)
     }
 
-    /// `const` version of `std::ops::PartialEq::eq`.
+    /// Checks if two bitboards [are the same].
     ///
-    /// Behaves exactly the same as `<Self as PartialEq>::eq`.
+    /// [are the same]: https://www.chessprogramming.org/General_Setwise_Operations#Equality
+    ///
+    /// This is a const version of [`PartialEq::eq`].
     #[inline(always)]
     #[must_use]
     pub const fn eq(&self, rhs: &BitBoard) -> bool {
         self.0 == rhs.0
     }
 
-    /// `const` version of `std::ops::BitAndAssign<Self>::bitand_assign`.
+    /// The assigning version of [`BitAnd::bitand`].
     ///
-    /// Behaves exactly the same as `<Self as BitAndAssign<Self>>::bitand_assign`.
+    /// This is a const version of [`BitAndAssign::bitand_assign`].
     #[inline(always)]
     pub const fn bitand_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitand(*self, rhs);
     }
 
-    /// `const` version of `std::ops::BitOrAssign<Self>::bitor_assign`.
+    /// The assigning version of [`BitOr::bitor`].
     ///
-    /// Behaves exactly the same as `<Self as BitOrAssign<Self>>::bitor_assign`.
+    /// This is a const version of [`BitOrAssign::bitor_assign`].
     #[inline(always)]
     pub const fn bitor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitor(*self, rhs);
     }
 
-    /// `const` version of `std::ops::BitXorAssign<Self>::bitxor_assign`.
+    /// The assigning version of [`BitXor::bitxor`].
     ///
-    /// Behaves exactly the same as `<Self as BitXorAssign<Self>>::bitxor_assign`.
+    /// This is a const version of [`BitXorAssign::bitxor_assign`].
     #[inline(always)]
     pub const fn bitxor_assign(&mut self, rhs: BitBoard) {
         *self = Self::bitxor(*self, rhs);
     }
 
-    /// `const` version of `std::ops::MulAssign::mul_assign`.
+    /// The assigning version of [`Mul::mul`].
     ///
-    /// Behaves exactly the same as `<Self as MulAssign>::mul_assign`.
+    /// This is a const version of [`MulAssign::mul_assign`].
     #[inline(always)]
     pub const fn mul_assign(&mut self, rhs: BitBoard) {
         *self = Self::mul(*self, rhs);
     }
 
-    /// `const` version of `std::ops::ShlAssign<u8>::shl_assign`.
+    /// The assigning version of [`Shl::shl`].
     ///
-    /// Behaves exactly the same as `<Self as ShlAssign<u8>>::shl_assign`.
+    /// This is a const version of [`ShlAssign::shl_assign`].
     #[inline(always)]
     pub const fn shl_assign(&mut self, rhs: u8) {
         *self = Self::shl(*self, rhs);
     }
 
-    /// `const` version of `std::ops::ShrAssign<u8>::shr_assign`.
+    /// The assigning version of [`Shr::shr`].
     ///
-    /// Behaves exactly the same as `<Self as ShrAssign<u8>>::shr_assign`.
+    /// This is a const version of [`ShrAssign::shr_assign`].
     #[inline(always)]
     pub const fn shr_assign(&mut self, rhs: u8) {
         *self = Self::shr(*self, rhs);
     }
 
-    /// Checks whether the entire board is unoccupied.
-    ///
-    /// # Returns
-    /// `bool` - whether the entire board is unoccupied
+    /// Returns `true` if the bitboard is completely unoccupied.
     #[inline(always)]
     #[must_use]
     pub const fn is_empty(self) -> bool {
         self.0 == 0
     }
 
-    /// Checks if the given square is occupied.
-    ///
-    /// # Arguments
-    /// * `sq` - the square to check
-    ///
-    /// # Returns
-    /// `bool` - whether the given square is occupied
+    /// Returns `true` if the given square is occupied.
     #[inline(always)]
     #[must_use]
     pub const fn has_square(self, sq: Square) -> bool {
         !self.bitand(BitBoard::from_square(sq)).is_empty()
     }
 
-    /// Tries to get the occupied square with the lowest index, if empty returns `None`.
-    ///
-    /// # Returns
-    /// `Option<Square>`:
-    /// - `Some(square: Square)` - the square with the lowest index
-    /// - `None` - if the bitboard is empty
-    ///
-    /// # See Also
-    /// [Square] - to see square's indexes
+    /// Returns the occupied square with the lowest index
+    /// or `None` if the bitboard is empty.
     #[inline(always)]
     #[must_use]
     pub const fn bit_scan_forward(self) -> Option<Square> {
@@ -279,46 +280,36 @@ impl BitBoard {
 
     /// Bitshifts the bitboard based on the sign of the input.
     ///
-    /// # Arguments
-    /// * `rhs` - the signed number of bits to shift by
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
+    /// Positive values shift `x` bits to the left,
+    /// while negative values shift `|x|` bits to the right.
     ///
     /// # See Also
-    /// [BitBoard::shr]
-    /// [BitBoard::shl]
+    /// [BitBoard::shr], [BitBoard::shl] - bitshifting
     #[inline(always)]
     #[must_use]
-    const fn genshift(self, rhs: i8) -> Self {
-        if rhs >= 0 {
-            self.shl(rhs as u8)
+    pub const fn genshift(self, x: i8) -> Self {
+        if x >= 0 {
+            self.shl(x as u8)
         } else {
-            self.shr(-rhs as u8)
+            self.shr(-x as u8)
         }
     }
 
     /// [Isolates] the least signigicant bit of occupancy.
     ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
     /// [isolates]: https://www.chessprogramming.org/General_Setwise_Operations#Isolation
     #[inline(always)]
     #[must_use]
-    const fn with_isolated_lsb(self) -> BitBoard {
+    pub const fn with_isolated_lsb(self) -> BitBoard {
         BitBoard(self.0 & self.0.wrapping_neg())
     }
 
     /// [Resets] the least signigicant bit of occupancy.
     ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
     /// [resets]: https://www.chessprogramming.org/General_Setwise_Operations#Reset
     #[inline(always)]
     #[must_use]
-    const fn with_reset_lsb(self) -> BitBoard {
+    pub const fn with_reset_lsb(self) -> BitBoard {
         BitBoard(self.0 & self.0.wrapping_sub(1))
     }
 }
@@ -326,26 +317,15 @@ impl BitBoard {
 impl Iterator for BitBoard {
     type Item = Square;
 
-    /// Returns the occupied square with the smallest index (or `None` if empty) and removes it from the bitboard.
-    ///
-    /// # Returns
-    /// `Option<Square>`:
-    /// - `Some(square: Square)` - the occupied square with the smallest index
-    /// - `None` - if the bitboard is empty
+    /// See [`BitBoard::iterator_next`].
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        Self::next(self)
+        Self::iterator_next(self)
     }
 }
 
 impl From<Square> for BitBoard {
-    /// Constructs a bitboard with only the given square occupied.
-    ///
-    /// # Arguments
-    /// * `value` - the occupied square
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
+    /// See [`BitBoard::from_square`].
     #[inline(always)]
     fn from(value: Square) -> Self {
         Self::from_square(value)
@@ -353,13 +333,7 @@ impl From<Square> for BitBoard {
 }
 
 impl From<Rank> for BitBoard {
-    /// Constructs a bitboard with only the given rank occupied.
-    ///
-    /// # Arguments
-    /// * `value` - the occupied rank
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
+    /// See [`BitBoard::from_rank`].
     #[inline(always)]
     fn from(value: Rank) -> Self {
         Self::from_rank(value)
@@ -367,13 +341,7 @@ impl From<Rank> for BitBoard {
 }
 
 impl From<File> for BitBoard {
-    /// Constructs a bitboard with only the given file occupied.
-    ///
-    /// # Arguments
-    /// * `value` - the occupied file
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
+    /// See [`BitBoard::from_file`].
     #[inline(always)]
     fn from(value: File) -> Self {
         Self::from_file(value)
@@ -381,13 +349,7 @@ impl From<File> for BitBoard {
 }
 
 impl From<PosDiag> for BitBoard {
-    /// Constructs a bitboard with only the given positive diagonal occupied.
-    ///
-    /// # Arguments
-    /// * `diag` - the occupied diagonal
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
+    /// See [`BitBoard::from_pos_diag`].
     #[inline(always)]
     fn from(value: PosDiag) -> Self {
         Self::from_pos_diag(value)
@@ -395,13 +357,7 @@ impl From<PosDiag> for BitBoard {
 }
 
 impl From<NegDiag> for BitBoard {
-    /// Constructs a bitboard with only the given negative diagonal occupied.
-    ///
-    /// # Arguments
-    /// * `diag` - the occupied diagonal
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
+    /// See [`BitBoard::from_neg_diag`].
     #[inline(always)]
     fn from(value: NegDiag) -> Self {
         Self::from_neg_diag(value)
@@ -411,15 +367,7 @@ impl From<NegDiag> for BitBoard {
 impl BitAnd<Self> for BitBoard {
     type Output = Self;
 
-    /// Computes the [intersection] (`&`) of two bitboards.
-    ///
-    /// # Arguments
-    /// * rhs - other bitboard
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [intersection]: https://www.chessprogramming.org/General_Setwise_Operations#Intersection
+    /// See [`BitBoard::bitand`].
     #[inline(always)]
     fn bitand(self, rhs: Self) -> Self::Output {
         Self::bitand(self, rhs)
@@ -427,7 +375,7 @@ impl BitAnd<Self> for BitBoard {
 }
 
 impl BitAndAssign<Self> for BitBoard {
-    /// The assigning version of `BitAnd<Self>`.
+    /// See [`BitBoard::bitand_assign`].
     #[inline(always)]
     fn bitand_assign(&mut self, rhs: Self) {
         Self::bitand_assign(self, rhs);
@@ -437,15 +385,7 @@ impl BitAndAssign<Self> for BitBoard {
 impl BitOr<Self> for BitBoard {
     type Output = Self;
 
-    /// Computes the [union] (`|`) of two bitboards.
-    ///
-    /// # Arguments
-    /// * rhs - other bitboard
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [union]: https://www.chessprogramming.org/General_Setwise_Operations#Union
+    /// See [`BitBoard::bitor`].
     #[inline(always)]
     fn bitor(self, rhs: Self) -> Self::Output {
         Self::bitor(self, rhs)
@@ -453,7 +393,7 @@ impl BitOr<Self> for BitBoard {
 }
 
 impl BitOrAssign<Self> for BitBoard {
-    /// The assigning version of `BitOr<Self>`.
+    /// See [`BitBoard::bitor_assign`].
     #[inline(always)]
     fn bitor_assign(&mut self, rhs: Self) {
         Self::bitor_assign(self, rhs);
@@ -463,15 +403,7 @@ impl BitOrAssign<Self> for BitBoard {
 impl BitXor<Self> for BitBoard {
     type Output = Self;
 
-    /// Computes the [exclusive OR] (`^`) of two bitboards.
-    ///
-    /// # Arguments
-    /// * rhs - other bitboard
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [exclusive OR]: https://www.chessprogramming.org/General_Setwise_Operations#Exclusive_Or
+    /// See [`BitBoard::bitxor`].
     #[inline(always)]
     fn bitxor(self, rhs: Self) -> Self::Output {
         Self::bitxor(self, rhs)
@@ -479,7 +411,7 @@ impl BitXor<Self> for BitBoard {
 }
 
 impl BitXorAssign<Self> for BitBoard {
-    /// The assigning version of `BitXor<Self>`.
+    /// See [`BitBoard::bitxor_assign`].
     #[inline(always)]
     fn bitxor_assign(&mut self, rhs: Self) {
         Self::bitxor_assign(self, rhs);
@@ -489,17 +421,7 @@ impl BitXorAssign<Self> for BitBoard {
 impl Mul for BitBoard {
     type Output = Self;
 
-    /// [Multiplies] the bitboard's occupancies.
-    ///
-    /// WARNING: THIS IS NOT A TRIVIAL OPERATION. ONLY USE IT IF YOU KNOW WHAT YOU'RE DOING.
-    ///
-    /// # Arguments
-    /// * rhs - other bitboard
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [multiplies]: https://www.chessprogramming.org/General_Setwise_Operations#Multiplication
+    /// See [`BitBoard::mul`].
     #[inline(always)]
     fn mul(self, rhs: Self) -> Self::Output {
         Self::mul(self, rhs)
@@ -507,7 +429,7 @@ impl Mul for BitBoard {
 }
 
 impl MulAssign for BitBoard {
-    /// The assigning version of `Mul`.
+    /// See [`BitBoard::mul_assign`].
     #[inline(always)]
     fn mul_assign(&mut self, rhs: Self) {
         Self::mul_assign(self, rhs)
@@ -517,15 +439,7 @@ impl MulAssign for BitBoard {
 impl Shl<u8> for BitBoard {
     type Output = Self;
 
-    /// [Bitshifts] the bitboard's occupancy towards higher values.
-    ///
-    /// # Arguments
-    /// * rhs - the number of bits to shift by
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [bitshifts]: https://www.chessprogramming.org/General_Setwise_Operations#Shifting_Bitboards
+    /// See [`BitBoard::shl`].
     #[inline(always)]
     fn shl(self, rhs: u8) -> Self::Output {
         Self::shl(self, rhs)
@@ -533,7 +447,7 @@ impl Shl<u8> for BitBoard {
 }
 
 impl ShlAssign<u8> for BitBoard {
-    /// The assigning version of `Shl<u8>`.
+    /// See [`BitBoard::shl_assign`].
     #[inline(always)]
     fn shl_assign(&mut self, rhs: u8) {
         Self::shl_assign(self, rhs);
@@ -543,15 +457,7 @@ impl ShlAssign<u8> for BitBoard {
 impl Shr<u8> for BitBoard {
     type Output = Self;
 
-    /// [Bitshifts] the bitboard's occupancy towards lower values.
-    ///
-    /// # Arguments
-    /// * rhs - the number of bits to shift by
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [bitshifts]: https://www.chessprogramming.org/General_Setwise_Operations#Shifting_Bitboards
+    /// See [`BitBoard::shr`].
     #[inline(always)]
     fn shr(self, rhs: u8) -> Self::Output {
         Self::shr(self, rhs)
@@ -559,7 +465,7 @@ impl Shr<u8> for BitBoard {
 }
 
 impl ShrAssign<u8> for BitBoard {
-    /// The assigning version of `Shr<u8>`.
+    /// See [`BitBoard::shr_assign`].
     #[inline(always)]
     fn shr_assign(&mut self, rhs: u8) {
         Self::shr_assign(self, rhs);
@@ -569,12 +475,7 @@ impl ShrAssign<u8> for BitBoard {
 impl Not for BitBoard {
     type Output = Self;
 
-    /// Returns the [complement set] (`!`) of the bitboard.
-    ///
-    /// # Returns
-    /// `Self` - the resulting bitboard
-    ///
-    /// [complement set]: https://www.chessprogramming.org/General_Setwise_Operations#Complement_Set
+    /// See [`BitBoard::not`].
     #[inline(always)]
     fn not(self) -> Self::Output {
         Self::not(self)
@@ -582,15 +483,7 @@ impl Not for BitBoard {
 }
 
 impl PartialEq for BitBoard {
-    /// Checks if two bitboards [are the same].
-    ///
-    /// # Arguments
-    /// * rhs - other bitboard
-    ///
-    /// # Returns
-    /// `bool` - whether the bitboards are the same
-    ///
-    /// [are the same]: https://www.chessprogramming.org/General_Setwise_Operations#Equality
+    /// See [`BitBoard::eq`].
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         Self::eq(self, other)
@@ -605,9 +498,6 @@ impl Hash for BitBoard {
 }
 
 impl fmt::Display for BitBoard {
-    /// Formats the bitboard for debug purposes.
-    ///
-    /// The result is a coarse ASCII drawing of the bitboard's occupancy.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut bb = self.0;
         let mut drawing = String::new();

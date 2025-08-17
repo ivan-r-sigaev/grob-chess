@@ -1,6 +1,6 @@
 use crate::game::{Game, GameEnding};
 use crate::transposition_table::TranspositionTable;
-use position::prelude::ChessMove;
+use position::position::ChessMove;
 
 pub fn evaluate<const TT_SIZE: usize>(game: &mut Game, depth: u8) -> i32 {
     let mut tt = TranspositionTable::<TT_SIZE, ChessMove>::new();

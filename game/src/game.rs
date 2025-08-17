@@ -1,6 +1,5 @@
 use crate::move_list::MoveList;
-use position::prelude::{ChessMove, ChessUnmove};
-use position::prelude::{ParseFenError, Position};
+use position::position::{ChessMove, ChessUnmove, ParseFenError, Position};
 
 #[derive(Debug, Clone)]
 pub struct Game {
