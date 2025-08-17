@@ -1,5 +1,5 @@
 use crate::move_list::MoveList;
-use position::position::{ChessMove, ChessUnmove, ParseFenError, Position};
+use position::position::{ChessMove, ChessUnmove, PositionHash, ParseFenError, Position};
 
 #[derive(Debug, Clone)]
 pub struct Game {
@@ -10,6 +10,7 @@ pub struct Game {
 
 #[derive(Debug, Clone, Copy)]
 struct PlyHistory {
+    hash: PositionHash,
     unmove: ChessUnmove,
 }
 
@@ -32,6 +33,9 @@ impl Game {
     #[must_use]
     pub fn get_position(&self) -> &Position {
         &self.pos
+    }
+    pub fn count_repetitions(&self, hash: PositionHash) -> usize {
+        self.history.iter().filter(|&ply| ply.hash == hash).count()
     }
     #[inline(always)]
     pub fn map_move_if_legal<F>(&mut self, move_concept: ChessMove, mut op: F) -> bool
@@ -93,16 +97,14 @@ impl Game {
         if !self.pos.is_move_applicable(move_concept) {
             return (self, false);
         }
-
+        let hash = self.pos.position_hash();
         let unmove = self.pos.make_move(move_concept);
         if self.pos.was_check_ignored() {
             self.pos.unmake_move(unmove);
             return (self, false);
         }
 
-        // TODO: Also check for threefold repetition, etc.
-
-        self.history.push(PlyHistory { unmove });
+        self.history.push(PlyHistory { unmove, hash });
 
         (self, true)
     }
