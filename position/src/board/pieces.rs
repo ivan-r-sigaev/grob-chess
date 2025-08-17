@@ -1,4 +1,4 @@
-use crate::board::Rank;
+use crate::board::{Rank, Square};
 use std::{fmt, ops::Not, str::FromStr};
 use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
@@ -73,6 +73,32 @@ impl Color {
             Rank::R6
         } else {
             Rank::R3
+        }
+    }
+
+    /// Returns the king's origin square for this color.
+    pub fn king_origin(self) -> Square {
+        match self {
+            Color::White => Square::E1,
+            Color::Black => Square::E8,
+        }
+    }
+
+    /// Returns the origin square of the kingside rook for this color.
+    #[must_use]
+    pub fn kingside_rook_origin(self) -> Square {
+        match self {
+            Color::White => Square::H1,
+            Color::Black => Square::H8,
+        }
+    }
+
+    /// Returns the origin square of the queenside rook for this color.
+    #[must_use]
+    pub fn queenside_rook_origin(self) -> Square {
+        match self {
+            Color::White => Square::A1,
+            Color::Black => Square::A8,
         }
     }
 }
