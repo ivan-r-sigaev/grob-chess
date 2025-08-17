@@ -1,6 +1,6 @@
 use crate::move_list::MoveList;
 use either::Either;
-use position::position::{ChessMove, ChessUnmove, PositionHash, ParseFenError, Position};
+use position::position::{ChessMove, ChessUnmove, ParseFenError, Position, PositionHash};
 
 #[derive(Debug, Clone)]
 pub struct Game {
@@ -93,7 +93,7 @@ impl GameSearch<'_> {
         });
         match ending {
             Some(ending) => Either::Right(ending),
-            None => Either::Left(any_move.unwrap())
+            None => Either::Left(any_move.unwrap()),
         }
     }
     #[inline(always)]

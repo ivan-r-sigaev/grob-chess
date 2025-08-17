@@ -56,7 +56,6 @@ fn negamax<const TT_SIZE: usize>(
 }
 
 fn evaluate_static(node: &mut GameSearch<'_>) -> (i32, Option<ChessMove>) {
-    
     let any_move = match node.check_ending() {
         either::Either::Left(chess_move) => chess_move,
         either::Either::Right(ending) => return (evaluate_ending(ending), None),
@@ -76,7 +75,10 @@ fn evaluate_static(node: &mut GameSearch<'_>) -> (i32, Option<ChessMove>) {
     let n_score = (knights & player).count() as i32 - (knights & !player).count() as i32;
     let p_score = (pawns & player).count() as i32 - (pawns & !player).count() as i32;
 
-    (p_score + (n_score + b_score) * 3 + r_score * 5 + q_score * 9, Some(any_move))
+    (
+        p_score + (n_score + b_score) * 3 + r_score * 5 + q_score * 9,
+        Some(any_move),
+    )
 }
 
 fn evaluate_ending(ending: GameEnding) -> i32 {
