@@ -162,6 +162,10 @@ dependencies = [
 [[package]]
 name = "uci"
 version = "0.1.0"
+dependencies = [
+ "game",
+ "position",
+]
 
 [[package]]
 name = "unicode-ident"
