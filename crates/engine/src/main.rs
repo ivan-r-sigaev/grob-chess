@@ -1,11 +1,11 @@
-//! Uci
+//! Engine
 //!
 //! This crate is the driver code for the engine.
 
-use crate::command::Command;
+use crate::uci::Command;
 use std::io::{self, BufRead, BufReader};
 
-mod command;
+mod uci;
 
 const ENGINE_NAME: &str = "Pico Chess";
 const AUTHOR_NAME: &str = "Ivan Sigaev";

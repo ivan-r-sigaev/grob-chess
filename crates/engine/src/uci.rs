@@ -2,7 +2,7 @@ use game::Game;
 use position::{LanMove, Position};
 use std::{str::FromStr, time::Duration};
 
-use crate::command::cursor::Cursor;
+use crate::uci::cursor::Cursor;
 
 mod cursor;
 
