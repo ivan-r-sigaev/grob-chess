@@ -1,6 +1,6 @@
 //! Position
 //!
-//! This module provedes types related to position representation and move generation.
+//! This crate provides types related to position representation and move generation.
 
 pub use castling_rights::CastlingRights;
 pub use move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
