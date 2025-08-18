@@ -7,4 +7,4 @@ pub mod game;
 pub mod transposition_table;
 
 #[cfg(test)]
-pub mod perft;
+mod perft;
