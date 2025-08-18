@@ -377,7 +377,7 @@ impl Position {
             return;
         }
 
-        if !self.is_kingside_castling_prohibited(self.turn()) {
+        if self.is_kingside_castling_allowed(self.turn()) {
             push_move(ChessMove {
                 from: if self.turn() == Color::White {
                     Square::E1
@@ -392,7 +392,7 @@ impl Position {
                 hint: ChessMoveHint::KingCastle,
             });
         }
-        if !self.is_queenside_castling_prohibited(self.turn()) {
+        if self.is_queenside_castling_allowed(self.turn()) {
             push_move(ChessMove {
                 from: if self.turn() == Color::White {
                     Square::E1
@@ -560,10 +560,10 @@ impl Position {
                     ) == BitBoard::from(to)
             }
             ChessMoveHint::KingCastle => {
-                piece == Piece::King && !self.is_kingside_castling_prohibited(color)
+                piece == Piece::King && self.is_kingside_castling_allowed(color)
             }
             ChessMoveHint::QueenCastle => {
-                piece == Piece::King && !self.is_queenside_castling_prohibited(color)
+                piece == Piece::King && self.is_queenside_castling_allowed(color)
             }
             ChessMoveHint::EnPassantCapture => {
                 let file = match self.en_passant() {
@@ -638,23 +638,11 @@ impl Position {
                         self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                     );
                 } else if piece == Piece::Rook {
-                    if from
-                        == (if self.turn() == Color::White {
-                            Square::H1
-                        } else {
-                            Square::H8
-                        })
-                    {
+                    if from == self.turn.kingside_rook_origin() {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
-                    } else if from
-                        == (if self.turn() == Color::White {
-                            Square::A1
-                        } else {
-                            Square::A8
-                        })
-                    {
+                    } else if from == self.turn.queenside_rook_origin() {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
@@ -722,23 +710,11 @@ impl Position {
                         self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                     );
                 } else if piece == Piece::Rook {
-                    if from
-                        == (if self.turn() == Color::White {
-                            Square::H1
-                        } else {
-                            Square::H8
-                        })
-                    {
+                    if from == self.turn.kingside_rook_origin() {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
-                    } else if from
-                        == (if self.turn() == Color::White {
-                            Square::A1
-                        } else {
-                            Square::A8
-                        })
-                    {
+                    } else if from == self.turn.queenside_rook_origin() {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
@@ -831,11 +807,7 @@ impl Position {
                 self.remove_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::H1
-                    } else {
-                        Square::H8
-                    },
+                    self.turn().kingside_rook_origin(),
                 );
                 self.add_color_piece(
                     self.turn(),
@@ -860,11 +832,7 @@ impl Position {
                 self.remove_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::A1
-                    } else {
-                        Square::A8
-                    },
+                    self.turn().queenside_rook_origin(),
                 );
                 self.add_color_piece(
                     self.turn(),
@@ -874,6 +842,18 @@ impl Position {
                     } else {
                         Square::D8
                     },
+                );
+            }
+        }
+
+        if capture == Some(Piece::Rook) {
+            if to == (!self.turn()).kingside_rook_origin() {
+                self.set_castling_rights(
+                    self.castling_rights() & !CastlingRights::kingside(!self.turn()),
+                );
+            } else if to == (!self.turn()).queenside_rook_origin() {
+                self.set_castling_rights(
+                    self.castling_rights() & !CastlingRights::queenside(!self.turn()),
                 );
             }
         }
@@ -1006,15 +986,7 @@ impl Position {
                         Square::F8
                     },
                 );
-                self.add_color_piece(
-                    self.turn(),
-                    Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::H1
-                    } else {
-                        Square::H8
-                    },
-                );
+                self.add_color_piece(self.turn(), Piece::Rook, self.turn().kingside_rook_origin());
             }
             ChessMoveHint::QueenCastle => {
                 self.remove_color_piece(self.turn(), Piece::King, to);
@@ -1032,11 +1004,7 @@ impl Position {
                 self.add_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::A1
-                    } else {
-                        Square::A8
-                    },
+                    self.turn().queenside_rook_origin(),
                 );
             }
         }
@@ -1044,93 +1012,46 @@ impl Position {
 }
 
 impl Position {
-    /// Returns `true` if the kingside castling is disallowed for a given color.
+    /// Returns whether the kingside castling is allowed for a given color.
     #[inline(always)]
     #[must_use]
-    fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
-        // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty = BitBoard::from(Square::F1) | BitBoard::from(Square::G1);
-        let b_empty = BitBoard::from(Square::F8) | BitBoard::from(Square::G8);
-        !self
-            .castling_rights()
-            .contains(CastlingRights::kingside(self.turn()))
-            || (self.board().get_color_piece(color, Piece::Rook)
-                & BitBoard::from(if color == Color::White {
-                    Square::H1
-                } else {
-                    Square::H8
-                }))
-            .is_empty()
-            || !(self.board().get_occupance()
-                & if color == Color::White {
-                    w_empty
-                } else {
-                    b_empty
-                })
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::F1
-                } else {
-                    Square::F8
-                },
-                !color,
-            ))
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::G1
-                } else {
-                    Square::G8
-                },
-                !color,
-            ))
-            .is_empty()
+    fn is_kingside_castling_allowed(&self, color: Color) -> bool {
+        let sq1 = match color {
+            Color::White => Square::F1,
+            Color::Black => Square::F8,
+        };
+        let sq2 = match color {
+            Color::White => Square::G1,
+            Color::Black => Square::G8,
+        };
+        self.castling_rights()
+            .contains(CastlingRights::kingside(color))
+            && !self.board().is_king_in_check(color)
+            && self.board().can_king_move_to(sq2, color)
+            && self.board().can_king_move_to(sq1, color)
     }
 
-    /// Returns `true` if the queenside castling is disallowed for a given color.
+    /// Returns whether the queenside castling is allowed for a given color.
     #[inline(always)]
     #[must_use]
-    fn is_queenside_castling_prohibited(&self, color: Color) -> bool {
-        // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty =
-            BitBoard::from(Square::B1) | BitBoard::from(Square::C1) | BitBoard::from(Square::D1);
-        let b_empty =
-            BitBoard::from(Square::B8) | BitBoard::from(Square::C8) | BitBoard::from(Square::D8);
-        !self
-            .castling_rights()
-            .contains(CastlingRights::queenside(self.turn()))
-            || (self.board().get_color_piece(color, Piece::Rook)
-                & BitBoard::from(if color == Color::White {
-                    Square::A1
-                } else {
-                    Square::A8
-                }))
-            .is_empty()
-            || !(self.board().get_occupance()
-                & if color == Color::White {
-                    w_empty
-                } else {
-                    b_empty
-                })
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::C1
-                } else {
-                    Square::C8
-                },
-                !color,
-            ))
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::D1
-                } else {
-                    Square::D8
-                },
-                !color,
-            ))
-            .is_empty()
+    fn is_queenside_castling_allowed(&self, color: Color) -> bool {
+        let sq1 = match color {
+            Color::White => Square::B1,
+            Color::Black => Square::B8,
+        };
+        let sq2 = match color {
+            Color::White => Square::C1,
+            Color::Black => Square::C8,
+        };
+        let sq3 = match color {
+            Color::White => Square::D1,
+            Color::Black => Square::D8,
+        };
+        self.castling_rights()
+            .contains(CastlingRights::queenside(color))
+            && !self.board().is_king_in_check(color)
+            && self.board().can_king_move_to(sq3, color)
+            && self.board().can_king_move_to(sq2, color)
+            && !self.board().get_occupance().has_square(sq1)
     }
 }

@@ -142,6 +142,12 @@ impl Board {
                 | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
                 | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders())
     }
+
+    /// Returns whether a king can step on a given square.
+    pub fn can_king_move_to(&self, sq: Square, color: Color) -> bool {
+        !self.get_occupance().has_square(sq) && self.get_color_attackers_to(sq, !color).is_empty()
+    }
+
     /// Returns the bitboard with queens and bishops.
     #[inline(always)]
     #[must_use]
