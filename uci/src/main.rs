@@ -1,3 +1,7 @@
+//! Uci
+//!
+//! This crate is the driver code for the engine.
+
 use crate::command::Command;
 use std::io::{self, BufRead, BufReader};
 
