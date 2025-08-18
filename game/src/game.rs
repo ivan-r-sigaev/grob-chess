@@ -1,13 +1,21 @@
 use either::Either;
 use position::position::{ChessMove, ChessUnmove, MoveList, Position, PositionHash};
 
+/// A chess game.
 #[derive(Debug, Clone)]
 pub struct Game {
     pos: Position,
     history: Vec<PlyHistory>,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct PlyHistory {
+    hash: PositionHash,
+    unmove: ChessUnmove,
+}
+
 impl Game {
+    /// Start a [`Game`] from a position.
     #[inline(always)]
     pub fn from_position(position: Position) -> Game {
         Game {
@@ -15,17 +23,21 @@ impl Game {
             history: Vec::new(),
         }
     }
+    /// Returns [`Game`]'s position.
     #[inline(always)]
     #[must_use]
     pub fn position(&self) -> &Position {
         &self.pos
     }
+    /// Returns the amount of times a given position repeats in the game's history.
     pub fn count_repetitions(&self, hash: PositionHash) -> usize {
         self.history.iter().filter(|&ply| ply.hash == hash).count()
     }
+    /// Starts a [`GameSearch`].
     pub fn search(&mut self) -> GameSearch<'_> {
         GameSearch::new(self)
     }
+    /// Make a [`ChessMove`] if it's valid.
     #[must_use]
     pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
         if !self.pos.is_move_applicable(chess_move) {
@@ -33,6 +45,7 @@ impl Game {
         }
         self.make_move(chess_move)
     }
+    /// Unroll the last made move unless it's already the starting position.
     #[must_use]
     pub fn try_unmake_move(&mut self) -> bool {
         if self.history.is_empty() {
@@ -59,20 +72,28 @@ impl Game {
     }
 }
 
+/// Searches through [`Game`]'s moves.
+///
+/// Even though [`GameSearch`] holds a mutable reference
+/// to the [`Game`], it will restore its original state
+/// once the search is over.
 #[derive(Debug)]
 pub struct GameSearch<'a> {
     game: &'a mut Game,
     move_list: MoveList,
 }
 
+/// Possible ending for a chess game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameEnding {
+    /// Game ends in a draw.
     Stalemate,
+    /// One of the players wins by checkmate.
     Checkmate,
 }
 
 impl<'a> GameSearch<'a> {
-    pub fn new(game: &'a mut Game) -> Self {
+    fn new(game: &'a mut Game) -> Self {
         Self {
             game,
             move_list: MoveList::empty(),
@@ -81,9 +102,12 @@ impl<'a> GameSearch<'a> {
 }
 
 impl GameSearch<'_> {
+    /// State of the game at this at this point during search.
     pub fn game(&self) -> &Game {
         self.game
     }
+    /// Returns any legal move for this position or a [`GameEnding`]
+    /// if the position has no legal moves.
     pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
         let mut any_move = None;
         let ending = self.for_each_legal_child_node(|node, chess_move| {
@@ -95,6 +119,9 @@ impl GameSearch<'_> {
             None => Either::Left(any_move.unwrap()),
         }
     }
+    /// Makes a move and inspects the resulting state of the game
+    /// with a function if the move is legal.
+    /// Returns `true` if the move was legal.
     #[inline(always)]
     pub fn map_move_if_legal<F>(&mut self, chess_move: ChessMove, op: F) -> bool
     where
@@ -107,6 +134,8 @@ impl GameSearch<'_> {
         self.game.unmake_move();
         true
     }
+    /// Inspects all legal moves in position with a function.
+    /// Returns `Some(game_ending: GameEnding)` if there are no legal moves.
     #[inline(always)]
     pub fn for_each_legal_child_node<F>(&mut self, mut op: F) -> Option<GameEnding>
     where
@@ -136,6 +165,12 @@ impl GameSearch<'_> {
             Some(GameEnding::Stalemate)
         }
     }
+    /// Skips all next moves if currently
+    /// inspecting legal moves using [`Self::for_each_legal_child_node`].
+    ///
+    /// # Panics
+    /// Panics if not currently
+    /// inspecting legal moves using [`Self::for_each_legal_child_node`].
     pub fn exhaust_moves(&mut self) {
         loop {
             if self.move_list.pop_move().is_none() {
@@ -143,10 +178,4 @@ impl GameSearch<'_> {
             }
         }
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct PlyHistory {
-    hash: PositionHash,
-    unmove: ChessUnmove,
 }

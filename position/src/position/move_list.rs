@@ -18,18 +18,27 @@ impl MoveList {
         }
     }
     /// Returns a slice to the current move group.
+    ///
+    /// # Panics
+    /// Panics if there is no current move group.
     pub fn group(&self) -> &[PackedChessMove] {
         let end = self.moves.len();
         let start = end - self.group_len();
         &self.moves[start..end]
     }
     /// Returns a mutable slice to the current move group.
+    ///
+    /// # Panics
+    /// Panics if there is no current move group.
     pub fn group_mut(&mut self) -> &mut [PackedChessMove] {
         let end = self.moves.len();
         let start = end - self.group_len();
         &mut self.moves[start..end]
     }
     /// Removes and returns a move from end of the current move group.
+    ///
+    /// # Panics
+    /// Panics if there is no current move group.
     #[inline(always)]
     #[must_use]
     pub fn pop_move(&mut self) -> Option<ChessMove> {
