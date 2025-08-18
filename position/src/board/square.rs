@@ -82,6 +82,13 @@ pub enum Rank {
     R8,
 }
 
+impl Rank {
+    /// Mirrors rank horizontally.
+    pub const fn mirrored(self) -> Self {
+        Self::from_repr((Self::COUNT - 1) as u8 - self as u8).unwrap()
+    }
+}
+
 impl fmt::Display for Rank {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -376,6 +383,11 @@ impl Square {
                 .rem_euclid(Self::COUNT as i8) as u8,
         )
         .unwrap()
+    }
+
+    /// Mirrors square horizontally.
+    pub const fn mirrored(self) -> Self {
+        Self::new(self.rank().mirrored(), self.file())
     }
 }
 

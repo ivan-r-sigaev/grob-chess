@@ -188,23 +188,23 @@ impl Position {
                 .get_color_piece(Color::White, Piece::King)
                 .bit_scan_forward()
                 .unwrap()
-                != Color::White.king_origin();
+                != Square::E1;
             let bad_king_b = bitboard
                 .get_color_piece(Color::Black, Piece::King)
                 .bit_scan_forward()
                 .unwrap()
-                != Color::Black.king_origin();
+                != Square::E8;
             let bad_rook_wk = (bitboard.get_color_piece(Color::White, Piece::Rook)
-                & BitBoard::from(Color::White.kingside_rook_origin()))
+                & BitBoard::from(Square::H1))
             .is_empty();
             let bad_rook_wq = (bitboard.get_color_piece(Color::White, Piece::Rook)
-                & BitBoard::from(Color::White.queenside_rook_origin()))
+                & BitBoard::from(Square::A1))
             .is_empty();
             let bad_rook_bk = (bitboard.get_color_piece(Color::Black, Piece::Rook)
-                & BitBoard::from(Color::Black.kingside_rook_origin()))
+                & BitBoard::from(Square::H8))
             .is_empty();
             let bad_rook_bq = (bitboard.get_color_piece(Color::Black, Piece::Rook)
-                & BitBoard::from(Color::Black.queenside_rook_origin()))
+                & BitBoard::from(Square::A8))
             .is_empty();
             if fen_parts[2].contains('K') {
                 if bad_king_w || bad_rook_wk {
