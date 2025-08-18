@@ -213,7 +213,7 @@ impl Board {
     /// The user of the function is responsible for not trying to overwrite the squares that contain
     /// the opposite color, which will result in doubly colored pieces.
     #[inline(always)]
-    pub(crate) fn mask_or(&mut self, color: Color, piece: Piece, mask: BitBoard) {
+    pub fn mask_or(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] |= mask;
         self.boards[color as usize] |= mask;
     }
@@ -226,7 +226,7 @@ impl Board {
     /// The user of the function is responsible for not trying to remove the pieces of a different color
     /// than specified by the mask, which will result in colored squares without a piece type.
     #[inline(always)]
-    pub(crate) fn mask_and(&mut self, color: Color, piece: Piece, mask: BitBoard) {
+    pub fn mask_and(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] &= mask;
         self.boards[color as usize] &= mask;
     }
@@ -246,7 +246,7 @@ impl Board {
     /// - immediate heat death of the universe
     /// - \[REDACTED\]
     #[inline(always)]
-    pub(crate) fn mask_xor(&mut self, color: Color, piece: Piece, mask: BitBoard) {
+    pub fn mask_xor(&mut self, color: Color, piece: Piece, mask: BitBoard) {
         self.boards[piece as usize + 2] ^= mask;
         self.boards[color as usize] ^= mask;
     }

@@ -3,12 +3,14 @@
 [![Build Status](https://github.com/ivan-r-sigaev/pico_chess/actions/workflows/rust.yml/badge.svg)](https://github.com/ivan-r-sigaev/pico_chess/actions)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-Another fast chess engine written in Rust (UCI support).
+Another (blazingly 🔥🔥🔥 fast 🚀🚀🚀) chess engine written in Rust 🦀🦀🦀. 
 
-## Overview
-- **Position crate**: FEN position (see crate [README](./position/README.md))
-- **Game crate**: PGN game (see crate [README](./game/README.md))
-- **TODO**: UCI support, search, evaluation
+(I'm sorry I couldn't resist the emojis 😔😔😔.)
+
+## Work In Progress
+
+This project is being actively developed, so some features may be unstable or 
+not yet present.
 
 ## Getting Started
 ```bash
@@ -20,4 +22,7 @@ cargo build
 
 # Run tests
 cargo test
+
+# Compile and run the engine (warninig: the UCI is not fully working yet)
+cargo run
 ```

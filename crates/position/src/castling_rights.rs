@@ -1,5 +1,5 @@
-use crate::board::Color;
 use bitflags::bitflags;
+use board::Color;
 use std::fmt;
 
 bitflags! {
@@ -44,8 +44,8 @@ impl CastlingRights {
     ///
     /// # Examples
     /// ```rust
-    /// use position::position::CastlingRights;
-    /// use position::board::Color;
+    /// use position::CastlingRights;
+    /// use board::Color;
     ///
     /// let white = CastlingRights::both_sides(Color::White);
     /// let white_king = CastlingRights::WHITE_KING;
