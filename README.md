@@ -5,7 +5,7 @@
 
 Another (blazingly 🔥🔥🔥 fast 🚀🚀🚀) chess engine written in Rust 🦀🦀🦀. 
 
-(I'm sorry I couldn't resist the emojis 😭😭😭.)
+(I'm sorry I couldn't resist the emojis 😔😔😔.)
 
 ## Work In Progress
 
