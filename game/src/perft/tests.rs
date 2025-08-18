@@ -18,46 +18,46 @@ fn collect(fen: &str, depth: u8) -> PerftValues {
     PerftValues::collect(&mut node, depth - 1)
 }
 
-fn test_perft(fen: &str, depth: u8, expected: PerftValues) {
+fn perft(fen: &str, depth: u8, expected: PerftValues) {
     let values = collect(fen, depth);
     println!("explicit => {values:?}");
     assert_eq!(values, expected);
 }
 
-fn test_perft_nodes(fen: &str, depth: u8, expected: u128) {
+fn perft_nodes(fen: &str, depth: u8, expected: u128) {
     let values = collect(fen, depth).nodes;
     assert_eq!(values, expected);
 }
 
 #[test]
 fn cpw_debug_5_move_count_depth_1() {
-    test_perft_nodes(CPW_DEBUG_5_FEN, 1, 44);
+    perft_nodes(CPW_DEBUG_5_FEN, 1, 44);
 }
 
 #[test]
 fn cpw_debug_5_move_count_depth_2() {
-    test_perft_nodes(CPW_DEBUG_5_FEN, 2, 1_486);
+    perft_nodes(CPW_DEBUG_5_FEN, 2, 1_486);
 }
 
 #[test]
 fn cpw_debug_5_move_count_depth_3() {
-    test_perft_nodes(CPW_DEBUG_5_FEN, 3, 62_379);
+    perft_nodes(CPW_DEBUG_5_FEN, 3, 62_379);
 }
 
 #[test]
 fn cpw_debug_5_move_count_depth_4() {
-    test_perft_nodes(CPW_DEBUG_5_FEN, 4, 2_103_487);
+    perft_nodes(CPW_DEBUG_5_FEN, 4, 2_103_487);
 }
 
 #[test]
 #[ignore = "reason: slow test"]
 fn cpw_debug_5_move_count_depth_5() {
-    test_perft_nodes(CPW_DEBUG_5_FEN, 5, 89_941_194);
+    perft_nodes(CPW_DEBUG_5_FEN, 5, 89_941_194);
 }
 
 #[test]
 fn cpw_mirror_w_perft_depth_1() {
-    test_perft(
+    perft(
         CPW_MIRROR_W_FEN,
         1,
         PerftValues {
@@ -74,7 +74,7 @@ fn cpw_mirror_w_perft_depth_1() {
 
 #[test]
 fn cpw_mirror_b_perft_depth_1() {
-    test_perft(
+    perft(
         CPW_MIRROR_B_FEN,
         1,
         PerftValues {
@@ -91,7 +91,7 @@ fn cpw_mirror_b_perft_depth_1() {
 
 #[test]
 fn cpw_mirror_w_perft_depth_2() {
-    test_perft(
+    perft(
         CPW_MIRROR_W_FEN,
         2,
         PerftValues {
@@ -108,7 +108,7 @@ fn cpw_mirror_w_perft_depth_2() {
 
 #[test]
 fn cpw_mirror_b_perft_depth_2() {
-    test_perft(
+    perft(
         CPW_MIRROR_B_FEN,
         2,
         PerftValues {
@@ -125,7 +125,7 @@ fn cpw_mirror_b_perft_depth_2() {
 
 #[test]
 fn cpw_mirror_w_perft_depth_3() {
-    test_perft(
+    perft(
         CPW_MIRROR_W_FEN,
         3,
         PerftValues {
@@ -142,7 +142,7 @@ fn cpw_mirror_w_perft_depth_3() {
 
 #[test]
 fn cpw_mirror_b_perft_depth_3() {
-    test_perft(
+    perft(
         CPW_MIRROR_B_FEN,
         3,
         PerftValues {
@@ -159,7 +159,7 @@ fn cpw_mirror_b_perft_depth_3() {
 
 #[test]
 fn cpw_mirror_w_perft_depth_4() {
-    test_perft(
+    perft(
         CPW_MIRROR_W_FEN,
         4,
         PerftValues {
@@ -176,7 +176,7 @@ fn cpw_mirror_w_perft_depth_4() {
 
 #[test]
 fn cpw_mirror_b_perft_depth_4() {
-    test_perft(
+    perft(
         CPW_MIRROR_B_FEN,
         4,
         PerftValues {
@@ -193,7 +193,7 @@ fn cpw_mirror_b_perft_depth_4() {
 
 #[test]
 fn cpw_debug_3_perft_depth_1() {
-    test_perft(
+    perft(
         CPW_DEBUG_3_FEN,
         1,
         PerftValues {
@@ -210,7 +210,7 @@ fn cpw_debug_3_perft_depth_1() {
 
 #[test]
 fn cpw_debug_3_perft_depth_2() {
-    test_perft(
+    perft(
         CPW_DEBUG_3_FEN,
         2,
         PerftValues {
@@ -227,7 +227,7 @@ fn cpw_debug_3_perft_depth_2() {
 
 #[test]
 fn cpw_debug_3_perft_depth_3() {
-    test_perft(
+    perft(
         CPW_DEBUG_3_FEN,
         3,
         PerftValues {
@@ -244,7 +244,7 @@ fn cpw_debug_3_perft_depth_3() {
 
 #[test]
 fn cpw_debug_3_perft_depth_4() {
-    test_perft(
+    perft(
         CPW_DEBUG_3_FEN,
         4,
         PerftValues {
@@ -261,7 +261,7 @@ fn cpw_debug_3_perft_depth_4() {
 
 #[test]
 fn cpw_debug_3_perft_depth_5() {
-    test_perft(
+    perft(
         CPW_DEBUG_3_FEN,
         5,
         PerftValues {
@@ -279,7 +279,7 @@ fn cpw_debug_3_perft_depth_5() {
 #[test]
 #[ignore = "reason: slow test"]
 fn cpw_debug_3_perft_depth_6() {
-    test_perft(
+    perft(
         CPW_DEBUG_3_FEN,
         6,
         PerftValues {
@@ -296,7 +296,7 @@ fn cpw_debug_3_perft_depth_6() {
 
 #[test]
 fn kiwipete_perft_depth_1() {
-    test_perft(
+    perft(
         KIWIPETE_FEN,
         1,
         PerftValues {
@@ -313,7 +313,7 @@ fn kiwipete_perft_depth_1() {
 
 #[test]
 fn kiwipete_perft_depth_2() {
-    test_perft(
+    perft(
         KIWIPETE_FEN,
         2,
         PerftValues {
@@ -330,7 +330,7 @@ fn kiwipete_perft_depth_2() {
 
 #[test]
 fn kiwipete_perft_depth_3() {
-    test_perft(
+    perft(
         KIWIPETE_FEN,
         3,
         PerftValues {
@@ -347,7 +347,7 @@ fn kiwipete_perft_depth_3() {
 
 #[test]
 fn kiwipete_perft_depth_4() {
-    test_perft(
+    perft(
         KIWIPETE_FEN,
         4,
         PerftValues {
@@ -364,7 +364,7 @@ fn kiwipete_perft_depth_4() {
 
 #[test]
 fn initial_position_perft_depth_1() {
-    test_perft(
+    perft(
         INITIAL_FEN,
         1,
         PerftValues {
@@ -381,7 +381,7 @@ fn initial_position_perft_depth_1() {
 
 #[test]
 fn initial_position_perft_depth_2() {
-    test_perft(
+    perft(
         INITIAL_FEN,
         2,
         PerftValues {
@@ -398,7 +398,7 @@ fn initial_position_perft_depth_2() {
 
 #[test]
 fn initial_position_perft_depth_3() {
-    test_perft(
+    perft(
         INITIAL_FEN,
         3,
         PerftValues {
@@ -415,7 +415,7 @@ fn initial_position_perft_depth_3() {
 
 #[test]
 fn initial_position_perft_depth_4() {
-    test_perft(
+    perft(
         INITIAL_FEN,
         4,
         PerftValues {
@@ -432,7 +432,7 @@ fn initial_position_perft_depth_4() {
 
 #[test]
 fn initial_position_perft_depth_5() {
-    test_perft(
+    perft(
         INITIAL_FEN,
         5,
         PerftValues {
@@ -450,7 +450,7 @@ fn initial_position_perft_depth_5() {
 #[test]
 #[ignore = "reason: slow test"]
 fn initial_position_perft_depth_6() {
-    test_perft(
+    perft(
         INITIAL_FEN,
         6,
         PerftValues {
