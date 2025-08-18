@@ -1,4 +1,4 @@
-use game::game::Game;
+use game::Game;
 use position::{LanMove, Position};
 use std::{str::FromStr, time::Duration};
 
