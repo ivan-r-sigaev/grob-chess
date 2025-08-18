@@ -143,232 +143,207 @@ impl ChessUnmove {
 }
 
 impl Position {
-    /// Generate pseudo-legal king moves from this position.
-    pub fn push_king_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
+    /// Generate pseudo-legal moves from this position.
+    pub fn push_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
+        if self.board().get_king_checkers(self.turn()).count() >= 2 {
+            self.push_king_attacks(push_move);
+            self.push_king_quiets(push_move);
+            return;
+        }
+
+        self.push_pawn_attacks(push_move);
+        self.push_knight_attacks(push_move);
+        self.push_bishop_attacks(push_move);
+        self.push_rook_attacks(push_move);
+        self.push_king_attacks(push_move);
+
+        self.push_castlings(push_move);
+        self.push_king_quiets(push_move);
+        self.push_rook_quiets(push_move);
+        self.push_bishop_quiets(push_move);
+        self.push_knight_quiets(push_move);
+        self.push_pawn_quiets(push_move);
+    }
+    /// Generate pseudo-legal king's quiet moves from this position.
+    pub fn push_king_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let from = self
             .board()
             .get_color_piece(self.turn(), Piece::King)
             .bit_scan_forward()
-            .expect("king does not exist");
+            .unwrap();
         let attacks = BitBoard::king_attacks(from);
-
-        for to in self.board().get_color(!self.turn()) & attacks {
-            push_move(ChessMove {
-                from,
-                to,
-                hint: ChessMoveHint::Caputre,
-            });
-        }
-
-        for to in !self.board().get_occupance() & attacks {
-            push_move(ChessMove {
-                from,
-                to,
-                hint: ChessMoveHint::Quiet,
-            });
-        }
+        self.push_quiets(push_move, attacks, from, ChessMoveHint::Quiet);
     }
-    /// Generate pseudo-legal knight moves from this position.
-    pub fn push_knight_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let opp = self.board().get_color(!self.turn());
-        let empty = !self.board().get_occupance();
-
+    /// Generate pseudo-legal king attacks from this position.
+    pub fn push_king_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
+        let from = self
+            .board()
+            .get_color_piece(self.turn(), Piece::King)
+            .bit_scan_forward()
+            .unwrap();
+        let attacks = BitBoard::king_attacks(from);
+        self.push_attacks(push_move, attacks, from, ChessMoveHint::Caputre);
+    }
+    /// Generate pseudo-legal knight's quiet moves from this position.
+    pub fn push_knight_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         for from in self.board().get_color_piece(self.turn(), Piece::Knight) {
             let attacks = BitBoard::knight_attacks(from);
-
-            for to in attacks & opp {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Caputre,
-                });
-            }
-
-            for to in attacks & empty {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Quiet,
-                });
-            }
+            self.push_quiets(push_move, attacks, from, ChessMoveHint::Quiet);
         }
     }
-    /// Generate pseudo-legal bishop-like moves from this position.
-    pub fn push_bishop_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let opp = self.board().get_color(!self.turn());
+    /// Generate pseudo-legal knight attacks from this position.
+    pub fn push_knight_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
+        for from in self.board().get_color_piece(self.turn(), Piece::Knight) {
+            let attacks = BitBoard::knight_attacks(from);
+            self.push_attacks(push_move, attacks, from, ChessMoveHint::Caputre);
+        }
+    }
+    /// Generate pseudo-legal bishop-like quiet moves from this position.
+    pub fn push_bishop_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let occ = self.board().get_occupance();
 
         for from in self.board().get_color_bishop_sliders(self.turn()) {
             let attacks = BitBoard::bishop_attacks(occ, from);
-
-            for to in attacks & opp {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Caputre,
-                });
-            }
-
-            for to in attacks & !occ {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Quiet,
-                });
-            }
+            self.push_quiets(push_move, attacks, from, ChessMoveHint::Quiet);
         }
     }
-    /// Generate pseudo-legal rook-like moves from this position.
-    pub fn push_rook_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let opp = self.board().get_color(!self.turn());
+    /// Generate pseudo-legal bishop-like attacks from this position.
+    pub fn push_bishop_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
+        let occ = self.board().get_occupance();
+
+        for from in self.board().get_color_bishop_sliders(self.turn()) {
+            let attacks = BitBoard::bishop_attacks(occ, from);
+            self.push_attacks(push_move, attacks, from, ChessMoveHint::Caputre);
+        }
+    }
+    /// Generate pseudo-legal rook-like quiet moves from this position.
+    pub fn push_rook_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let occ = self.board().get_occupance();
 
         for from in self.board().get_color_rook_sliders(self.turn()) {
             let attacks = BitBoard::rook_attacks(occ, from);
+            self.push_quiets(push_move, attacks, from, ChessMoveHint::Quiet);
+        }
+    }
+    /// Generate pseudo-legal rook-like attacks from this position.
+    pub fn push_rook_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
+        let occ = self.board().get_occupance();
 
-            for to in attacks & opp {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Caputre,
-                });
-            }
-
-            for to in attacks & !occ {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Quiet,
-                });
-            }
+        for from in self.board().get_color_rook_sliders(self.turn()) {
+            let attacks = BitBoard::rook_attacks(occ, from);
+            self.push_attacks(push_move, attacks, from, ChessMoveHint::Caputre);
         }
     }
     /// Generate pseudo-legal quiet pawn moves from this position.
     pub fn push_pawn_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let empty = !self.board().get_occupance();
-        let mut single_pushes = BitBoard::pawn_pushes(
+
+        let single_pushes = BitBoard::pawn_pushes(
             self.board().get_color_piece(self.turn(), Piece::Pawn),
             empty,
             self.turn(),
         );
         let double_pushes = BitBoard::pawn_pushes(
             single_pushes
-                & if self.turn() == Color::White {
-                    BitBoard::from_rank(Rank::R3)
-                } else {
-                    BitBoard::from_rank(Rank::R6)
+                & match self.turn() {
+                    Color::White => BitBoard::from_rank(Rank::R3),
+                    Color::Black => BitBoard::from_rank(Rank::R6),
                 },
             empty,
             self.turn(),
         );
         let promotion_pushes = single_pushes
-            & if self.turn() == Color::White {
-                BitBoard::from_rank(Rank::R8)
-            } else {
-                BitBoard::from_rank(Rank::R1)
+            & match self.turn() {
+                Color::White => BitBoard::from_rank(Rank::R8),
+                Color::Black => BitBoard::from_rank(Rank::R1),
             };
-        single_pushes &= !promotion_pushes;
+        let quiet_pushes = single_pushes & !promotion_pushes;
         let push_offset = if self.turn() == Color::White { -8 } else { 8 };
 
-        for to in single_pushes {
-            push_move(ChessMove {
-                from: to.shifted(push_offset),
-                to,
-                hint: ChessMoveHint::Quiet,
-            });
-        }
-
-        for to in double_pushes {
-            push_move(ChessMove {
-                from: to.shifted(push_offset * 2),
-                to,
-                hint: ChessMoveHint::DoublePawn,
-            });
-        }
-
-        for to in promotion_pushes {
-            let from = to.shifted(push_offset);
-            push_move(ChessMove {
-                from,
-                to,
-                hint: ChessMoveHint::BishopPromotion,
-            });
-            push_move(ChessMove {
-                from,
-                to,
-                hint: ChessMoveHint::KnightPromotion,
-            });
-            push_move(ChessMove {
-                from,
-                to,
-                hint: ChessMoveHint::RookPromotion,
-            });
-            push_move(ChessMove {
-                from,
-                to,
-                hint: ChessMoveHint::QueenPromotion,
-            });
-        }
+        Self::push_for_each_shifted(push_move, quiet_pushes, push_offset, ChessMoveHint::Quiet);
+        Self::push_for_each_shifted(
+            push_move,
+            double_pushes,
+            push_offset * 2,
+            ChessMoveHint::DoublePawn,
+        );
+        Self::push_for_each_shifted(
+            push_move,
+            promotion_pushes,
+            push_offset,
+            ChessMoveHint::BishopPromotion,
+        );
+        Self::push_for_each_shifted(
+            push_move,
+            promotion_pushes,
+            push_offset,
+            ChessMoveHint::KnightPromotion,
+        );
+        Self::push_for_each_shifted(
+            push_move,
+            promotion_pushes,
+            push_offset,
+            ChessMoveHint::RookPromotion,
+        );
+        Self::push_for_each_shifted(
+            push_move,
+            promotion_pushes,
+            push_offset,
+            ChessMoveHint::QueenPromotion,
+        );
     }
     /// Generate pseudo-legal pawn captures from this position.
     pub fn push_pawn_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
         let opp = self.board().get_color(!self.turn());
 
-        let mut pawns = self.board().get_color_piece(self.turn(), Piece::Pawn);
-        let promoters = pawns
-            & if self.turn() == Color::White {
-                BitBoard::from_rank(Rank::R7)
-            } else {
-                BitBoard::from_rank(Rank::R2)
-            };
-        pawns &= !promoters;
+        let pawns = self.board().get_color_piece(self.turn(), Piece::Pawn);
+        let promoters = pawns & BitBoard::from(self.turn().mirror_rank(Rank::R7));
+        let pawns = pawns & !promoters;
         for from in promoters {
-            for to in BitBoard::pawn_attacks(from, self.turn()) & opp {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::BishopPromotionCapture,
-                });
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::KnightPromotionCapture,
-                });
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::RookPromotionCapture,
-                });
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::QueenPromotionCapture,
-                });
-            }
+            let attacks = BitBoard::pawn_attacks(from, self.turn()) & opp;
+            self.push_attacks(
+                push_move,
+                attacks,
+                from,
+                ChessMoveHint::BishopPromotionCapture,
+            );
+            self.push_attacks(
+                push_move,
+                attacks,
+                from,
+                ChessMoveHint::KnightPromotionCapture,
+            );
+            self.push_attacks(
+                push_move,
+                attacks,
+                from,
+                ChessMoveHint::RookPromotionCapture,
+            );
+            self.push_attacks(
+                push_move,
+                attacks,
+                from,
+                ChessMoveHint::QueenPromotionCapture,
+            );
         }
 
-        if self.en_passant().is_some() {
+        if let Some(file) = self.en_passant() {
             let to = Square::new(
-                self.turn().en_passant_dest_rank(),
-                self.en_passant().unwrap(),
+                {
+                    let this = self.turn();
+                    this.mirror_rank(Rank::R6)
+                },
+                file,
             );
             for from in pawns & BitBoard::pawn_attacks(to, !self.turn()) {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::EnPassantCapture,
-                });
+                let hint = ChessMoveHint::EnPassantCapture;
+                push_move(ChessMove { from, to, hint });
             }
         }
 
         for from in pawns {
-            for to in BitBoard::pawn_attacks(from, self.turn()) & opp {
-                push_move(ChessMove {
-                    from,
-                    to,
-                    hint: ChessMoveHint::Caputre,
-                });
-            }
+            let attacks = BitBoard::pawn_attacks(from, self.turn()) & opp;
+            self.push_attacks(push_move, attacks, from, ChessMoveHint::Caputre);
         }
     }
     /// Generate pseudo-legal castling moves from this position.
@@ -377,35 +352,90 @@ impl Position {
             return;
         }
 
-        if !self.is_kingside_castling_prohibited(self.turn()) {
+        if self.is_kingside_castling_allowed(self.turn()) {
             push_move(ChessMove {
-                from: if self.turn() == Color::White {
-                    Square::E1
-                } else {
-                    Square::E8
-                },
-                to: if self.turn() == Color::White {
-                    Square::G1
-                } else {
-                    Square::G8
-                },
+                from: self.turn().mirror_square(Square::E1),
+                to: self.turn().mirror_square(Square::G1),
                 hint: ChessMoveHint::KingCastle,
             });
         }
-        if !self.is_queenside_castling_prohibited(self.turn()) {
+        if self.is_queenside_castling_allowed(self.turn()) {
             push_move(ChessMove {
-                from: if self.turn() == Color::White {
-                    Square::E1
-                } else {
-                    Square::E8
-                },
-                to: if self.turn() == Color::White {
-                    Square::C1
-                } else {
-                    Square::C8
-                },
+                from: self.turn().mirror_square(Square::E1),
+                to: self.turn().mirror_square(Square::C1),
                 hint: ChessMoveHint::QueenCastle,
             });
+        }
+    }
+    fn push_attacks(
+        &self,
+        push_move: &mut impl FnMut(ChessMove),
+        attacks: BitBoard,
+        from: Square,
+        hint: ChessMoveHint,
+    ) {
+        let board = self.board();
+        let color = !self.turn();
+        Self::push_for_each(
+            push_move,
+            attacks & board.get_color_piece(color, Piece::Queen),
+            from,
+            hint,
+        );
+        Self::push_for_each(
+            push_move,
+            attacks & board.get_color_piece(color, Piece::Rook),
+            from,
+            hint,
+        );
+        Self::push_for_each(
+            push_move,
+            attacks & board.get_color_piece(color, Piece::Bishop),
+            from,
+            hint,
+        );
+        Self::push_for_each(
+            push_move,
+            attacks & board.get_color_piece(color, Piece::Knight),
+            from,
+            hint,
+        );
+        Self::push_for_each(
+            push_move,
+            attacks & board.get_color_piece(color, Piece::Pawn),
+            from,
+            hint,
+        );
+    }
+    fn push_quiets(
+        &self,
+        push_move: &mut impl FnMut(ChessMove),
+        attacks: BitBoard,
+        from: Square,
+        hint: ChessMoveHint,
+    ) {
+        let board = self.board();
+        Self::push_for_each(push_move, attacks & !board.get_occupance(), from, hint);
+    }
+    fn push_for_each(
+        push_move: &mut impl FnMut(ChessMove),
+        to: BitBoard,
+        from: Square,
+        hint: ChessMoveHint,
+    ) {
+        for to in to {
+            push_move(ChessMove { to, from, hint });
+        }
+    }
+    fn push_for_each_shifted(
+        push_move: &mut impl FnMut(ChessMove),
+        to: BitBoard,
+        delta: i8,
+        hint: ChessMoveHint,
+    ) {
+        for to in to {
+            let from = to.shifted(delta);
+            push_move(ChessMove { to, from, hint });
         }
     }
 }
@@ -464,27 +494,36 @@ impl Position {
                 result = Some(chess_move);
             }
         };
-        match piece {
-            Piece::Pawn => {
-                self.push_pawn_quiets(&mut test_move);
-                self.push_pawn_attacks(&mut test_move);
+        if self.board().get_piece_at(lan_move.to).is_some() {
+            match piece {
+                Piece::Pawn => self.push_pawn_attacks(&mut test_move),
+                Piece::Bishop => self.push_bishop_attacks(&mut test_move),
+                Piece::Knight => self.push_knight_attacks(&mut test_move),
+                Piece::Rook => self.push_rook_attacks(&mut test_move),
+                Piece::Queen => {
+                    self.push_bishop_attacks(&mut test_move);
+                    self.push_rook_attacks(&mut test_move);
+                }
+                Piece::King => self.push_king_attacks(&mut test_move),
             }
-            Piece::Bishop => {
-                self.push_bishop_moves(&mut test_move);
-            }
-            Piece::Knight => {
-                self.push_knight_moves(&mut test_move);
-            }
-            Piece::Rook => {
-                self.push_rook_moves(&mut test_move);
-            }
-            Piece::Queen => {
-                self.push_bishop_moves(&mut test_move);
-                self.push_rook_moves(&mut test_move);
-            }
-            Piece::King => {
-                self.push_castlings(&mut test_move);
-                self.push_king_moves(&mut test_move);
+        } else {
+            match piece {
+                Piece::Pawn => {
+                    // "to" is unoccupied for en passant.
+                    self.push_pawn_attacks(&mut test_move);
+                    self.push_pawn_quiets(&mut test_move);
+                }
+                Piece::Bishop => self.push_bishop_quiets(&mut test_move),
+                Piece::Knight => self.push_knight_quiets(&mut test_move),
+                Piece::Rook => self.push_rook_quiets(&mut test_move),
+                Piece::Queen => {
+                    self.push_bishop_quiets(&mut test_move);
+                    self.push_rook_quiets(&mut test_move);
+                }
+                Piece::King => {
+                    self.push_castlings(&mut test_move);
+                    self.push_king_quiets(&mut test_move);
+                }
             }
         }
 
@@ -552,7 +591,7 @@ impl Position {
             },
             ChessMoveHint::DoublePawn => {
                 piece == Piece::Pawn
-                    && from.rank() == color.pawn_rank()
+                    && from.rank() == color.mirror_rank(Rank::R2)
                     && BitBoard::pawn_pushes(
                         BitBoard::pawn_pushes(BitBoard::from(from), empty, color),
                         empty,
@@ -560,10 +599,10 @@ impl Position {
                     ) == BitBoard::from(to)
             }
             ChessMoveHint::KingCastle => {
-                piece == Piece::King && !self.is_kingside_castling_prohibited(color)
+                piece == Piece::King && self.is_kingside_castling_allowed(color)
             }
             ChessMoveHint::QueenCastle => {
-                piece == Piece::King && !self.is_queenside_castling_prohibited(color)
+                piece == Piece::King && self.is_queenside_castling_allowed(color)
             }
             ChessMoveHint::EnPassantCapture => {
                 let file = match self.en_passant() {
@@ -571,7 +610,7 @@ impl Position {
                     None => return false,
                 };
                 let target_sq = Square::new(from.rank(), to.file());
-                Square::new(color.en_passant_dest_rank(), file) == to
+                Square::new(color.mirror_rank(Rank::R6), file) == to
                     && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
                     && self.board().get_piece_at(target_sq) == Some(Piece::Pawn)
                     && self.board().get_color_at(target_sq) == Some(!color)
@@ -581,7 +620,7 @@ impl Position {
             | ChessMoveHint::RookPromotion
             | ChessMoveHint::QueenPromotion => {
                 piece == Piece::Pawn
-                    && to.rank() == color.promotion_rank()
+                    && to.rank() == color.mirror_rank(Rank::R8)
                     && BitBoard::pawn_pushes(BitBoard::from(from), BitBoard::FILLED, color)
                         == BitBoard::from(to)
             }
@@ -590,7 +629,7 @@ impl Position {
             | ChessMoveHint::RookPromotionCapture
             | ChessMoveHint::QueenPromotionCapture => {
                 piece == Piece::Pawn
-                    && to.rank() == color.promotion_rank()
+                    && to.rank() == color.mirror_rank(Rank::R8)
                     && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
             }
         }
@@ -638,23 +677,11 @@ impl Position {
                         self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                     );
                 } else if piece == Piece::Rook {
-                    if from
-                        == (if self.turn() == Color::White {
-                            Square::H1
-                        } else {
-                            Square::H8
-                        })
-                    {
+                    if from == self.turn().mirror_square(Square::H1) {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
-                    } else if from
-                        == (if self.turn() == Color::White {
-                            Square::A1
-                        } else {
-                            Square::A8
-                        })
-                    {
+                    } else if from == self.turn.mirror_square(Square::A1) {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
@@ -722,23 +749,11 @@ impl Position {
                         self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                     );
                 } else if piece == Piece::Rook {
-                    if from
-                        == (if self.turn() == Color::White {
-                            Square::H1
-                        } else {
-                            Square::H8
-                        })
-                    {
+                    if from == self.turn().mirror_square(Square::H1) {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
-                    } else if from
-                        == (if self.turn() == Color::White {
-                            Square::A1
-                        } else {
-                            Square::A8
-                        })
-                    {
+                    } else if from == self.turn.mirror_square(Square::A1) {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
@@ -831,20 +846,12 @@ impl Position {
                 self.remove_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::H1
-                    } else {
-                        Square::H8
-                    },
+                    self.turn().mirror_square(Square::H1),
                 );
                 self.add_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::F1
-                    } else {
-                        Square::F8
-                    },
+                    self.turn().mirror_square(Square::F1),
                 );
             }
             ChessMoveHint::QueenCastle => {
@@ -860,20 +867,24 @@ impl Position {
                 self.remove_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::A1
-                    } else {
-                        Square::A8
-                    },
+                    self.turn().mirror_square(Square::A1),
                 );
                 self.add_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::D1
-                    } else {
-                        Square::D8
-                    },
+                    self.turn().mirror_square(Square::D1),
+                );
+            }
+        }
+
+        if capture == Some(Piece::Rook) {
+            if to == (!self.turn()).mirror_square(Square::H1) {
+                self.set_castling_rights(
+                    self.castling_rights() & !CastlingRights::kingside(!self.turn()),
+                );
+            } else if to == (!self.turn()).mirror_square(Square::A1) {
+                self.set_castling_rights(
+                    self.castling_rights() & !CastlingRights::queenside(!self.turn()),
                 );
             }
         }
@@ -1000,20 +1011,12 @@ impl Position {
                 self.remove_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::F1
-                    } else {
-                        Square::F8
-                    },
+                    self.turn().mirror_square(Square::F1),
                 );
                 self.add_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::H1
-                    } else {
-                        Square::H8
-                    },
+                    self.turn().mirror_square(Square::H1),
                 );
             }
             ChessMoveHint::QueenCastle => {
@@ -1023,20 +1026,12 @@ impl Position {
                 self.remove_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::D1
-                    } else {
-                        Square::D8
-                    },
+                    self.turn().mirror_square(Square::D1),
                 );
                 self.add_color_piece(
                     self.turn(),
                     Piece::Rook,
-                    if self.turn() == Color::White {
-                        Square::A1
-                    } else {
-                        Square::A8
-                    },
+                    self.turn().mirror_square(Square::A1),
                 );
             }
         }
@@ -1044,93 +1039,37 @@ impl Position {
 }
 
 impl Position {
-    /// Returns `true` if the kingside castling is disallowed for a given color.
+    /// Returns whether the kingside castling is allowed for a given color.
     #[inline(always)]
     #[must_use]
-    fn is_kingside_castling_prohibited(&self, color: Color) -> bool {
-        // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty = BitBoard::from(Square::F1) | BitBoard::from(Square::G1);
-        let b_empty = BitBoard::from(Square::F8) | BitBoard::from(Square::G8);
-        !self
-            .castling_rights()
-            .contains(CastlingRights::kingside(self.turn()))
-            || (self.board().get_color_piece(color, Piece::Rook)
-                & BitBoard::from(if color == Color::White {
-                    Square::H1
-                } else {
-                    Square::H8
-                }))
-            .is_empty()
-            || !(self.board().get_occupance()
-                & if color == Color::White {
-                    w_empty
-                } else {
-                    b_empty
-                })
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::F1
-                } else {
-                    Square::F8
-                },
-                !color,
-            ))
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::G1
-                } else {
-                    Square::G8
-                },
-                !color,
-            ))
-            .is_empty()
+    fn is_kingside_castling_allowed(&self, color: Color) -> bool {
+        self.castling_rights()
+            .contains(CastlingRights::kingside(color))
+            && !self.board().is_king_in_check(color)
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::F1), color)
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::G1), color)
     }
 
-    /// Returns `true` if the queenside castling is disallowed for a given color.
+    /// Returns whether the queenside castling is allowed for a given color.
     #[inline(always)]
     #[must_use]
-    fn is_queenside_castling_prohibited(&self, color: Color) -> bool {
-        // TODO: remove crights when rook is taken instead of checking for it's existence
-        let w_empty =
-            BitBoard::from(Square::B1) | BitBoard::from(Square::C1) | BitBoard::from(Square::D1);
-        let b_empty =
-            BitBoard::from(Square::B8) | BitBoard::from(Square::C8) | BitBoard::from(Square::D8);
-        !self
-            .castling_rights()
-            .contains(CastlingRights::queenside(self.turn()))
-            || (self.board().get_color_piece(color, Piece::Rook)
-                & BitBoard::from(if color == Color::White {
-                    Square::A1
-                } else {
-                    Square::A8
-                }))
-            .is_empty()
-            || !(self.board().get_occupance()
-                & if color == Color::White {
-                    w_empty
-                } else {
-                    b_empty
-                })
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::C1
-                } else {
-                    Square::C8
-                },
-                !color,
-            ))
-            .is_empty()
-            || !(self.board().get_color_attackers_to(
-                if color == Color::White {
-                    Square::D1
-                } else {
-                    Square::D8
-                },
-                !color,
-            ))
-            .is_empty()
+    fn is_queenside_castling_allowed(&self, color: Color) -> bool {
+        self.castling_rights()
+            .contains(CastlingRights::queenside(color))
+            && !self.board().is_king_in_check(color)
+            && !self
+                .board()
+                .get_occupance()
+                .has_square(color.mirror_square(Square::B1))
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::C1), color)
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::D1), color)
     }
 }

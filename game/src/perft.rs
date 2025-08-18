@@ -1,24 +1,31 @@
-use super::*;
-use perft::{count_leaves, perft_leaves, PerftValues};
 use position::position::Position;
 
-mod perft {
-    use super::*;
-    use position::position::{ChessMoveHint, Position};
+use crate::{game::Game, perft::values::PerftValues};
 
+mod values {
+    use crate::game::GameSearch;
+    use position::position::ChessMoveHint;
+
+    /// Values used to test the validity of a perft.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct PerftValues {
-        pub nodes: u128,
-        pub captures: u128,
-        pub ep: u128,
-        pub castles: u128,
-        pub promotions: u128,
-        pub checks: u128,
-        pub checkmates: u128,
+        pub nodes: u64,
+        pub captures: u64,
+        pub ep: u64,
+        pub castles: u64,
+        pub promotions: u64,
+        pub checks: u64,
+        pub checkmates: u64,
     }
 
     impl PerftValues {
-        pub fn new() -> Self {
+        /// Perform a perft on search node.
+        pub fn collect(node: &mut GameSearch, depth: u8) -> Self {
+            let mut values = PerftValues::empty();
+            values.search(node, depth);
+            values
+        }
+        fn empty() -> Self {
             Self {
                 nodes: 0,
                 captures: 0,
@@ -29,7 +36,7 @@ mod perft {
                 checkmates: 0,
             }
         }
-        pub fn add_move(&mut self, hint: ChessMoveHint) {
+        fn add_move(&mut self, hint: ChessMoveHint) {
             self.nodes += 1;
             if hint.is_capture() {
                 self.captures += 1;
@@ -44,94 +51,78 @@ mod perft {
                 self.promotions += 1;
             }
         }
-        pub fn add_check(&mut self) {
+        fn add_check(&mut self) {
             self.checks += 1;
         }
-        pub fn add_checkmate(&mut self) {
+        fn add_checkmate(&mut self) {
             self.checkmates += 1;
         }
-    }
-
-    pub fn perft_leaves(mut position: Position, depth: u8) -> PerftValues {
-        let mut data = PerftValues::new();
-        collect_perft(&mut position, &mut MoveList::empty(), &mut data, depth - 1);
-        data
-    }
-    pub fn count_leaves(mut position: Position, depth: u8) -> u128 {
-        count_legal_moves(&mut position, &mut MoveList::empty(), depth - 1)
-    }
-
-    fn can_move(position: &mut Position, move_list: &mut MoveList) -> bool {
-        move_list.generate_moves(position);
-
-        while let Some(next_move) = move_list.pop_move() {
-            let unmove = position.make_move(next_move);
-
-            if !position.was_check_ignored() {
-                position.unmake_move(unmove);
-                move_list.pop_group();
-                return true;
-            }
-
-            position.unmake_move(unmove);
-        }
-
-        move_list.pop_group();
-        false
-    }
-
-    fn count_legal_moves(position: &mut Position, move_list: &mut MoveList, depth: u8) -> u128 {
-        let mut count = 0u128;
-        move_list.generate_moves(position);
-
-        while let Some(next_move) = move_list.pop_move() {
-            let unmove = position.make_move(next_move);
-
-            if !position.was_check_ignored() {
-                if depth == 0 {
-                    count += 1;
-                } else {
-                    count += count_legal_moves(position, move_list, depth - 1);
+        fn search(&mut self, node: &mut GameSearch, depth: u8) {
+            _ = node.for_each_legal_child_node(|node, chess_move| {
+                if depth != 0 {
+                    self.search(node, depth - 1);
+                    return;
                 }
-            }
+                self.add_move(chess_move.hint());
 
-            position.unmake_move(unmove);
-        }
-
-        move_list.pop_group();
-        count
-    }
-
-    fn collect_perft(
-        position: &mut Position,
-        move_list: &mut MoveList,
-        data: &mut PerftValues,
-        depth: u8,
-    ) {
-        move_list.generate_moves(position);
-
-        while let Some(next_move) = move_list.pop_move() {
-            let unmove = position.make_move(next_move);
-
-            if !position.was_check_ignored() {
-                if depth == 0 {
-                    data.add_move(next_move.hint());
-                    if position.is_check() {
-                        data.add_check();
-                        if !can_move(position, move_list) {
-                            data.add_checkmate();
-                        }
-                    }
-                } else {
-                    collect_perft(position, move_list, data, depth - 1);
+                if !node.game().position().is_check() {
+                    return;
                 }
-            }
+                self.add_check();
 
-            position.unmake_move(unmove);
+                if !node.check_ending().is_right() {
+                    return;
+                }
+                self.add_checkmate();
+            })
         }
-
-        move_list.pop_group();
     }
+}
+
+fn collect(fen: &str, depth: u8) -> PerftValues {
+    let position = Position::try_from_fen(fen).unwrap();
+    let mut game = Game::from_position(position);
+    let mut node = game.search();
+    PerftValues::collect(&mut node, depth - 1)
+}
+
+fn perft(fen: &str, depth: u8, expected: PerftValues) {
+    let values = collect(fen, depth);
+    println!("explicit => {values:?}");
+    assert_eq!(values, expected);
+}
+
+fn perft_nodes(fen: &str, depth: u8, expected: u64) {
+    let values = collect(fen, depth).nodes;
+    assert_eq!(values, expected);
+}
+
+const CPW_DEBUG_5_FEN: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
+
+#[test]
+fn cpw_debug_5_move_count_depth_1() {
+    perft_nodes(CPW_DEBUG_5_FEN, 1, 44);
+}
+
+#[test]
+fn cpw_debug_5_move_count_depth_2() {
+    perft_nodes(CPW_DEBUG_5_FEN, 2, 1_486);
+}
+
+#[test]
+fn cpw_debug_5_move_count_depth_3() {
+    perft_nodes(CPW_DEBUG_5_FEN, 3, 62_379);
+}
+
+#[test]
+fn cpw_debug_5_move_count_depth_4() {
+    perft_nodes(CPW_DEBUG_5_FEN, 4, 2_103_487);
+}
+
+#[test]
+#[ignore = "reason: slow test"]
+fn cpw_debug_5_move_count_depth_5() {
+    perft_nodes(CPW_DEBUG_5_FEN, 5, 89_941_194);
 }
 
 const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -139,47 +130,6 @@ const KIWIPETE_FEN: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3
 const CPW_DEBUG_3_FEN: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
 const CPW_MIRROR_W_FEN: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
 const CPW_MIRROR_B_FEN: &str = "r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1";
-
-const CPW_DEBUG_5_FEN: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
-
-fn perft(fen: &str, depth: u8, expected: PerftValues) {
-    let position = Position::try_from_fen(fen).unwrap();
-    let values = perft_leaves(position, depth);
-    println!("explicit => {values:?}");
-    assert_eq!(values, expected);
-}
-
-fn test_move_count(fen: &str, depth: u8, expected: u128) {
-    let position = Position::try_from_fen(fen).unwrap();
-    let values = count_leaves(position, depth);
-    assert_eq!(values, expected);
-}
-
-#[test]
-fn cpw_debug_5_move_count_depth_1() {
-    test_move_count(CPW_DEBUG_5_FEN, 1, 44);
-}
-
-#[test]
-fn cpw_debug_5_move_count_depth_2() {
-    test_move_count(CPW_DEBUG_5_FEN, 2, 1_486);
-}
-
-#[test]
-fn cpw_debug_5_move_count_depth_3() {
-    test_move_count(CPW_DEBUG_5_FEN, 3, 62_379);
-}
-
-#[test]
-fn cpw_debug_5_move_count_depth_4() {
-    test_move_count(CPW_DEBUG_5_FEN, 4, 2_103_487);
-}
-
-#[test]
-#[ignore = "reason: slow test"]
-fn cpw_debug_5_move_count_depth_5() {
-    test_move_count(CPW_DEBUG_5_FEN, 5, 89_941_194);
-}
 
 #[test]
 fn cpw_mirror_w_perft_depth_1() {

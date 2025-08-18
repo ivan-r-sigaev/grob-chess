@@ -4,6 +4,7 @@
 
 pub use castling_rights::CastlingRights;
 pub use move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
+pub use move_list::MoveList;
 pub use position_hash::PositionHash;
 
 use crate::board::{BitBoard, Board, Color, File, Piece, Square};
@@ -14,6 +15,7 @@ use std::hash::Hash;
 
 mod castling_rights;
 mod move_generation;
+mod move_list;
 mod position_hash;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
@@ -65,6 +67,7 @@ impl Hash for Position {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParseFenError {
     BadFenSize,
+    BadKingCount,
     BadRowCount,
     BadRowSize,
     BadCastlingRights,
@@ -163,6 +166,13 @@ impl Position {
             }
         }
 
+        if bitboard.get_color_piece(Color::White, Piece::King).count() != 1 {
+            return Err(ParseFenError::BadKingCount);
+        }
+        if bitboard.get_color_piece(Color::Black, Piece::King).count() != 1 {
+            return Err(ParseFenError::BadKingCount);
+        }
+
         let turn = if fen_parts[1] == "w" {
             Color::White
         } else if fen_parts[1] == "b" {
@@ -176,19 +186,57 @@ impl Position {
         let mut castling_rights = CastlingRights::empty();
         if fen_parts[2] != "-" {
             let mut remaining_len = fen_parts[2].len();
+            let bad_king_w = bitboard
+                .get_color_piece(Color::White, Piece::King)
+                .bit_scan_forward()
+                .unwrap()
+                != Square::E1;
+            let bad_king_b = bitboard
+                .get_color_piece(Color::Black, Piece::King)
+                .bit_scan_forward()
+                .unwrap()
+                != Square::E8;
+            let bad_rook_wk = (bitboard.get_color_piece(Color::White, Piece::Rook)
+                & BitBoard::from(Square::H1))
+            .is_empty();
+            let bad_rook_wq = (bitboard.get_color_piece(Color::White, Piece::Rook)
+                & BitBoard::from(Square::A1))
+            .is_empty();
+            let bad_rook_bk = (bitboard.get_color_piece(Color::Black, Piece::Rook)
+                & BitBoard::from(Square::H8))
+            .is_empty();
+            let bad_rook_bq = (bitboard.get_color_piece(Color::Black, Piece::Rook)
+                & BitBoard::from(Square::A8))
+            .is_empty();
             if fen_parts[2].contains('K') {
+                if bad_king_w || bad_rook_wk {
+                    return Err(ParseFenError::BadCastlingRights);
+                }
+
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::WHITE_KING;
             }
             if fen_parts[2].contains('Q') {
+                if bad_king_w || bad_rook_wq {
+                    return Err(ParseFenError::BadCastlingRights);
+                }
+
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::WHITE_QUEEN;
             }
             if fen_parts[2].contains('k') {
+                if bad_king_b || bad_rook_bk {
+                    return Err(ParseFenError::BadCastlingRights);
+                }
+
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::BLACK_KING;
             }
             if fen_parts[2].contains('q') {
+                if bad_king_b || bad_rook_bq {
+                    return Err(ParseFenError::BadCastlingRights);
+                }
+
                 remaining_len -= 1;
                 castling_rights |= CastlingRights::BLACK_QUEEN;
             }

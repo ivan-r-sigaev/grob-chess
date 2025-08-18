@@ -1,4 +1,4 @@
-use crate::board::Rank;
+use crate::board::{Rank, Square};
 use std::{fmt, ops::Not, str::FromStr};
 use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
@@ -22,57 +22,19 @@ pub enum Color {
 }
 
 impl Color {
-    /// Returns the rank where the pawns of this color can promote.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use position::board::{Color, Rank};
-    ///
-    /// assert_eq!(Color::White.promotion_rank(), Rank::R8);
-    /// assert_eq!(Color::Black.promotion_rank(), Rank::R1);
-    /// ```
-    #[must_use]
-    pub fn promotion_rank(self) -> Rank {
-        if self == Color::White {
-            Rank::R8
-        } else {
-            Rank::R1
+    /// Returns the same square for white and mirrors the square for black.
+    pub fn mirror_square(self, square: Square) -> Square {
+        match self {
+            Color::White => square,
+            Color::Black => square.mirrored(),
         }
     }
 
-    /// Returns the rank where the pawns of this color will be at the start of the game.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use position::board::{Color, Rank};
-    ///
-    /// assert_eq!(Color::White.pawn_rank(), Rank::R2);
-    /// assert_eq!(Color::Black.pawn_rank(), Rank::R7);
-    /// ```
-    #[must_use]
-    pub fn pawn_rank(self) -> Rank {
-        if self == Color::White {
-            Rank::R2
-        } else {
-            Rank::R7
-        }
-    }
-
-    /// Returns the rank where the pawns of this color will be after performing en passant.
-    ///
-    /// # Examples
-    /// ```rust
-    /// use position::board::{Color, Rank};
-    ///
-    /// assert_eq!(Color::White.en_passant_dest_rank(), Rank::R6);
-    /// assert_eq!(Color::Black.en_passant_dest_rank(), Rank::R3);
-    /// ```
-    #[must_use]
-    pub fn en_passant_dest_rank(self) -> Rank {
-        if self == Color::White {
-            Rank::R6
-        } else {
-            Rank::R3
+    /// Returns the same rank for white and mirrors the rank for black.
+    pub fn mirror_rank(self, rank: Rank) -> Rank {
+        match self {
+            Color::White => rank,
+            Color::Black => rank.mirrored(),
         }
     }
 }

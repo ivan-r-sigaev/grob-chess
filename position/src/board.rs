@@ -142,6 +142,12 @@ impl Board {
                 | BitBoard::bishop_attacks(occ, sq) & self.get_bishop_sliders()
                 | BitBoard::rook_attacks(occ, sq) & self.get_rook_sliders())
     }
+
+    /// Returns whether a king can step on a given square.
+    pub fn can_king_move_to(&self, sq: Square, color: Color) -> bool {
+        !self.get_occupance().has_square(sq) && self.get_color_attackers_to(sq, !color).is_empty()
+    }
+
     /// Returns the bitboard with queens and bishops.
     #[inline(always)]
     #[must_use]
@@ -170,17 +176,31 @@ impl Board {
         self.get_color(color) & self.get_rook_sliders()
     }
 
+    /// Returns the square of the king.
+    ///
+    /// # Panics
+    /// Panics if the board does not have a king of this color.
+    pub fn get_king(&self, color: Color) -> Square {
+        BitBoard::bit_scan_forward(self.get_color_piece(color, Piece::King))
+            .expect("king does not exist")
+    }
+
+    /// Returns the pieces declaring check to the king of this color.
+    ///
+    /// # Panics
+    /// Panics if the board does not have a king of this color.
+    pub fn get_king_checkers(&self, color: Color) -> BitBoard {
+        self.get_color_attackers_to(self.get_king(color), !color)
+    }
+
     /// Returns `true` if the king of the given color is currently in check.
+    ///
+    /// # Panics
+    /// Panics if the board does not have a king of this color.
     #[inline(always)]
     #[must_use]
     pub fn is_king_in_check(&self, color: Color) -> bool {
-        !self
-            .get_color_attackers_to(
-                BitBoard::bit_scan_forward(self.get_color_piece(color, Piece::King))
-                    .expect("king does not exist"),
-                !color,
-            )
-            .is_empty()
+        !self.get_king_checkers(color).is_empty()
     }
 }
 
