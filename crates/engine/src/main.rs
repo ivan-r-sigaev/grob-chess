@@ -2,21 +2,18 @@
 //!
 //! This crate is the driver code for the engine.
 
-use crate::uci::Command;
-use std::io::{self, BufRead, BufReader};
+use crate::uci::{Command, UciChannel};
 
 mod uci;
 
 const ENGINE_NAME: &str = "Pico Chess";
 const AUTHOR_NAME: &str = "Ivan Sigaev";
 
-fn main() -> Result<(), io::Error> {
-    let handle = io::stdin().lock();
-    let mut lines = BufReader::new(handle).lines();
-    for result in &mut lines {
-        let Ok(command) = result?.parse::<Command>() else {
-            continue;
-        };
+fn main() {
+    let uci_channel = UciChannel::spawn();
+
+    loop {
+        let command = uci_channel.recv().recv().unwrap();
         match command {
             Command::Uci => {
                 println!("id name {ENGINE_NAME}");
@@ -34,5 +31,4 @@ fn main() -> Result<(), io::Error> {
             Command::Quit => break,
         }
     }
-    Ok(())
 }

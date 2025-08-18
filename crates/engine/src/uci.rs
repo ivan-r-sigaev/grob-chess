@@ -1,10 +1,70 @@
+use crossbeam::channel::{unbounded, Receiver, Sender};
 use game::Game;
 use position::{LanMove, Position};
-use std::{str::FromStr, time::Duration};
+use std::{
+    error, fmt,
+    io::{self, BufRead, BufReader},
+    result,
+    str::FromStr,
+    thread,
+    time::Duration,
+};
 
 use crate::uci::cursor::Cursor;
 
 mod cursor;
+
+pub struct UciChannel {
+    handle: Option<thread::JoinHandle<Result<()>>>,
+    command_recv: Receiver<Command>,
+}
+
+type Result<T> = result::Result<T, Error>;
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub enum Error {
+    Disconnected,
+    Io(io::Error),
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
+impl error::Error for Error {}
+
+impl UciChannel {
+    pub fn spawn() -> Self {
+        let (command_send, command_recv) = unbounded();
+        let handle = Some(thread::spawn(|| run_uci_channel(command_send)));
+        Self {
+            handle,
+            command_recv,
+        }
+    }
+    pub fn recv(&self) -> &Receiver<Command> {
+        &self.command_recv
+    }
+    fn drop_in_palce(&mut self) -> thread::Result<Result<()>> {
+        self.handle.take().map(|h| h.join()).unwrap_or(Ok(Ok(())))
+    }
+}
+
+impl Drop for UciChannel {
+    fn drop(&mut self) {
+        let result = self.drop_in_palce();
+
+        // Ignore error if already panicking.
+        if !thread::panicking() {
+            return;
+        }
+
+        result.unwrap().unwrap()
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -37,7 +97,7 @@ pub struct Go {
 impl FromStr for Command {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         let mut cursor = Cursor::new(s);
         let Some(token) = cursor.next_token() else {
             return Err(());
@@ -127,4 +187,18 @@ impl Cursor<'_> {
         }
         res
     }
+}
+
+fn run_uci_channel(command_send: Sender<Command>) -> Result<()> {
+    let handle = io::stdin().lock();
+    let mut lines = BufReader::new(handle).lines();
+    for result in &mut lines {
+        let Ok(command) = result.map_err(Error::Io)?.parse::<Command>() else {
+            continue;
+        };
+        command_send
+            .send(command)
+            .map_err(|_| Error::Disconnected)?;
+    }
+    Ok(())
 }
