@@ -24,13 +24,18 @@ impl MoveList {
         let push_move = &mut |chess_move| {
             self.push_move(chess_move);
         };
-        position.push_king_moves(push_move);
-        position.push_knight_moves(push_move);
-        position.push_bishop_moves(push_move);
-        position.push_rook_moves(push_move);
         position.push_pawn_attacks(push_move);
-        position.push_pawn_quiets(push_move);
+        position.push_knight_attacks(push_move);
+        position.push_bishop_attacks(push_move);
+        position.push_rook_attacks(push_move);
+        position.push_king_attacks(push_move);
+
         position.push_castlings(push_move);
+        position.push_king_quiets(push_move);
+        position.push_rook_quiets(push_move);
+        position.push_bishop_quiets(push_move);
+        position.push_knight_quiets(push_move);
+        position.push_pawn_quiets(push_move);
     }
     #[inline(always)]
     #[must_use]
