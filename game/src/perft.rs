@@ -4,13 +4,13 @@ use crate::game::GameSearch;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PerftValues {
-    pub nodes: u128,
-    pub captures: u128,
-    pub ep: u128,
-    pub castles: u128,
-    pub promotions: u128,
-    pub checks: u128,
-    pub checkmates: u128,
+    pub nodes: u64,
+    pub captures: u64,
+    pub ep: u64,
+    pub castles: u64,
+    pub promotions: u64,
+    pub checks: u64,
+    pub checkmates: u64,
 }
 
 impl PerftValues {

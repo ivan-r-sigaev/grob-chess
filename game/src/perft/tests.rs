@@ -24,7 +24,7 @@ fn perft(fen: &str, depth: u8, expected: PerftValues) {
     assert_eq!(values, expected);
 }
 
-fn perft_nodes(fen: &str, depth: u8, expected: u128) {
+fn perft_nodes(fen: &str, depth: u8, expected: u64) {
     let values = collect(fen, depth).nodes;
     assert_eq!(values, expected);
 }
