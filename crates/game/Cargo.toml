@@ -7,3 +7,4 @@ edition = "2021"
 strum = { version = "0.27.1", features = ["derive"] }
 position = { path = "../position" }
 either = "1.15.0"
+crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
