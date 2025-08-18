@@ -112,7 +112,10 @@ impl GameSearch<'_> {
     where
         F: FnMut(&mut Self, ChessMove),
     {
-        self.move_list.generate_moves(self.game.position());
+        self.move_list.push_group();
+        self.game.position().push_moves(&mut |chess_move| {
+            self.move_list.push_move(chess_move);
+        });
 
         let mut has_moves = false;
         while let Some(chess_move) = self.move_list.pop_move() {
