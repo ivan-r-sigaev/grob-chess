@@ -1,6 +1,6 @@
 //! Board
 //!
-//! This module provides types related to board representation.
+//! This crate provides types related to board representation.
 
 pub use bitboard::BitBoard;
 pub use pieces::{Color, Piece, Promotion};
