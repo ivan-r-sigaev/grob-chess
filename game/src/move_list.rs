@@ -19,23 +19,10 @@ impl MoveList {
     }
     #[inline(always)]
     pub fn generate_moves(&mut self, position: &Position) {
-        // TODO: could optimize for double checks here...
         self.push_group();
-        let push_move = &mut |chess_move| {
+        position.push_moves(&mut |chess_move| {
             self.push_move(chess_move);
-        };
-        position.push_pawn_attacks(push_move);
-        position.push_knight_attacks(push_move);
-        position.push_bishop_attacks(push_move);
-        position.push_rook_attacks(push_move);
-        position.push_king_attacks(push_move);
-
-        position.push_castlings(push_move);
-        position.push_king_quiets(push_move);
-        position.push_rook_quiets(push_move);
-        position.push_bishop_quiets(push_move);
-        position.push_knight_quiets(push_move);
-        position.push_pawn_quiets(push_move);
+        });
     }
     #[inline(always)]
     #[must_use]

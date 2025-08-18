@@ -143,6 +143,27 @@ impl ChessUnmove {
 }
 
 impl Position {
+    /// Generate pseudo-legal moves from this position.
+    pub fn push_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
+        if self.board().get_king_checkers(self.turn()).count() >= 2 {
+            self.push_king_attacks(push_move);
+            self.push_king_quiets(push_move);
+            return;
+        }
+
+        self.push_pawn_attacks(push_move);
+        self.push_knight_attacks(push_move);
+        self.push_bishop_attacks(push_move);
+        self.push_rook_attacks(push_move);
+        self.push_king_attacks(push_move);
+
+        self.push_castlings(push_move);
+        self.push_king_quiets(push_move);
+        self.push_rook_quiets(push_move);
+        self.push_bishop_quiets(push_move);
+        self.push_knight_quiets(push_move);
+        self.push_pawn_quiets(push_move);
+    }
     /// Generate pseudo-legal king's quiet moves from this position.
     pub fn push_king_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
         let from = self
@@ -473,35 +494,36 @@ impl Position {
                 result = Some(chess_move);
             }
         };
-        // TODO: I only have to check for captures in case of a capture
-        // and the other way around too.
-        match piece {
-            Piece::Pawn => {
-                self.push_pawn_quiets(&mut test_move);
-                self.push_pawn_attacks(&mut test_move);
+        if self.board().get_piece_at(lan_move.to).is_some() {
+            match piece {
+                Piece::Pawn => self.push_pawn_attacks(&mut test_move),
+                Piece::Bishop => self.push_bishop_attacks(&mut test_move),
+                Piece::Knight => self.push_knight_attacks(&mut test_move),
+                Piece::Rook => self.push_rook_attacks(&mut test_move),
+                Piece::Queen => {
+                    self.push_bishop_attacks(&mut test_move);
+                    self.push_rook_attacks(&mut test_move);
+                }
+                Piece::King => self.push_king_attacks(&mut test_move),
             }
-            Piece::Bishop => {
-                self.push_bishop_quiets(&mut test_move);
-                self.push_bishop_attacks(&mut test_move);
-            }
-            Piece::Knight => {
-                self.push_knight_quiets(&mut test_move);
-                self.push_knight_attacks(&mut test_move);
-            }
-            Piece::Rook => {
-                self.push_rook_quiets(&mut test_move);
-                self.push_rook_attacks(&mut test_move);
-            }
-            Piece::Queen => {
-                self.push_bishop_quiets(&mut test_move);
-                self.push_bishop_attacks(&mut test_move);
-                self.push_rook_quiets(&mut test_move);
-                self.push_rook_attacks(&mut test_move);
-            }
-            Piece::King => {
-                self.push_castlings(&mut test_move);
-                self.push_king_quiets(&mut test_move);
-                self.push_king_attacks(&mut test_move);
+        } else {
+            match piece {
+                Piece::Pawn => {
+                    // "to" is unoccupied for en passant.
+                    self.push_pawn_attacks(&mut test_move);
+                    self.push_pawn_quiets(&mut test_move);
+                }
+                Piece::Bishop => self.push_bishop_quiets(&mut test_move),
+                Piece::Knight => self.push_knight_quiets(&mut test_move),
+                Piece::Rook => self.push_rook_quiets(&mut test_move),
+                Piece::Queen => {
+                    self.push_bishop_quiets(&mut test_move);
+                    self.push_rook_quiets(&mut test_move);
+                }
+                Piece::King => {
+                    self.push_castlings(&mut test_move);
+                    self.push_king_quiets(&mut test_move);
+                }
             }
         }
 

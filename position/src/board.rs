@@ -176,17 +176,31 @@ impl Board {
         self.get_color(color) & self.get_rook_sliders()
     }
 
+    /// Returns the square of the king.
+    ///
+    /// # Panics
+    /// Panics if the board does not have a king of this color.
+    pub fn get_king(&self, color: Color) -> Square {
+        BitBoard::bit_scan_forward(self.get_color_piece(color, Piece::King))
+            .expect("king does not exist")
+    }
+
+    /// Returns the pieces declaring check to the king of this color.
+    ///
+    /// # Panics
+    /// Panics if the board does not have a king of this color.
+    pub fn get_king_checkers(&self, color: Color) -> BitBoard {
+        self.get_color_attackers_to(self.get_king(color), !color)
+    }
+
     /// Returns `true` if the king of the given color is currently in check.
+    ///
+    /// # Panics
+    /// Panics if the board does not have a king of this color.
     #[inline(always)]
     #[must_use]
     pub fn is_king_in_check(&self, color: Color) -> bool {
-        !self
-            .get_color_attackers_to(
-                BitBoard::bit_scan_forward(self.get_color_piece(color, Piece::King))
-                    .expect("king does not exist"),
-                !color,
-            )
-            .is_empty()
+        !self.get_king_checkers(color).is_empty()
     }
 }
 
