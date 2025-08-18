@@ -25,7 +25,7 @@ impl Game {
         self.history.iter().filter(|&ply| ply.hash == hash).count()
     }
     pub fn search(&mut self) -> GameSearch<'_> {
-        todo!()
+        GameSearch::new(self)
     }
     #[must_use]
     pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
@@ -52,7 +52,7 @@ impl Game {
         }
 
         self.history.push(PlyHistory { unmove, hash });
-        false
+        true
     }
     fn unmake_move(&mut self) {
         let ply = self.history.pop().unwrap();
