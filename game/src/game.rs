@@ -1,6 +1,5 @@
-use crate::move_list::MoveList;
 use either::Either;
-use position::position::{ChessMove, ChessUnmove, Position, PositionHash};
+use position::position::{ChessMove, ChessUnmove, MoveList, Position, PositionHash};
 
 #[derive(Debug, Clone)]
 pub struct Game {

@@ -4,6 +4,7 @@
 
 pub use castling_rights::CastlingRights;
 pub use move_generation::{ChessMove, ChessMoveHint, ChessUnmove, LanMove, PackedChessMove};
+pub use move_list::MoveList;
 pub use position_hash::PositionHash;
 
 use crate::board::{BitBoard, Board, Color, File, Piece, Square};
@@ -14,6 +15,7 @@ use std::hash::Hash;
 
 mod castling_rights;
 mod move_generation;
+mod move_list;
 mod position_hash;
 
 use zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist};
