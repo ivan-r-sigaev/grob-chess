@@ -1,10 +1,10 @@
-use position::position::Position;
+use position::Position;
 
 use crate::{game::Game, perft::values::PerftValues};
 
 mod values {
     use crate::game::GameSearch;
-    use position::position::ChessMoveHint;
+    use position::ChessMoveHint;
 
     /// Values used to test the validity of a perft.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]

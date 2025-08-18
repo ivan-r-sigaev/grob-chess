@@ -1,5 +1,5 @@
 use game::game::Game;
-use position::position::{LanMove, Position};
+use position::{LanMove, Position};
 use std::{str::FromStr, time::Duration};
 
 use crate::command::cursor::Cursor;

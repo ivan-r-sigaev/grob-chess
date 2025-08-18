@@ -1,4 +1,4 @@
-use crate::board::{Rank, Square};
+use crate::{Rank, Square};
 use std::{fmt, ops::Not, str::FromStr};
 use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 
@@ -6,7 +6,7 @@ use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
 ///
 /// # Examples
 /// ```rust
-/// use position::board::Color;
+/// use board::Color;
 /// use strum::FromRepr;
 ///
 /// assert_eq!(Color::from_repr(0), Some(Color::White));
@@ -46,7 +46,7 @@ impl Not for Color {
     ///
     /// # Examples
     /// ```rust
-    /// use position::board::Color;
+    /// use board::Color;
     ///
     /// assert_eq!(!Color::White, Color::Black);
     /// assert_eq!(!Color::Black, Color::White);

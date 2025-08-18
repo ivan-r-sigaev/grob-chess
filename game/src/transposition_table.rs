@@ -1,4 +1,4 @@
-use position::position::PositionHash;
+use position::PositionHash;
 use std::{array, mem};
 
 /// [Transposition table]

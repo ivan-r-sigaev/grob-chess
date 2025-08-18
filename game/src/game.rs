@@ -1,5 +1,5 @@
 use either::Either;
-use position::position::{ChessMove, ChessUnmove, MoveList, Position, PositionHash};
+use position::{ChessMove, ChessUnmove, MoveList, Position, PositionHash};
 
 /// A chess game.
 #[derive(Debug, Clone)]

@@ -1,4 +1,4 @@
-use crate::board::{File, NegDiag, PosDiag, Rank, Square};
+use crate::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,

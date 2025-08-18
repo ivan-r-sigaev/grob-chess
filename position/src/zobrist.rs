@@ -1,5 +1,5 @@
-use crate::board::{Color, File, Piece, Square};
-use crate::position::CastlingRights;
+use crate::CastlingRights;
+use board::{Color, File, Piece, Square};
 
 use const_random::const_random;
 

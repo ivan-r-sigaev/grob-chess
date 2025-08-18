@@ -1,4 +1,4 @@
-use crate::board::{BitBoard, Color, File, PosDiag, Rank, Square};
+use crate::{BitBoard, Color, File, PosDiag, Rank, Square};
 use strum::{EnumCount, VariantArray};
 
 impl BitBoard {
@@ -45,7 +45,7 @@ impl BitBoard {
     /// Returns the move of a king from a given square.
     #[inline(always)]
     #[must_use]
-    pub(crate) const fn king_attacks(from: Square) -> BitBoard {
+    pub const fn king_attacks(from: Square) -> BitBoard {
         let bb = BitBoard::from_square(from);
         let tmp = bb.left().bitor(bb.right());
         tmp.bitor(tmp.up())
