@@ -2,9 +2,9 @@ use std::{mem, num::NonZeroU64};
 
 /// A fixed size collection simialr to [`std::collections::HashMap`],
 /// that does not enforce uniqueness of its keys.
-/// 
+///
 /// This collection is primarily useful when designing a [transposition table].
-/// 
+///
 /// [transposition table]: https://www.chessprogramming.org/Transposition_Table
 pub struct WeakHashMap<V>(Box<[Item<V>]>);
 
@@ -28,7 +28,7 @@ impl<'a, V> Entry<'a, V> {
             Entry::Exact(mut exact_entry) => {
                 exact_entry.insert(value);
                 exact_entry
-            },
+            }
             Entry::Clash(clash_entry) => {
                 let mut exact_entry = clash_entry.with_new_key();
                 exact_entry.insert(value);
@@ -171,10 +171,10 @@ impl<'a, V> KeyLookup<'a, V> {
 
 impl<V> WeakHashMap<V> {
     /// Create a [`WeakHashMap`] that can hold a specified number of items.
-    /// 
+    ///
     /// # Panics
-    /// - Panics if `len` is zero.
-    /// - Panics if `len` exceeds `isize::MAX`.
+    /// - Panics if `capacity` is zero.
+    /// - Panics if `capacity * size_of::<V>()` exceeds `isize::MAX`.
     pub fn new(capacity: usize) -> Self {
         assert!(capacity > 0, "must be able to hold at least one item!");
         let mut vec = Vec::new();
@@ -195,7 +195,7 @@ impl<V> WeakHashMap<V> {
                 } else {
                     Entry::Clash(ClashEntry { key, item })
                 }
-            },
+            }
             None => Entry::Empty(EmptyEntry { key, item }),
         }
     }
@@ -209,7 +209,7 @@ impl<V> WeakHashMap<V> {
                 } else {
                     KeyLookup::Clash(*k, v)
                 }
-            },
+            }
             None => KeyLookup::Empty,
         }
     }
@@ -218,4 +218,3 @@ impl<V> WeakHashMap<V> {
         (key.get() % self.capacity() as u64) as usize
     }
 }
-
