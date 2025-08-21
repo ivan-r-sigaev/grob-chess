@@ -18,7 +18,7 @@ pub struct Transposition {
     /// The [`Score`] of the position on the basis of the past search.
     pub score: Score,
     /// The depth of the past search.
-    pub depth: u8,
+    pub depth: u64,  // TODO: is u64 too large?
 }
 
 /// A [transposition table].

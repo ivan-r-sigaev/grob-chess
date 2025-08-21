@@ -163,7 +163,7 @@ impl ParallelSearch {
     pub fn prepare_search(
         &mut self,
         game: Game,
-        depth: u8,
+        depth: u64,
         nodes_max: Option<u64>,
         deadline: Option<Instant>,
     ) -> usize {
@@ -241,7 +241,7 @@ impl Drop for ParallelSearch {
 #[derive(Debug, Clone)]
 struct Job {
     game: Game,
-    depth: u8,
+    depth: u64,
     nodes_max: Option<u64>,
     deadline: Option<Instant>,
     index: usize,
@@ -327,7 +327,7 @@ impl Worker {
 fn search(
     node: &mut GameSearch,
     tt: Arc<TranspositionTable>,
-    depth: u8,
+    depth: u64,
     constraints: SearchConstraints,
     signal: Arc<CachePadded<AtomicU8>>,
     mut alpha: Score,
