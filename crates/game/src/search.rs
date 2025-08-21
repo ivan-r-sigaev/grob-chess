@@ -136,12 +136,12 @@ impl ParallelSearch {
     pub fn pending_count(&self) -> usize {
         self.jobs_count() - self.results.len()
     }
-    pub fn wait<'a>(&'a self, select: &mut Select<'a>) -> usize {
+    pub fn wait<'a>(&'a self, sel: &mut Select<'a>) -> usize {
         if !self.is_searching() {
             panic!("Search is paused.");
         }
 
-        select.recv(&self.res_recv)
+        sel.recv(&self.res_recv)
     }
     pub fn try_collect(&mut self) -> Option<Vec<SearchResult>> {
         if !self.is_searching() {

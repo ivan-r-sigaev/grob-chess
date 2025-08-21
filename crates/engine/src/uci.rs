@@ -10,6 +10,7 @@ use crate::uci::cursor::Cursor;
 mod cursor;
 
 /// A convenience wrapper to be able to block on command line input.
+#[derive(Debug)]
 pub struct UciChannel {
     handle: Option<thread::JoinHandle<Result<()>>>,
     command_recv: Receiver<Command>,
@@ -44,9 +45,8 @@ impl UciChannel {
             commands,
         }
     }
-    #[allow(unused)]
-    pub fn wait<'a>(&'a self, select: &mut Select<'a>) -> usize {
-        select.recv(&self.command_recv)
+    pub fn wait<'a>(&'a self, sel: &mut Select<'a>) -> usize {
+        sel.recv(&self.command_recv)
     }
     pub fn check(&mut self) -> Option<&Command> {
         loop {
@@ -59,7 +59,7 @@ impl UciChannel {
         }
         self.commands.back()
     }
-    pub fn recv(&mut self) -> Option<Command> {
+    pub fn pop(&mut self) -> Option<Command> {
         self.check();
         self.commands.pop_back() 
     }
