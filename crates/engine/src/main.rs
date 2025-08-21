@@ -5,6 +5,7 @@
 use crate::uci::{Command, UciChannel};
 
 mod uci;
+mod search;
 
 const ENGINE_NAME: &str = "Pico Chess";
 const AUTHOR_NAME: &str = "Ivan Sigaev";
