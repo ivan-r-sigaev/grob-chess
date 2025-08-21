@@ -79,7 +79,7 @@ impl Server {
             }
             Command::PonderHit => {
                 if self.search.is_running() {
-                    self.search.set_pondering(false)
+                    self.search.ponderhit()
                 }
             }
             Command::Quit => {

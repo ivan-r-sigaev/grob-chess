@@ -46,7 +46,7 @@ impl Search {
 
         self.search.clear_tt();
     }
-    pub fn set_pondering(&mut self, _is_pondering: bool) {
+    pub fn ponderhit(&mut self) {
         todo!()
     }
 }
