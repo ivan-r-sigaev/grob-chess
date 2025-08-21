@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use crossbeam::channel::Select;
 use game::Game;
 use position::Position;
@@ -103,7 +104,14 @@ impl Server {
         Self::display_search_result(result);
     }
     fn display_search_result(result: SearchResult) {
-        let best_move = result.best_move.map(|m| m.to_string()).unwrap_or(String::from("(none)"));
-        println!("bestmove {best_move}")
+        let mut msg = String::from("bestmove ");
+        match result.best_move {
+            Some(best_move) => write!(msg, "{best_move}").unwrap(),
+            None => write!(msg, "(none)").unwrap(),
+        };
+        if let Some(ponder) = result.ponder {
+            write!(msg, " ponder {ponder}").unwrap();
+        };
+        println!("{msg}");
     }
 }

@@ -7,6 +7,7 @@ use crate::uci::Go;
 #[derive(Debug, Clone, Copy)]
 pub struct SearchResult {
     pub best_move: Option<LanMove>,
+    pub ponder: Option<LanMove>,
 }
 
 #[derive(Debug)]
