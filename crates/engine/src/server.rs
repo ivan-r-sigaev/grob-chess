@@ -83,7 +83,9 @@ impl Server {
                 }
             }
             Command::Quit => {
-                self.stop_search();
+                if self.search.is_running() {
+                    self.stop_search();
+                }
                 self.should_quit = true;
             }
         }
