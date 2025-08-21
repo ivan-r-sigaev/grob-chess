@@ -1,5 +1,4 @@
-use crossbeam::channel::Select;
-use game::{ParallelSearch, Transposition};
+use game::{ParallelSearch, Transposition, Waiter};
 use position::LanMove;
 
 use crate::uci::Go;
@@ -26,8 +25,8 @@ impl Search {
     pub fn is_running(&self) -> bool {
         todo!()
     }
-    pub fn wait<'a>(&'a self, sel: &mut Select<'a>) -> usize {
-        self.search.wait(sel)
+    pub fn add_to_waiter<'a>(&'a self, _waiter: &mut Waiter<'a>) -> usize {
+        todo!()
     }
     pub fn go(&mut self, _go: Go) {
         todo!()

@@ -3,18 +3,18 @@ use std::{
         atomic::{AtomicU8, Ordering},
         Arc, Barrier
     },
-    thread,
+    thread, time::Instant,
 };
 
 use board::Piece;
 use crossbeam::{
-    channel::{unbounded, Receiver, Select, Sender},
+    channel::{unbounded, Receiver, Sender},
     utils::CachePadded,
 };
 use either::Either;
 use position::ChessMove;
 
-use crate::{Game, GameEnding, GameSearch, Transposition, TranspositionTable};
+use crate::{Game, GameEnding, GameSearch, Transposition, TranspositionTable, Waiter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Score {
@@ -136,12 +136,12 @@ impl ParallelSearch {
     pub fn pending_count(&self) -> usize {
         self.jobs_count() - self.results.len()
     }
-    pub fn wait<'a>(&'a self, sel: &mut Select<'a>) -> usize {
+    pub fn add_to_waiter<'a>(&'a self, waiter: &mut Waiter<'a>, deadline: Option<Instant>) -> usize {
         if !self.is_searching() {
             panic!("Search is paused.");
         }
-
-        sel.recv(&self.res_recv)
+        
+        waiter.add(&self.res_recv, deadline)
     }
     pub fn try_collect(&mut self) -> Option<Vec<SearchResult>> {
         if !self.is_searching() {

@@ -1,5 +1,5 @@
-use crossbeam::channel::{unbounded, Receiver, Select, Sender, TryRecvError};
-use game::Game;
+use crossbeam::channel::{unbounded, Receiver, Sender, TryRecvError};
+use game::{Game, Waiter};
 use position::{LanMove, Position};
 use std::{
     collections::VecDeque, error, fmt, io::{self, BufRead, BufReader}, result, str::FromStr, thread, time::Duration
@@ -45,8 +45,8 @@ impl UciChannel {
             commands,
         }
     }
-    pub fn wait<'a>(&'a self, sel: &mut Select<'a>) -> usize {
-        sel.recv(&self.command_recv)
+    pub fn add_to_waiter<'a>(&'a self, waiter: &mut Waiter<'a>) -> usize {
+        waiter.add(&self.command_recv, None)
     }
     pub fn check(&mut self) -> Option<&Command> {
         loop {
