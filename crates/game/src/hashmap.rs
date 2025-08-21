@@ -213,6 +213,12 @@ impl<V> WeakHashMap<V> {
             None => KeyLookup::Empty,
         }
     }
+    /// Remove all items form [`WeakHashMap`].
+    pub fn clear(&mut self) {
+        for opt in self.0.iter_mut() {
+            _ = opt.take();
+        }
+    }
     // Returns the array index for the specified key.
     fn key_index(&self, key: NonZeroU64) -> usize {
         (key.get() % self.capacity() as u64) as usize

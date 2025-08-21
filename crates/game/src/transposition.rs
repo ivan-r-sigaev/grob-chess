@@ -3,7 +3,7 @@ use std::fmt;
 use parking_lot::RwLock;
 use position::{ChessMove, PositionHash};
 
-use crate::{KeyLookup, WeakHashMap};
+use crate::{KeyLookup, Score, WeakHashMap};
 
 /// A [transposition]. 
 /// 
@@ -13,8 +13,12 @@ use crate::{KeyLookup, WeakHashMap};
 /// [transposition]: https://www.chessprogramming.org/Transposition
 #[derive(Debug, Clone, Copy)]
 pub struct Transposition {
-    /// Best move on the basis of past search.
+    /// Best move on the basis of the past search.
     pub best_move: ChessMove,
+    /// The [`Score`] of the position on the basis of the past search.
+    pub score: Score,
+    /// The depth of the past search.
+    pub depth: u8,
 }
 
 /// A [transposition table].
@@ -62,6 +66,10 @@ impl TranspositionTable {
     /// clashing hash if one exists.
     pub fn insert(&self, hash: PositionHash, value: Transposition) {
         _ = self.0.write().entry(hash.get()).insert(value);
+    }
+    /// Clears all saved [`Transposition`]s.
+    pub fn clear(&self) {
+        self.0.write().clear();
     }
 }
 

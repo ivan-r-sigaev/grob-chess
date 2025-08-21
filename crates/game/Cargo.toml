@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 strum = { version = "0.27.1", features = ["derive"] }
 position = { path = "../position" }
+board = { path = "../board" }
 either = "1.15.0"
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
 parking_lot = "0.12.4"

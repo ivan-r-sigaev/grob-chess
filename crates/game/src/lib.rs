@@ -5,8 +5,10 @@
 pub use game::{Game, GameEnding, GameSearch};
 pub use hashmap::{ClashEntry, EmptyEntry, Entry, ExactEntry, KeyLookup, WeakHashMap};
 pub use transposition::{Transposition, TranspositionTable};
+pub use search::{ParallelSearch, Score, SearchResult};
 
 mod game;
+mod search;
 mod hashmap;
 mod transposition;
 
