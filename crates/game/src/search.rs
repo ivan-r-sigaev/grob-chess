@@ -79,6 +79,7 @@ pub struct SearchResult {
     pub best_move: Option<ChessMove>,
     pub score: Score,
     pub nodes: u64,
+    pub unfinished: bool,
 }
 
 #[derive(Debug)]
@@ -159,7 +160,13 @@ impl ParallelSearch {
         self.signal.store(SIGNAL_STOP, Ordering::SeqCst);
         Some(self.collect_results())
     }
-    pub fn prepare_search(&mut self, game: Game, depth: u8, nodes_max: Option<u64>) -> usize {
+    pub fn prepare_search(
+        &mut self,
+        game: Game,
+        depth: u8,
+        nodes_max: Option<u64>,
+        deadline: Option<Instant>,
+    ) -> usize {
         if self.is_searching() {
             panic!("Search is already running.");
         }
@@ -170,6 +177,7 @@ impl ParallelSearch {
             game,
             depth,
             nodes_max,
+            deadline,
             index,
         };
         self.job_send.send(search_job).unwrap();
@@ -235,6 +243,7 @@ struct Job {
     game: Game,
     depth: u8,
     nodes_max: Option<u64>,
+    deadline: Option<Instant>,
     index: usize,
 }
 
@@ -262,6 +271,21 @@ impl Drop for Worker {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+struct SearchConstraints {
+    pub nodes_max: Option<u64>,
+    pub deadline: Option<Instant>,
+}
+
+impl SearchConstraints {
+    pub fn nodes_fail(self, nodes: u64) -> bool {
+        self.nodes_max.is_some_and(|max| nodes > max)
+    }
+    pub fn time_fails(self) -> bool {
+        self.deadline.is_some_and(|d| Instant::now() > d)
+    }
+}
+
 impl Worker {
     fn new(
         job_recv: Receiver<Job>,
@@ -280,7 +304,10 @@ impl Worker {
                     &mut game.search(),
                     tt.clone(),
                     job.depth,
-                    job.nodes_max,
+                    SearchConstraints {
+                        nodes_max: job.nodes_max,
+                        deadline: job.deadline
+                    },
                     signal.clone(),
                     worst_score,
                     worst_score.prev(),
@@ -301,13 +328,14 @@ fn search(
     node: &mut GameSearch,
     tt: Arc<TranspositionTable>,
     depth: u8,
-    nodes_max: Option<u64>,
+    constraints: SearchConstraints,
     signal: Arc<CachePadded<AtomicU8>>,
     mut alpha: Score,
     beta: Score,
 ) -> SearchResult {
-    if signal.load(Ordering::Relaxed) != SIGNAL_GO {
-        return evaluate(node);
+    if signal.load(Ordering::Relaxed) != SIGNAL_GO
+        || constraints.time_fails() {
+        return evaluate(node, true);
     }
 
     let position = node.game().position();
@@ -325,6 +353,7 @@ fn search(
                 best_move: Some(t.best_move),
                 score: t.score,
                 nodes: 1,
+                unfinished: false,
             }
         }
     }
@@ -336,8 +365,16 @@ fn search(
     let mut best_move= None;
     let mut best_score = None;
     let mut nodes = 1;
+    let mut unfinished = false;
     let maybe_ending = node.for_each_legal_child_node(|node, chess_move| {
-        let result = search(node, tt.clone(), depth - 1, nodes_max, signal.clone(), alpha, beta);
+        let result = search(
+            node, tt.clone(),
+            depth - 1,
+            constraints,
+            signal.clone(),
+            alpha,
+            beta
+        );
         nodes += result.nodes;
         if best_score.is_none_or(|score| result.score.prev() > score) {
             best_score = Some(result.score);
@@ -348,10 +385,16 @@ fn search(
             alpha = result.score;
         }
 
-        if result.score >= beta
-            || nodes_max.is_some_and(|max| nodes >= max)
+        if result.score >= beta {
+            node.exhaust_moves();
+            return;
+        }
+
+        if constraints.nodes_fail(nodes)
+            || constraints.time_fails()
             || signal.load(Ordering::Relaxed) != SIGNAL_GO
         {
+            unfinished = true;
             node.exhaust_moves();
         }
     });
@@ -369,21 +412,21 @@ fn search(
         }
     };
     
-    SearchResult { best_move, score, nodes }
+    SearchResult { best_move, score, nodes, unfinished }
 }
 
 fn quiescence(node: &mut GameSearch, signal: Arc<CachePadded<AtomicU8>>, alpha: Score, beta: Score) -> SearchResult {
     if signal.load(Ordering::Relaxed) != SIGNAL_GO {
-        return evaluate(node);
+        return evaluate(node, true);
     }
 
     _ = (alpha, beta);
 
     // TODO: implement quiescence search.
-    evaluate(node)
+    evaluate(node, false)
 }
 
-fn evaluate(node: &mut GameSearch) -> SearchResult {
+fn evaluate(node: &mut GameSearch, unfinished: bool) -> SearchResult {
     let nodes = 1;
     let any_move = match node.check_ending() {
         Either::Left(chess_move) => chess_move,
@@ -391,6 +434,7 @@ fn evaluate(node: &mut GameSearch) -> SearchResult {
             best_move: None,
             score: Score::ending(ending),
             nodes,
+            unfinished,
         },
     };
 
@@ -414,5 +458,6 @@ fn evaluate(node: &mut GameSearch) -> SearchResult {
         best_move: Some(any_move),
         score,
         nodes,
+        unfinished,
     }
 }
