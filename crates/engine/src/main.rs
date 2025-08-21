@@ -10,10 +10,10 @@ const ENGINE_NAME: &str = "Pico Chess";
 const AUTHOR_NAME: &str = "Ivan Sigaev";
 
 fn main() {
-    let uci_channel = UciChannel::spawn();
+    let mut uci_channel = UciChannel::spawn();
 
     loop {
-        let command = uci_channel.recv().recv().unwrap();
+        let command = uci_channel.recv().unwrap();
         match command {
             Command::Uci => {
                 println!("id name {ENGINE_NAME}");
