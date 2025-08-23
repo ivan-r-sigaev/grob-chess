@@ -3,9 +3,10 @@ use std::num::NonZeroU64;
 use board::{Board, Color, File};
 use either::Either;
 
+use crate::castling_rights::CastlingRights;
+use crate::move_list::MoveList;
 use crate::position::{ChessMove, ChessUnmove, LanMove, Position};
 use crate::raw_position::ParseFenError;
-use crate::{CastlingRights, MoveList};
 
 /// A chess game.
 #[derive(Debug, Clone)]
@@ -175,6 +176,19 @@ pub enum GameEnding {
     Checkmate,
 }
 
+/// Specifies the move ordering policy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MoveOrdering {
+    /// Order captrues before the quiet moves.
+    #[default]
+    CapturesFirst,
+    /// Same as [`MoveOrdering::CapturesFirst`] but also apply [MVV-LVA]
+    /// heuristic for the captures.
+    ///
+    /// [MVV-LVA]: https://www.chessprogramming.org/MVV-LVA
+    MvvLva,
+}
+
 impl GameExplorer<'_> {
     /// State of the game at this at this point during search.
     pub fn game(&self) -> &Game {
@@ -184,7 +198,7 @@ impl GameExplorer<'_> {
     /// if the position has no legal moves.
     pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
         let mut any_move = None;
-        let ending = self.for_each_legal_child_node(|node, chess_move| {
+        let ending = self.for_each_legal_child_node(MoveOrdering::default(), |node, chess_move| {
             any_move = Some(chess_move);
             node.exhaust_moves();
         });
@@ -211,14 +225,16 @@ impl GameExplorer<'_> {
     /// Inspects all legal moves in position with a function.
     /// Returns `Some(game_ending: GameEnding)` if there are no legal moves.
     #[inline(always)]
-    pub fn for_each_legal_child_node<F>(&mut self, mut op: F) -> Option<GameEnding>
+    pub fn for_each_legal_child_node<F>(
+        &mut self,
+        policy: MoveOrdering,
+        mut op: F,
+    ) -> Option<GameEnding>
     where
         F: FnMut(&mut Self, ChessMove),
     {
         self.move_list.push_group();
-        self.game.position.push_moves(&mut |chess_move| {
-            self.move_list.push_move(chess_move);
-        });
+        self.generate_moves(policy);
 
         let mut has_moves = false;
         while let Some(chess_move) = self.move_list.pop_move() {
@@ -251,6 +267,23 @@ impl GameExplorer<'_> {
                 break;
             }
         }
+    }
+    fn generate_moves(&mut self, policy: MoveOrdering) {
+        self.game.position.push_moves(&mut |chess_move| {
+            self.move_list.push_move(chess_move);
+        });
+        if policy == MoveOrdering::CapturesFirst {
+            return;
+        }
+
+        let moves = self.move_list.group_mut();
+        moves.sort_by_cached_key(|k| {
+            let piece = self.game.board().get_piece_at(k.get().dest_square());
+            match piece {
+                Some(piece) => piece as i32,
+                None => -1,
+            }
+        });
     }
 }
 

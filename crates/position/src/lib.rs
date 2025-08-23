@@ -3,8 +3,7 @@
 //! This crate provides types related to position representation and move generation.
 
 pub use castling_rights::CastlingRights;
-pub use game::{Game, GameEnding, GameExplorer};
-pub use move_list::MoveList;
+pub use game::{Game, GameEnding, GameExplorer, MoveOrdering};
 pub use position::{ChessMove, ChessMoveHint, LanMove, PackedChessMove};
 pub use raw_position::ParseFenError;
 

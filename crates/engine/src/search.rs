@@ -5,7 +5,7 @@ use std::{
 
 use board::Color;
 use game::{ParallelSearch, Score, Transposition, Waiter};
-use position::{ChessMove, Game, LanMove};
+use position::{ChessMove, Game, LanMove, MoveOrdering};
 
 use crate::uci::Go;
 
@@ -75,9 +75,10 @@ impl Search {
             .filter(|vec| !vec.is_empty())
             .unwrap_or({
                 let mut vec = Vec::new();
-                game.explore().for_each_legal_child_node(|_, chess_move| {
-                    vec.push(chess_move);
-                });
+                game.explore()
+                    .for_each_legal_child_node(MoveOrdering::MvvLva, |_, chess_move| {
+                        vec.push(chess_move);
+                    });
                 vec
             });
         let moves = {

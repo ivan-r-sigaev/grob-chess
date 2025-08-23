@@ -73,6 +73,8 @@ impl Not for Color {
     Debug,
     PartialEq,
     Eq,
+    PartialOrd,
+    Ord,
     EnumCount,
     EnumIter,
     Display,
@@ -86,14 +88,14 @@ pub enum Piece {
     #[strum(serialize = "p")]
     #[strum(ascii_case_insensitive)]
     Pawn,
-    /// Bishop pieces.
-    #[strum(serialize = "b")]
-    #[strum(ascii_case_insensitive)]
-    Bishop,
     /// Knight pieces.
     #[strum(serialize = "n")]
     #[strum(ascii_case_insensitive)]
     Knight,
+    /// Bishop pieces.
+    #[strum(serialize = "b")]
+    #[strum(ascii_case_insensitive)]
+    Bishop,
     /// Rook pieces.
     #[strum(serialize = "r")]
     #[strum(ascii_case_insensitive)]
@@ -128,6 +130,8 @@ impl Piece {
     Debug,
     PartialEq,
     Eq,
+    PartialOrd,
+    Ord,
     EnumCount,
     EnumIter,
     Display,

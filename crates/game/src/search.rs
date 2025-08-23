@@ -13,7 +13,7 @@ use crossbeam::{
     utils::CachePadded,
 };
 use either::Either;
-use position::{ChessMove, Game};
+use position::{ChessMove, Game, MoveOrdering};
 
 use crate::{Transposition, TranspositionTable, Waiter};
 use position::{GameEnding, GameExplorer};
@@ -419,7 +419,7 @@ fn search(
     let mut best_score = None;
     let mut nodes = 1;
     let mut unfinished = false;
-    let maybe_ending = node.for_each_legal_child_node(|node, chess_move| {
+    let maybe_ending = node.for_each_legal_child_node(MoveOrdering::MvvLva, |node, chess_move| {
         let result = search(
             node,
             tt.clone(),
