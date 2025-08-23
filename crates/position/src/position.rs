@@ -1,5 +1,6 @@
 use board::{BitBoard, Board, Color, File, Piece, Square};
 
+use std::collections::VecDeque;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::hash::Hash;
@@ -50,18 +51,28 @@ impl Hash for Position {
 
 /// An error that originated from [FEN] parsing.
 ///
+/// If a FEN string contains multiple errors the error in the part
+/// nearest to the string beginning will be retruned (e.g. FEN with
+/// erroneous castling rights and trailing garbage will return
+/// [`ParseFenError::BadCastlingRights`]).
+///
 /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ParseFenError {
-    BadFenSize,
-    BadKingCount,
-    BadRowCount,
-    BadRowSize,
-    BadCastlingRights,
+    /// Something is wrong with the part of the FEN representing the board.
+    BadBoard,
+    /// Something is wrong with the part of the FEN representing the turn.
+    BadTurn,
+    /// Something is wrong with the part of the FEN representing the en passant.
     BadEnPassant,
+    /// Something is wrong with the part of the FEN representing the castling rights.
+    BadCastlingRights,
+    /// Something is wrong with the part of the FEN representing the halfmove clock.
     BadHalfmoveClock,
+    /// Something is wrong with the part of the FEN representing the fullmove clock.
     BadFullmoveClock,
-    UnknownCharacter,
+    /// FEN is valid but the string is followed by an unknown extension.
+    TrailingGarbage,
 }
 
 impl Display for ParseFenError {
@@ -79,7 +90,7 @@ impl Position {
         Self::try_from_fen(INITIAL_FEN).unwrap()
     }
 
-    /// Tries to construct a new position from [FEN].
+    /// Tries to parse a new position from [FEN].
     ///
     /// # Examples
     /// ```rust
@@ -93,208 +104,126 @@ impl Position {
     ///
     /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
     pub fn try_from_fen(fen: &str) -> Result<Self, ParseFenError> {
-        let fen_parts: Vec<&str> = fen.split_whitespace().collect();
-        if fen_parts.len() != 6 {
-            return Err(ParseFenError::BadFenSize);
-        }
-
-        let position_parts: Vec<&str> = fen_parts[0].split('/').collect();
-        if position_parts.len() != 8 {
-            return Err(ParseFenError::BadRowCount);
-        }
-
-        let mut bitboard = Board::empty();
+        let mut words: VecDeque<&str> = fen.split_whitespace().collect();
         let mut zobrist_hash = 0;
+
+        let fen_board = words.pop_front().ok_or(ParseFenError::BadBoard)?;
+        let rows: Vec<&str> = fen_board.split('/').collect();
+        if rows.len() != 8 {
+            return Err(ParseFenError::BadBoard);
+        }
+        let mut board = Board::empty();
         let mut sq: Square = Square::A1;
         for y in (0..8).rev() {
-            let mut x = 0;
-            for ch in position_parts[y].chars() {
+            let mut row_size = 0;
+            for ch in rows[y].chars() {
                 if ('1'..='8').contains(&ch) {
-                    let increment = u8::try_from(ch).unwrap() - u8::try_from('1').unwrap();
-                    x += increment;
-                    sq = sq.shifted(increment as i8);
-                } else if ch.is_ascii_alphabetic() {
-                    let lower = ch.to_ascii_lowercase();
-                    let color = if ch.is_ascii_lowercase() {
-                        Color::Black
-                    } else {
-                        Color::White
-                    };
-
-                    let piece = if lower == 'k' {
-                        Piece::King
-                    } else if lower == 'q' {
-                        Piece::Queen
-                    } else if lower == 'r' {
-                        Piece::Rook
-                    } else if lower == 'b' {
-                        Piece::Bishop
-                    } else if lower == 'n' {
-                        Piece::Knight
-                    } else if lower == 'p' {
-                        Piece::Pawn
-                    } else {
-                        return Err(ParseFenError::UnknownCharacter);
-                    };
-
-                    bitboard.mask_or(color, piece, BitBoard::from(sq));
-                    zobrist_hash ^= get_square_zobrist(color, piece, sq);
+                    let inc = u8::try_from(ch).unwrap() - u8::try_from('1').unwrap();
+                    row_size += inc;
+                    sq = sq.shifted(inc as i8);
                 } else {
-                    return Err(ParseFenError::UnknownCharacter);
+                    let color = match ch.is_ascii_lowercase() {
+                        true => Color::Black,
+                        false => Color::White,
+                    };
+
+                    let piece = ch
+                        .to_string()
+                        .parse::<Piece>()
+                        .map_err(|_| ParseFenError::BadBoard)?;
+
+                    board.mask_or(color, piece, BitBoard::from(sq));
+                    zobrist_hash ^= get_square_zobrist(color, piece, sq);
                 }
                 sq = sq.shifted(1);
-                x += 1;
-                if x > 8 {
-                    return Err(ParseFenError::BadFenSize);
+                row_size += 1;
+                if row_size > 8 {
+                    return Err(ParseFenError::BadBoard);
                 }
             }
-            if x < 8 {
-                return Err(ParseFenError::BadFenSize);
+            if row_size < 8 {
+                return Err(ParseFenError::BadBoard);
             }
         }
-
-        if bitboard.get_color_piece(Color::White, Piece::King).count() != 1 {
-            return Err(ParseFenError::BadKingCount);
+        if board.get_color_piece(Color::White, Piece::King).count() != 1 {
+            return Err(ParseFenError::BadBoard);
         }
-        if bitboard.get_color_piece(Color::Black, Piece::King).count() != 1 {
-            return Err(ParseFenError::BadKingCount);
+        if board.get_color_piece(Color::Black, Piece::King).count() != 1 {
+            return Err(ParseFenError::BadBoard);
         }
 
-        let turn = if fen_parts[1] == "w" {
-            Color::White
-        } else if fen_parts[1] == "b" {
-            Color::Black
-        } else {
-            return Err(ParseFenError::UnknownCharacter);
-        };
-
+        let turn = words
+            .pop_front()
+            .and_then(|s| s.parse::<Color>().ok())
+            .ok_or(ParseFenError::BadTurn)?;
         zobrist_hash ^= get_turn_zobrist(turn);
 
-        let mut castling_rights = CastlingRights::empty();
-        if fen_parts[2] != "-" {
-            let mut remaining_len = fen_parts[2].len();
-            let bad_king_w = bitboard
-                .get_color_piece(Color::White, Piece::King)
-                .bit_scan_forward()
-                .unwrap()
-                != Square::E1;
-            let bad_king_b = bitboard
-                .get_color_piece(Color::Black, Piece::King)
-                .bit_scan_forward()
-                .unwrap()
-                != Square::E8;
-            let bad_rook_wk = (bitboard.get_color_piece(Color::White, Piece::Rook)
-                & BitBoard::from(Square::H1))
-            .is_empty();
-            let bad_rook_wq = (bitboard.get_color_piece(Color::White, Piece::Rook)
-                & BitBoard::from(Square::A1))
-            .is_empty();
-            let bad_rook_bk = (bitboard.get_color_piece(Color::Black, Piece::Rook)
-                & BitBoard::from(Square::H8))
-            .is_empty();
-            let bad_rook_bq = (bitboard.get_color_piece(Color::Black, Piece::Rook)
-                & BitBoard::from(Square::A8))
-            .is_empty();
-            if fen_parts[2].contains('K') {
-                if bad_king_w || bad_rook_wk {
-                    return Err(ParseFenError::BadCastlingRights);
+        let castling_rights = words
+            .pop_front()
+            .and_then(|s| s.parse::<CastlingRights>().ok())
+            .ok_or(ParseFenError::BadTurn)?;
+        let castling_rights_max = {
+            let mut cr = CastlingRights::all();
+            let w_king = board.get_color_piece(Color::White, Piece::King);
+            if !w_king.has_square(Square::E1) {
+                cr &= !CastlingRights::both_sides(Color::White);
+            } else {
+                let w_rooks = board.get_color_piece(Color::White, Piece::Rook);
+                if !w_rooks.has_square(Square::H1) {
+                    cr &= !CastlingRights::WHITE_KING;
                 }
-
-                remaining_len -= 1;
-                castling_rights |= CastlingRights::WHITE_KING;
-            }
-            if fen_parts[2].contains('Q') {
-                if bad_king_w || bad_rook_wq {
-                    return Err(ParseFenError::BadCastlingRights);
+                if !w_rooks.has_square(Square::A1) {
+                    cr &= !CastlingRights::WHITE_QUEEN;
                 }
-
-                remaining_len -= 1;
-                castling_rights |= CastlingRights::WHITE_QUEEN;
             }
-            if fen_parts[2].contains('k') {
-                if bad_king_b || bad_rook_bk {
-                    return Err(ParseFenError::BadCastlingRights);
+            let b_king = board.get_color_piece(Color::Black, Piece::King);
+            if !b_king.has_square(Square::E8) {
+                cr &= !CastlingRights::both_sides(Color::Black);
+            } else {
+                let b_rooks = board.get_color_piece(Color::Black, Piece::Rook);
+                if !b_rooks.has_square(Square::H8) {
+                    cr &= !CastlingRights::BLACK_KING;
                 }
-
-                remaining_len -= 1;
-                castling_rights |= CastlingRights::BLACK_KING;
-            }
-            if fen_parts[2].contains('q') {
-                if bad_king_b || bad_rook_bq {
-                    return Err(ParseFenError::BadCastlingRights);
+                if !b_rooks.has_square(Square::A8) {
+                    cr &= !CastlingRights::BLACK_QUEEN;
                 }
-
-                remaining_len -= 1;
-                castling_rights |= CastlingRights::BLACK_QUEEN;
             }
-            if remaining_len != 0 {
-                return Err(ParseFenError::BadCastlingRights);
-            }
+            cr
+        };
+        if !castling_rights_max.contains(castling_rights) {
+            return Err(ParseFenError::BadCastlingRights);
         }
         zobrist_hash ^= get_castling_zobrist(castling_rights);
 
-        let en_passant;
-        if fen_parts[3] == "-" {
-            en_passant = None;
-        } else {
-            if fen_parts[3].chars().count() != 2 {
-                return Err(ParseFenError::BadEnPassant);
-            }
-            let col = fen_parts[3].chars().nth(0).unwrap();
-            let row = fen_parts[3].chars().nth(1).unwrap();
-            if row != '6' || row != '3' {
-                return Err(ParseFenError::BadEnPassant);
-            }
-
-            if col == 'a' {
-                en_passant = Some(File::A);
-            } else if col == 'b' {
-                en_passant = Some(File::B);
-            } else if col == 'c' {
-                en_passant = Some(File::C);
-            } else if col == 'd' {
-                en_passant = Some(File::D);
-            } else if col == 'e' {
-                en_passant = Some(File::E);
-            } else if col == 'f' {
-                en_passant = Some(File::F);
-            } else if col == 'g' {
-                en_passant = Some(File::G);
-            } else if col == 'h' {
-                en_passant = Some(File::H);
-            } else {
-                return Err(ParseFenError::BadEnPassant);
-            }
-        }
+        let en_passant_fen = words.pop_front().ok_or(ParseFenError::BadEnPassant)?;
+        let en_passant = match en_passant_fen {
+            "-" => None,
+            s => Some(s.parse::<File>().map_err(|_| ParseFenError::BadEnPassant)?),
+        };
         zobrist_hash ^= get_en_passant_zobrist(en_passant);
 
-        let hm = fen_parts[4].parse::<u32>();
-        if hm.is_err() {
-            return Err(ParseFenError::BadHalfmoveClock);
-        }
-        let halfmove_clock = hm.unwrap();
+        let hm = words
+            .pop_front()
+            .and_then(|s| s.parse::<u32>().ok())
+            .ok_or(ParseFenError::BadHalfmoveClock)?;
 
-        let fm = fen_parts[5].parse::<u32>();
-        if fm.is_err() {
-            return Err(ParseFenError::BadFullmoveClock);
-        }
-        let move_index = fm.unwrap();
-        let halfmove_index = move_index - halfmove_clock;
+        let fm = words
+            .pop_front()
+            .and_then(|s| s.parse::<u32>().ok())
+            .ok_or(ParseFenError::BadFullmoveClock)?;
 
-        // let piece_scores: [PieceScore; 2] = [
-        //     board.get_piece_score(Color::try_from(0)),
-        //     board.get_piece_score(Color::Black)
-        // ];
+        if !words.is_empty() {
+            return Err(ParseFenError::TrailingGarbage);
+        }
 
         Ok(Position {
-            board: bitboard,
+            board,
             turn,
             castling_rights,
             en_passant,
-            move_index,
-            move_index_rule_50: halfmove_index,
+            move_index: fm,
+            move_index_rule_50: fm - hm,
             zobrist_hash,
-            //piece_scores,
         })
     }
 }
