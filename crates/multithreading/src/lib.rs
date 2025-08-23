@@ -1,6 +1,6 @@
-//! Game
+//! Multithreading
 //!
-//! This crate provides types related to chess game representation and search.
+//! This crate provides types related to multithreading.
 
 pub use hashmap::{ClashEntry, EmptyEntry, Entry, ExactEntry, KeyLookup, WeakHashMap};
 pub use search::{ParallelSearch, Score, SearchResult};
