@@ -681,7 +681,7 @@ impl Position {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
-                    } else if from == self.turn.mirror_square(Square::A1) {
+                    } else if from == self.turn().mirror_square(Square::A1) {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
@@ -753,7 +753,7 @@ impl Position {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
-                    } else if from == self.turn.mirror_square(Square::A1) {
+                    } else if from == self.turn().mirror_square(Square::A1) {
                         self.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
