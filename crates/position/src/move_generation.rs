@@ -460,11 +460,11 @@ impl FromStr for LanMove {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (from_str, rest) = s.split_at_checked(2).ok_or(())?;
         let (to_str, maybe_promotion_str) = rest.split_at_checked(2).ok_or(())?;
-        let from = from_str.parse::<Square>()?;
-        let to = to_str.parse::<Square>()?;
+        let from = from_str.parse::<Square>().map_err(|_| ())?;
+        let to = to_str.parse::<Square>().map_err(|_| ())?;
         let promotion = match maybe_promotion_str {
             "" => None,
-            promotion_str => Some(promotion_str.parse::<Promotion>()?),
+            promotion_str => Some(promotion_str.parse::<Promotion>().map_err(|_| ())?),
         };
         Ok(LanMove {
             from,

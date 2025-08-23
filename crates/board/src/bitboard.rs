@@ -312,6 +312,25 @@ impl BitBoard {
     pub const fn with_reset_lsb(self) -> BitBoard {
         BitBoard(self.0 & self.0.wrapping_sub(1))
     }
+    /// Creates a string containing an ASCII drawing of the bitboard.
+    pub fn image_string(self) -> String {
+        let mut bb = self.0;
+        let mut drawing = String::new();
+        for _y in 0..8 {
+            let mut row = String::from("  ");
+            for _x in 0..8 {
+                if bb & 1 != 0 {
+                    row += "1";
+                } else {
+                    row += "_";
+                }
+                row += " ";
+                bb >>= 1;
+            }
+            drawing = row + "\n" + &drawing;
+        }
+        format!("Bitboard (white side view) {{\n{drawing}}}")
+    }
 }
 
 impl Iterator for BitBoard {
@@ -499,22 +518,7 @@ impl Hash for BitBoard {
 
 impl fmt::Display for BitBoard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut bb = self.0;
-        let mut drawing = String::new();
-        for _y in 0..8 {
-            let mut row = String::from("  ");
-            for _x in 0..8 {
-                if bb & 1 != 0 {
-                    row += "1";
-                } else {
-                    row += "_";
-                }
-                row += " ";
-                bb >>= 1;
-            }
-            drawing = row + "\n" + &drawing;
-        }
-        write!(f, "Bitboard (white side view) {{\n{drawing}}}")
+        write!(f, "{}", self.image_string())
     }
 }
 

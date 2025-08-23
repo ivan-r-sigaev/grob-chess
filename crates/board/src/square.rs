@@ -1,84 +1,88 @@
-use std::{fmt, str::FromStr};
-use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
+use strum::{Display, EnumCount, EnumIter, EnumString, FromRepr, VariantArray};
 
 /// File on a chess board.
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum File {
     /// The 'A' file.
+    #[strum(ascii_case_insensitive)]
     A,
     /// The 'B' file.
+    #[strum(ascii_case_insensitive)]
     B,
     /// The 'C' file.
+    #[strum(ascii_case_insensitive)]
     C,
     /// The 'D' file.
+    #[strum(ascii_case_insensitive)]
     D,
     /// The 'E' file.
+    #[strum(ascii_case_insensitive)]
     E,
     /// The 'F' file.
+    #[strum(ascii_case_insensitive)]
     F,
     /// The 'G' file.
+    #[strum(ascii_case_insensitive)]
     G,
     /// The 'H' file.
+    #[strum(ascii_case_insensitive)]
     H,
-}
-
-impl FromStr for File {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "a" => File::A,
-            "b" => File::B,
-            "c" => File::C,
-            "d" => File::D,
-            "e" => File::E,
-            "f" => File::F,
-            "g" => File::G,
-            "h" => File::H,
-            _ => return Err(()),
-        })
-    }
-}
-
-impl fmt::Display for File {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                File::A => "a",
-                File::B => "b",
-                File::C => "c",
-                File::D => "d",
-                File::E => "e",
-                File::F => "f",
-                File::G => "g",
-                File::H => "h",
-            }
-        )
-    }
 }
 
 /// Rank on a chess board.
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum Rank {
     /// The first rank.
+    #[strum(serialize = "1")]
     R1,
     /// The second rank.
+    #[strum(serialize = "2")]
     R2,
     /// The third rank.
+    #[strum(serialize = "3")]
     R3,
     /// The fourth rank.
+    #[strum(serialize = "4")]
     R4,
     /// The fifth rank.
+    #[strum(serialize = "5")]
     R5,
     /// The sixth rank.
+    #[strum(serialize = "6")]
     R6,
     /// The seventh rank.
+    #[strum(serialize = "7")]
     R7,
     /// The eighth rank.
+    #[strum(serialize = "8")]
     R8,
 }
 
@@ -89,231 +93,250 @@ impl Rank {
     }
 }
 
-impl fmt::Display for Rank {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Rank::R1 => "1",
-                Rank::R2 => "2",
-                Rank::R3 => "3",
-                Rank::R4 => "4",
-                Rank::R5 => "5",
-                Rank::R6 => "6",
-                Rank::R7 => "7",
-                Rank::R8 => "8",
-            }
-        )
-    }
-}
-
-impl FromStr for Rank {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "1" => Rank::R1,
-            "2" => Rank::R2,
-            "3" => Rank::R3,
-            "4" => Rank::R4,
-            "5" => Rank::R5,
-            "6" => Rank::R6,
-            "7" => Rank::R7,
-            "8" => Rank::R8,
-            _ => return Err(()),
-        })
-    }
-}
-
 /// Positive diagonal (bottom left to top right) on a chess board.
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum PosDiag {
+    #[strum(ascii_case_insensitive)]
     H1H1 = -(Rank::COUNT as i8) + 1,
+    #[strum(ascii_case_insensitive)]
     G1H2,
+    #[strum(ascii_case_insensitive)]
     F1H3,
+    #[strum(ascii_case_insensitive)]
     E1H4,
+    #[strum(ascii_case_insensitive)]
     D1H5,
+    #[strum(ascii_case_insensitive)]
     C1H6,
+    #[strum(ascii_case_insensitive)]
     B1H7,
     /// The main diagonal.
+    #[strum(ascii_case_insensitive)]
     A1H8,
+    #[strum(ascii_case_insensitive)]
     A2G8,
+    #[strum(ascii_case_insensitive)]
     A3F8,
+    #[strum(ascii_case_insensitive)]
     A4E8,
+    #[strum(ascii_case_insensitive)]
     A5D8,
+    #[strum(ascii_case_insensitive)]
     A6C8,
+    #[strum(ascii_case_insensitive)]
     A7B8,
+    #[strum(ascii_case_insensitive)]
     A8A8,
-}
-
-impl fmt::Display for PosDiag {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                PosDiag::H1H1 => "h1-h1",
-                PosDiag::G1H2 => "g1-h2",
-                PosDiag::F1H3 => "f1-h3",
-                PosDiag::E1H4 => "e1-h4",
-                PosDiag::D1H5 => "d1-h5",
-                PosDiag::C1H6 => "c1-h6",
-                PosDiag::B1H7 => "b1-h7",
-                PosDiag::A1H8 => "a1-h8",
-                PosDiag::A2G8 => "a2-g8",
-                PosDiag::A3F8 => "a3-f8",
-                PosDiag::A4E8 => "a4-e8",
-                PosDiag::A5D8 => "a5-d8",
-                PosDiag::A6C8 => "a6-c8",
-                PosDiag::A7B8 => "a7-b8",
-                PosDiag::A8A8 => "a8-a8",
-            }
-        )
-    }
 }
 
 /// Negative diagonal (top left to bottom right) on a chess board.
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum NegDiag {
+    #[strum(ascii_case_insensitive)]
     A1A1 = -(Rank::COUNT as i8) + 1,
+    #[strum(ascii_case_insensitive)]
     A2B1,
+    #[strum(ascii_case_insensitive)]
     A3C1,
+    #[strum(ascii_case_insensitive)]
     A4D1,
+    #[strum(ascii_case_insensitive)]
     A5E1,
+    #[strum(ascii_case_insensitive)]
     A6F1,
+    #[strum(ascii_case_insensitive)]
     A7G1,
     /// The main antidiagonal.
+    #[strum(ascii_case_insensitive)]
     A8H1,
+    #[strum(ascii_case_insensitive)]
     B8H2,
+    #[strum(ascii_case_insensitive)]
     C8H3,
+    #[strum(ascii_case_insensitive)]
     D8H4,
+    #[strum(ascii_case_insensitive)]
     E8H5,
+    #[strum(ascii_case_insensitive)]
     F8H6,
+    #[strum(ascii_case_insensitive)]
     G8H7,
+    #[strum(ascii_case_insensitive)]
     H8H8,
 }
 
-impl fmt::Display for NegDiag {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                NegDiag::A1A1 => "a1-a1",
-                NegDiag::A2B1 => "a2-b1",
-                NegDiag::A3C1 => "a3-c1",
-                NegDiag::A4D1 => "a4-d1",
-                NegDiag::A5E1 => "a5-e1",
-                NegDiag::A6F1 => "a6-f1",
-                NegDiag::A7G1 => "a7-g1",
-                NegDiag::A8H1 => "a8-h1",
-                NegDiag::B8H2 => "b8-h2",
-                NegDiag::C8H3 => "c8-h3",
-                NegDiag::D8H4 => "d8-h4",
-                NegDiag::E8H5 => "e8-h5",
-                NegDiag::F8H6 => "f8-h6",
-                NegDiag::G8H7 => "g8-h7",
-                NegDiag::H8H8 => "h8-h8",
-            }
-        )
-    }
-}
-
 /// Square on a chess board.
-///
-/// # Examples
-/// ```rust
-/// use strum::{FromRepr, IntoEnumIterator};
-/// use board::{Square, Rank, File};
-///
-/// // Conversion rule to rank/file
-/// for square in Square::iter() {
-///     assert_eq!(Some(square.rank()), Rank::from_repr(square as u8 / 8));
-///     assert_eq!(Some(square.file()), File::from_repr(square as u8 % 8));
-/// }
-/// ```
-///
-/// ```rust
-/// use strum::{FromRepr, IntoEnumIterator};
-/// use board::{Square, PosDiag, NegDiag};
-///
-/// // Conversion rule to positive/negative diagonals
-/// for square in Square::iter() {
-///     let rank = square.rank();
-///     let file = square.file();
-///     assert_eq!(Some(square.pos_diag()), PosDiag::from_repr(rank as i8 - file as i8));
-///     assert_eq!(Some(square.neg_diag()), NegDiag::from_repr(rank as i8 + file as i8 - 7));
-/// }
-/// ```
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum Square {
+    #[strum(ascii_case_insensitive)]
     A1,
+    #[strum(ascii_case_insensitive)]
     B1,
+    #[strum(ascii_case_insensitive)]
     C1,
+    #[strum(ascii_case_insensitive)]
     D1,
+    #[strum(ascii_case_insensitive)]
     E1,
+    #[strum(ascii_case_insensitive)]
     F1,
+    #[strum(ascii_case_insensitive)]
     G1,
+    #[strum(ascii_case_insensitive)]
     H1,
+    #[strum(ascii_case_insensitive)]
     A2,
+    #[strum(ascii_case_insensitive)]
     B2,
+    #[strum(ascii_case_insensitive)]
     C2,
+    #[strum(ascii_case_insensitive)]
     D2,
+    #[strum(ascii_case_insensitive)]
     E2,
+    #[strum(ascii_case_insensitive)]
     F2,
+    #[strum(ascii_case_insensitive)]
     G2,
+    #[strum(ascii_case_insensitive)]
     H2,
+    #[strum(ascii_case_insensitive)]
     A3,
+    #[strum(ascii_case_insensitive)]
     B3,
+    #[strum(ascii_case_insensitive)]
     C3,
+    #[strum(ascii_case_insensitive)]
     D3,
+    #[strum(ascii_case_insensitive)]
     E3,
+    #[strum(ascii_case_insensitive)]
     F3,
+    #[strum(ascii_case_insensitive)]
     G3,
+    #[strum(ascii_case_insensitive)]
     H3,
+    #[strum(ascii_case_insensitive)]
     A4,
+    #[strum(ascii_case_insensitive)]
     B4,
+    #[strum(ascii_case_insensitive)]
     C4,
+    #[strum(ascii_case_insensitive)]
     D4,
+    #[strum(ascii_case_insensitive)]
     E4,
+    #[strum(ascii_case_insensitive)]
     F4,
+    #[strum(ascii_case_insensitive)]
     G4,
+    #[strum(ascii_case_insensitive)]
     H4,
+    #[strum(ascii_case_insensitive)]
     A5,
+    #[strum(ascii_case_insensitive)]
     B5,
+    #[strum(ascii_case_insensitive)]
     C5,
+    #[strum(ascii_case_insensitive)]
     D5,
+    #[strum(ascii_case_insensitive)]
     E5,
+    #[strum(ascii_case_insensitive)]
     F5,
+    #[strum(ascii_case_insensitive)]
     G5,
+    #[strum(ascii_case_insensitive)]
     H5,
+    #[strum(ascii_case_insensitive)]
     A6,
+    #[strum(ascii_case_insensitive)]
     B6,
+    #[strum(ascii_case_insensitive)]
     C6,
+    #[strum(ascii_case_insensitive)]
     D6,
+    #[strum(ascii_case_insensitive)]
     E6,
+    #[strum(ascii_case_insensitive)]
     F6,
+    #[strum(ascii_case_insensitive)]
     G6,
+    #[strum(ascii_case_insensitive)]
     H6,
+    #[strum(ascii_case_insensitive)]
     A7,
+    #[strum(ascii_case_insensitive)]
     B7,
+    #[strum(ascii_case_insensitive)]
     C7,
+    #[strum(ascii_case_insensitive)]
     D7,
+    #[strum(ascii_case_insensitive)]
     E7,
+    #[strum(ascii_case_insensitive)]
     F7,
+    #[strum(ascii_case_insensitive)]
     G7,
+    #[strum(ascii_case_insensitive)]
     H7,
+    #[strum(ascii_case_insensitive)]
     A8,
+    #[strum(ascii_case_insensitive)]
     B8,
+    #[strum(ascii_case_insensitive)]
     C8,
+    #[strum(ascii_case_insensitive)]
     D8,
+    #[strum(ascii_case_insensitive)]
     E8,
+    #[strum(ascii_case_insensitive)]
     F8,
+    #[strum(ascii_case_insensitive)]
     G8,
+    #[strum(ascii_case_insensitive)]
     H8,
 }
 
@@ -391,27 +414,34 @@ impl Square {
     }
 }
 
-impl FromStr for Square {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (file_str, rank_str) = s.split_at_checked(2).ok_or(())?;
-        let file = file_str.parse::<File>()?;
-        let rank = rank_str.parse::<Rank>()?;
-        Ok(Square::new(rank, file))
-    }
-}
-
-impl fmt::Display for Square {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.file(), self.rank())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use strum::IntoEnumIterator;
+
+    #[test]
+    fn test_rank_file_conversion() {
+        for square in Square::iter() {
+            assert_eq!(Some(square.rank()), Rank::from_repr(square as u8 / 8));
+            assert_eq!(Some(square.file()), File::from_repr(square as u8 % 8));
+        }
+    }
+
+    #[test]
+    fn test_pos_neg_diagonals() {
+        for square in Square::iter() {
+            let rank = square.rank();
+            let file = square.file();
+            assert_eq!(
+                Some(square.pos_diag()),
+                PosDiag::from_repr(rank as i8 - file as i8)
+            );
+            assert_eq!(
+                Some(square.neg_diag()),
+                NegDiag::from_repr(rank as i8 + file as i8 - 7)
+            );
+        }
+    }
 
     #[test]
     fn test_square_constructor() {

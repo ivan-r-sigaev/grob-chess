@@ -1,23 +1,31 @@
 use crate::{Rank, Square};
-use std::{fmt, ops::Not, str::FromStr};
-use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
+use std::ops::Not;
+use strum::{Display, EnumCount, EnumIter, EnumString, FromRepr, VariantArray};
 
 /// Color of a chess piece.
-///
-/// # Examples
-/// ```rust
-/// use board::Color;
-/// use strum::FromRepr;
-///
-/// assert_eq!(Color::from_repr(0), Some(Color::White));
-/// assert_eq!(Color::from_repr(1), Some(Color::Black));
-/// ```
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum Color {
     /// White pieces.
+    #[strum(serialize = "w")]
+    #[strum(ascii_case_insensitive)]
     White,
     /// Black pieces.
+    #[strum(serialize = "b")]
+    #[strum(ascii_case_insensitive)]
     Black,
 }
 
@@ -57,46 +65,46 @@ impl Not for Color {
     }
 }
 
-impl FromStr for Color {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "w" => Color::White,
-            "b" => Color::Black,
-            _ => return Err(()),
-        })
-    }
-}
-
-impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Color::White => "w",
-                Color::Black => "b",
-            }
-        )
-    }
-}
-
 /// Chess piece type.
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum Piece {
     /// Pawn pieces.
+    #[strum(serialize = "p")]
+    #[strum(ascii_case_insensitive)]
     Pawn,
     /// Bishop pieces.
+    #[strum(serialize = "b")]
+    #[strum(ascii_case_insensitive)]
     Bishop,
     /// Knight pieces.
+    #[strum(serialize = "n")]
+    #[strum(ascii_case_insensitive)]
     Knight,
     /// Rook pieces.
+    #[strum(serialize = "r")]
+    #[strum(ascii_case_insensitive)]
     Rook,
     /// Queen pieces.
+    #[strum(serialize = "q")]
+    #[strum(ascii_case_insensitive)]
     Queen,
     /// King pieces.
+    #[strum(serialize = "k")]
+    #[strum(ascii_case_insensitive)]
     King,
 }
 
@@ -113,49 +121,37 @@ impl Piece {
     }
 }
 
-impl FromStr for Piece {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "p" => Piece::Pawn,
-            "b" => Piece::Bishop,
-            "n" => Piece::Knight,
-            "r" => Piece::Rook,
-            "q" => Piece::Queen,
-            "k" => Piece::King,
-            _ => return Err(()),
-        })
-    }
-}
-
-impl fmt::Display for Piece {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Piece::Pawn => "p",
-                Piece::Bishop => "b",
-                Piece::Knight => "n",
-                Piece::Rook => "r",
-                Piece::Queen => "q",
-                Piece::King => "k",
-            }
-        )
-    }
-}
-
 /// Chess piece type that pawns can promote to.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    EnumCount,
+    EnumIter,
+    Display,
+    EnumString,
+    VariantArray,
+    FromRepr,
+    Hash,
+)]
 pub enum Promotion {
     /// Promotion to bishop.
+    #[strum(serialize = "b")]
+    #[strum(ascii_case_insensitive)]
     Bishop,
     /// Promotion to knight.
+    #[strum(serialize = "n")]
+    #[strum(ascii_case_insensitive)]
     Knight,
     /// Promotion to rook.
+    #[strum(serialize = "r")]
+    #[strum(ascii_case_insensitive)]
     Rook,
     /// Promotion to queen.
+    #[strum(serialize = "q")]
+    #[strum(ascii_case_insensitive)]
     Queen,
 }
 
@@ -168,20 +164,5 @@ impl Promotion {
             Promotion::Rook => Piece::Rook,
             Promotion::Queen => Piece::Queen,
         }
-    }
-}
-
-impl FromStr for Promotion {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let piece = s.parse::<Piece>()?;
-        piece.promotion().ok_or(())
-    }
-}
-
-impl fmt::Display for Promotion {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.piece())
     }
 }

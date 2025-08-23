@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 use board::Color;
-use std::fmt;
+use std::{fmt, str::FromStr};
 
 bitflags! {
     /// Castlight rights of a chess position.
@@ -70,31 +70,69 @@ impl CastlingRights {
     }
 }
 
+impl FromStr for CastlingRights {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut res = Self::empty();
+        if s == "-" {
+            return Ok(res);
+        }
+
+        let mut chars = s.chars().peekable();
+        if chars.peek() == Some(&'K') {
+            res |= Self::WHITE_KING;
+            chars.next();
+        }
+        if chars.peek() == Some(&'Q') {
+            res |= Self::WHITE_QUEEN;
+            chars.next();
+        }
+        if chars.peek() == Some(&'k') {
+            res |= Self::BLACK_KING;
+            chars.next();
+        }
+        if chars.peek() == Some(&'q') {
+            res |= Self::BLACK_QUEEN;
+            chars.next();
+        }
+        if chars.peek().is_none() {
+            Ok(res)
+        } else {
+            Err(())
+        }
+    }
+}
+
 impl fmt::Display for CastlingRights {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}{}{}{}",
-            if self.contains(Self::WHITE_KING) {
-                "K"
-            } else {
-                ""
-            },
-            if self.contains(Self::WHITE_QUEEN) {
-                "Q"
-            } else {
-                ""
-            },
-            if self.contains(Self::BLACK_KING) {
-                "k"
-            } else {
-                ""
-            },
-            if self.contains(Self::WHITE_QUEEN) {
-                "q"
-            } else {
-                ""
-            }
-        )
+        if self.is_empty() {
+            write!(f, "-")
+        } else {
+            write!(
+                f,
+                "{}{}{}{}",
+                if self.contains(Self::WHITE_KING) {
+                    "K"
+                } else {
+                    ""
+                },
+                if self.contains(Self::WHITE_QUEEN) {
+                    "Q"
+                } else {
+                    ""
+                },
+                if self.contains(Self::BLACK_KING) {
+                    "k"
+                } else {
+                    ""
+                },
+                if self.contains(Self::WHITE_QUEEN) {
+                    "q"
+                } else {
+                    ""
+                }
+            )
+        }
     }
 }
