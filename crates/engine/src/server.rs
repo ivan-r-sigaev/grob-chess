@@ -1,8 +1,11 @@
-use std::fmt::Write;
 use game::{Game, Waiter};
 use position::Position;
+use std::fmt::Write;
 
-use crate::{search::{Search, SearchResult}, uci::{Command, UciChannel}};
+use crate::{
+    search::{Search, SearchResult},
+    uci::{Command, UciChannel},
+};
 
 #[derive(Debug)]
 pub struct Server {
@@ -23,7 +26,13 @@ impl Server {
         let is_uci_blocked = false;
         let search = Search::new();
         let game = Game::from_position(Position::initial_position());
-        Self { should_quit, uci, is_uci_blocked, game, search }
+        Self {
+            should_quit,
+            uci,
+            is_uci_blocked,
+            game,
+            search,
+        }
     }
     pub fn run(&mut self) {
         while !self.should_quit {
@@ -55,12 +64,12 @@ impl Server {
         }
     }
     fn handle_command(&mut self) {
-        if self.search.is_running() && matches!(
-            self.uci.check().unwrap(),
-            Command::UciNewGame |
-            Command::Position(_) |
-            Command::Go(_)
-        ) {
+        if self.search.is_running()
+            && matches!(
+                self.uci.check().unwrap(),
+                Command::UciNewGame | Command::Position(_) | Command::Go(_)
+            )
+        {
             self.is_uci_blocked = true;
             return;
         }
@@ -100,7 +109,7 @@ impl Server {
             return;
         };
         Self::display_search_result(result);
-        
+
         if self.is_uci_blocked {
             self.is_uci_blocked = false;
             self.handle_commands();

@@ -3,9 +3,9 @@ use std::time::Instant;
 use crossbeam::channel::{Receiver, Select};
 
 /// This is a convenience wrapper around `crossbeam_channel::select::Select`.
-/// 
+///
 /// Like `crossbeam_channel::select::Select` the purpose of the [`Waiter`]
-/// is to block on multiple `Receiver`s until one of them becomes ready. 
+/// is to block on multiple `Receiver`s until one of them becomes ready.
 /// [`Waiter`] can also keep the track of the deadlines for each of the added
 /// receivers if those receivers have to stop blocking upon reaching them.
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl<'a> Waiter<'a> {
         }
     }
     /// Adds the receiver to be tracked by the waiter and returs its index.
-    /// 
+    ///
     /// If deadline is specified the waiter will act as if the added
     /// receiver is ready upon reaching this deadline.
     pub fn add<T>(&mut self, r: &'a Receiver<T>, deadline: Option<Instant>) -> usize {
@@ -37,7 +37,7 @@ impl<'a> Waiter<'a> {
     }
     /// Blocks until one of the added receivers is ready or
     /// have reached its deadline and returns the index of this receiver.
-    /// 
+    ///
     /// # Panics
     /// Panics if no receivers were added.
     pub fn wait(mut self) -> usize {
@@ -54,4 +54,3 @@ impl<'a> Default for Waiter<'a> {
         Self::new()
     }
 }
-

@@ -1,8 +1,14 @@
-use crossbeam::channel::{unbounded, Receiver, Sender, TryRecvError};
+use crossbeam::channel::{Receiver, Sender, TryRecvError, unbounded};
 use game::{Game, Waiter};
 use position::{LanMove, Position};
 use std::{
-    collections::VecDeque, error, fmt, io::{self, BufRead, BufReader}, result, str::FromStr, thread, time::Duration
+    collections::VecDeque,
+    error, fmt,
+    io::{self, BufRead, BufReader},
+    result,
+    str::FromStr,
+    thread,
+    time::Duration,
 };
 
 use crate::uci::cursor::Cursor;
@@ -61,7 +67,7 @@ impl UciChannel {
     }
     pub fn pop(&mut self) -> Option<Command> {
         self.check();
-        self.commands.pop_back() 
+        self.commands.pop_back()
     }
     fn drop_inplace(&mut self) -> thread::Result<Result<()>> {
         self.handle.take().map(|h| h.join()).unwrap_or(Ok(Ok(())))

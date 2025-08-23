@@ -1,4 +1,7 @@
-use std::{collections::HashMap, time::{Duration, Instant}};
+use std::{
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 
 use board::Color;
 use game::{Game, ParallelSearch, Score, Transposition, Waiter};
@@ -38,7 +41,10 @@ impl Search {
         const TT_CAPACITY_IN_BYTES: usize = 16 * 1024 * 1024;
         const TT_CAPACITY: usize = TT_CAPACITY_IN_BYTES / size_of::<Transposition>();
         let search = ParallelSearch::new(THREAD_COUNT, TT_CAPACITY);
-        Self { search, progress: None }
+        Self {
+            search,
+            progress: None,
+        }
     }
     pub fn is_running(&self) -> bool {
         self.progress.is_some()
@@ -54,23 +60,26 @@ impl Search {
             ));
         }
 
-        let moves = go.searchmoves.map(|moves| {
-            let mut vec = Vec::new();
-            for lan_move in moves {
-                let Some(chess_move) = game.position().lan_move(lan_move) else {
-                    continue;
-                };
-                vec.push(chess_move);
-            }
-            vec
-        }).filter(|vec| !vec.is_empty())
-        .unwrap_or({
-            let mut vec = Vec::new();
-            game.search().for_each_legal_child_node(|_, chess_move| {
-                vec.push(chess_move);
+        let moves = go
+            .searchmoves
+            .map(|moves| {
+                let mut vec = Vec::new();
+                for lan_move in moves {
+                    let Some(chess_move) = game.position().lan_move(lan_move) else {
+                        continue;
+                    };
+                    vec.push(chess_move);
+                }
+                vec
+            })
+            .filter(|vec| !vec.is_empty())
+            .unwrap_or({
+                let mut vec = Vec::new();
+                game.search().for_each_legal_child_node(|_, chess_move| {
+                    vec.push(chess_move);
+                });
+                vec
             });
-            vec
-        });
         let moves = {
             let mut map = HashMap::new();
             for chess_move in moves {
@@ -78,28 +87,32 @@ impl Search {
             }
             map
         };
-        let deadline = go.movetime.or_else(|| {
-            let turn = game.position().turn();
-            let inc = match turn {
-                Color::White => go.winc,
-                Color::Black => go.binc,
-            }.unwrap_or(Duration::ZERO);
-            match turn {
-                Color::White => go.wtime,
-                Color::Black => go.btime,
-            }.map(|time| time + inc)
-        }).map(|d| Instant::now() + d);
+        let deadline = go
+            .movetime
+            .or_else(|| {
+                let turn = game.position().turn();
+                let inc = match turn {
+                    Color::White => go.winc,
+                    Color::Black => go.binc,
+                }
+                .unwrap_or(Duration::ZERO);
+                match turn {
+                    Color::White => go.wtime,
+                    Color::Black => go.btime,
+                }
+                .map(|time| time + inc)
+            })
+            .map(|d| Instant::now() + d);
         _ = go.movestogo;
         let nodes_max = go.nodes;
         let depth_max = go.depth.map(|d| d - 1);
         let mate = go.mate;
         let ponder = go.ponder;
         let infinite = go.infinite;
-        let pending_result = game
-            .search()
-            .check_ending()
-            .right()
-            .map(|_| SearchResult { best_move: None, ponder: None });
+        let pending_result = game.search().check_ending().right().map(|_| SearchResult {
+            best_move: None,
+            ponder: None,
+        });
         self.progress = Some(SearchProgress {
             game,
             moves,
@@ -135,7 +148,7 @@ impl Search {
         self.progress = None;
         SearchResult {
             best_move: Some(best_move.lan()),
-            ponder: None
+            ponder: None,
         }
     }
     pub fn check(&mut self) -> Option<SearchResult> {
@@ -152,7 +165,7 @@ impl Search {
         if should_stop {
             let result = Some(SearchResult {
                 best_move: Some(best_move.lan()),
-                ponder: None
+                ponder: None,
             });
             if should_hold {
                 progress.pending_result = result;
@@ -187,12 +200,15 @@ impl Search {
 
         progress.ponder = false;
     }
-    fn collect(progress: &mut SearchProgress, results: Vec<game::SearchResult>) -> (ChessMove, bool, bool) {
+    fn collect(
+        progress: &mut SearchProgress,
+        results: Vec<game::SearchResult>,
+    ) -> (ChessMove, bool, bool) {
         let mut best_move = None;
         let mut score = None;
         let mut nodes = 0;
         let mut unfinished = false;
-        
+
         for (i, (&chess_move, &fallback)) in progress.moves.iter().enumerate() {
             let recent = results[i];
             let result = match fallback {
@@ -211,13 +227,17 @@ impl Search {
         let best_move = best_move.unwrap();
         let score = score.unwrap();
 
-        let depth_fail = progress.depth_max.is_some_and(|max| progress.running_depth >= max);
+        let depth_fail = progress
+            .depth_max
+            .is_some_and(|max| progress.running_depth >= max);
         let nodes_fail = progress.nodes_max.is_some_and(|max| nodes >= max);
-        let mate_fail = progress.mate.is_some_and(|n| score >= Score::Mating(n) || score <= Score::Mated(n));
+        let mate_fail = progress
+            .mate
+            .is_some_and(|n| score >= Score::Mating(n) || score <= Score::Mated(n));
         let should_stop = unfinished | depth_fail | nodes_fail | mate_fail;
         let only_depth = depth_fail & !nodes_fail & !mate_fail;
         let should_hold = should_stop & (progress.ponder | (only_depth & progress.infinite));
-        
+
         (best_move, should_stop, should_hold)
     }
     fn prepare(&mut self) {
@@ -229,7 +249,7 @@ impl Search {
                 game,
                 progress.running_depth,
                 progress.nodes_max,
-                progress.deadline
+                progress.deadline,
             );
         }
         self.search.go();

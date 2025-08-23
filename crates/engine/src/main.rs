@@ -4,9 +4,9 @@
 
 use crate::server::Server;
 
-mod uci;
 mod search;
 mod server;
+mod uci;
 
 fn main() {
     Server::new().run();
