@@ -232,5 +232,6 @@ impl Search {
                 progress.deadline
             );
         }
+        self.search.go();
     }
 }

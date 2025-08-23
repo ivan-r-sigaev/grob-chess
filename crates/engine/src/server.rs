@@ -28,12 +28,18 @@ impl Server {
     pub fn run(&mut self) {
         while !self.should_quit {
             let mut waiter = Waiter::new();
-            let uci_index = self.uci.add_to_waiter(&mut waiter);
-            let search_index = self.search.add_to_waiter(&mut waiter);
-            match waiter.wait() {
-                index if index == uci_index => self.handle_commands(),
-                index if index == search_index => self.update_search(),
-                _ => unreachable!(),
+            if self.search.is_running() {
+                let uci_index = self.uci.add_to_waiter(&mut waiter);
+                let search_index = self.search.add_to_waiter(&mut waiter);
+                match waiter.wait() {
+                    index if index == uci_index => self.handle_commands(),
+                    index if index == search_index => self.update_search(),
+                    _ => unreachable!(),
+                }
+            } else {
+                self.uci.add_to_waiter(&mut waiter);
+                waiter.wait();
+                self.handle_commands();
             }
         }
     }
