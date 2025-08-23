@@ -5,6 +5,5 @@ edition = "2024"
 
 [dependencies]
 game = { path = "../game" }
-board = { path = "../board" }
 multithreading = { path = "../multithreading" }
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel", "crossbeam-deque"] }

@@ -3,9 +3,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use board::Color;
 use crossbeam::channel::Select;
-use game::{ChessMove, Game, LanMove, MoveOrdering};
+use game::{ChessMove, Color, Game, LanMove, MoveOrdering};
 use multithreading::{ParallelSearch, Score, Transposition};
 
 use crate::uci::Go;

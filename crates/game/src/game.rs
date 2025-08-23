@@ -1,12 +1,12 @@
 use std::num::NonZeroU64;
 
-use board::{Board, Color, File};
 use either::Either;
 
 use crate::castling_rights::CastlingRights;
 use crate::move_list::MoveList;
 use crate::position::{ChessMove, ChessUnmove, LanMove, Position};
 use crate::raw_position::ParseFenError;
+use crate::{Board, Color, File};
 
 /// A chess game.
 #[derive(Debug, Clone)]

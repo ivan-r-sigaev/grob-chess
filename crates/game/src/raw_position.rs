@@ -1,10 +1,8 @@
 use std::{collections::VecDeque, error::Error, fmt, num::NonZeroU64};
 
-use board::{BitBoard, Board, Color, File, Piece, Square};
-
 use crate::{
     zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist},
-    CastlingRights,
+    BitBoard, Board, CastlingRights, Color, File, Piece, Square,
 };
 
 /// An error that originated from [FEN] parsing.

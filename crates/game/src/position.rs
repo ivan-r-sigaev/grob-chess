@@ -1,9 +1,11 @@
 use std::{fmt, num::NonZeroU64, str::FromStr};
 
-use board::{BitBoard, Board, Color, File, Piece, Promotion, Rank, Square};
 use strum::{EnumCount, FromRepr, VariantArray};
 
-use crate::{raw_position::RawPosition, CastlingRights, ParseFenError};
+use crate::{
+    raw_position::RawPosition, BitBoard, Board, CastlingRights, Color, File, ParseFenError, Piece,
+    Promotion, Rank, Square,
+};
 
 /// A hint specifying what kind of move to perform.
 #[repr(u8)]

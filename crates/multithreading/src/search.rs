@@ -7,13 +7,12 @@ use std::{
     time::Instant,
 };
 
-use board::Piece;
 use crossbeam::{
     channel::{unbounded, Receiver, Select, Sender},
     utils::CachePadded,
 };
 use either::Either;
-use game::{ChessMove, Game, GameEnding, GameExplorer, MoveOrdering};
+use game::{ChessMove, Game, GameEnding, GameExplorer, MoveOrdering, Piece};
 
 use crate::{Transposition, TranspositionTable};
 
