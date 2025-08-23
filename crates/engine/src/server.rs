@@ -1,4 +1,4 @@
-use game::{Game, Waiter};
+use game::Waiter;
 use position::Position;
 use std::fmt::Write;
 
@@ -12,7 +12,7 @@ pub struct Server {
     should_quit: bool,
     uci: UciChannel,
     is_uci_blocked: bool,
-    game: Game,
+    game: Position,
     search: Search,
 }
 
@@ -25,7 +25,7 @@ impl Server {
         let uci = UciChannel::spawn();
         let is_uci_blocked = false;
         let search = Search::new();
-        let game = Game::from_position(Position::initial_position());
+        let game = Position::initial_position();
         Self {
             should_quit,
             uci,

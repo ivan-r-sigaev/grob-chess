@@ -1,5 +1,6 @@
-use crate::{CastlingRights, Position};
+use crate::{CastlingRights, MoveList, PlyHistory, Position};
 use board::{BitBoard, Color, File, Piece, Promotion, Rank, Square};
+use either::Either;
 use std::{fmt, str::FromStr};
 use strum::{EnumCount, FromRepr, VariantArray};
 
@@ -634,15 +635,60 @@ impl Position {
             }
         }
     }
-
-    /// Makes a chess move.
-    ///
-    /// # Preconditions
-    /// - `chess_move` must be at least pseduo-legal for this position.
-    ///
-    /// Violating the preconditions may silently corrupt position state.
+    /// Make a [`ChessMove`] if it's valid.
     #[must_use]
-    pub fn make_move(&mut self, chess_move: ChessMove) -> ChessUnmove {
+    pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
+        if !self.is_move_applicable(chess_move) {
+            return false;
+        }
+        self.make_move_unchecked(chess_move)
+    }
+    /// Unroll the last made move unless it's already the starting position.
+    #[must_use]
+    pub fn try_unmake_move(&mut self) -> bool {
+        if self.is_history_empty() {
+            return false;
+        }
+        self.unmake_move_unchecked();
+        true
+    }
+    pub fn search<'a>(&'a mut self) -> GameSearch<'a> {
+        GameSearch::new(self)
+    }
+    // Make a [`ChessMove`].
+    //
+    // # Preconditions
+    // - [`ChessMove`] must be at least pseudo-legal.
+    //
+    // Violating the preconditions will corrupt the position's state.
+    #[must_use]
+    fn make_move_unchecked(&mut self, chess_move: ChessMove) -> bool {
+        let hash = self.zobrist();
+        let unmove = self.make_move_internal(chess_move);
+        if self.was_check_ignored() {
+            self.unmake_move_internal(unmove);
+            return false;
+        }
+
+        self.push_history(PlyHistory { unmove, hash });
+        true
+    }
+    // Unroll the last made move unless it's already the starting position.
+    //
+    // # Panics
+    // Panics if there are no moves in the game's history.
+    fn unmake_move_unchecked(&mut self) {
+        let ply = self.pop_history();
+        self.unmake_move_internal(ply.unmove);
+    }
+    // Makes a chess move.
+    //
+    // # Preconditions
+    // - `chess_move` must be at least pseduo-legal for this position.
+    //
+    // Violating the preconditions may silently corrupt position state.
+    #[must_use]
+    fn make_move_internal(&mut self, chess_move: ChessMove) -> ChessUnmove {
         // TODO: this check may slow the program down.
         debug_assert!(
             self.is_move_applicable(chess_move),
@@ -688,16 +734,14 @@ impl Position {
                     }
                 }
 
-                self.remove_color_piece(self.turn(), piece, from);
-                self.add_color_piece(self.turn(), piece, to);
+                self.move_color_piece(self.turn(), piece, from, to);
             }
             ChessMoveHint::DoublePawn => {
                 capture = None;
                 self.set_en_passant(Some(from.file()));
                 self.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Pawn, to);
+                self.move_color_piece(self.turn(), Piece::Pawn, from, to);
             }
             ChessMoveHint::BishopPromotion => {
                 capture = None;
@@ -760,22 +804,20 @@ impl Position {
                     }
                 }
 
-                self.remove_color_piece(self.turn(), piece, from);
                 self.remove_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), piece, to);
+                self.move_color_piece(self.turn(), piece, from, to);
             }
             ChessMoveHint::EnPassantCapture => {
                 capture = Some(Piece::Pawn);
                 self.set_en_passant(None);
                 self.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
                 self.remove_color_piece(
                     !self.turn(),
                     Piece::Pawn,
                     Square::new(from.rank(), to.file()),
                 );
-                self.add_color_piece(self.turn(), Piece::Pawn, to);
+                self.move_color_piece(self.turn(), Piece::Pawn, from, to);
             }
             ChessMoveHint::BishopPromotionCapture => {
                 let captured_piece = self
@@ -840,17 +882,11 @@ impl Position {
                     self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                 );
 
-                self.remove_color_piece(self.turn(), Piece::King, from);
-                self.add_color_piece(self.turn(), Piece::King, to);
-
-                self.remove_color_piece(
+                self.move_color_piece(self.turn(), Piece::King, from, to);
+                self.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::H1),
-                );
-                self.add_color_piece(
-                    self.turn(),
-                    Piece::Rook,
                     self.turn().mirror_square(Square::F1),
                 );
             }
@@ -861,17 +897,11 @@ impl Position {
                     self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                 );
 
-                self.remove_color_piece(self.turn(), Piece::King, from);
-                self.add_color_piece(self.turn(), Piece::King, to);
-
-                self.remove_color_piece(
+                self.move_color_piece(self.turn(), Piece::King, from, to);
+                self.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::A1),
-                );
-                self.add_color_piece(
-                    self.turn(),
-                    Piece::Rook,
                     self.turn().mirror_square(Square::D1),
                 );
             }
@@ -899,13 +929,13 @@ impl Position {
             move_index_rule_50: halfmove_index,
         }
     }
-    /// Rolls back a move.
-    ///
-    /// # Preconditions
-    /// - `chess_unmove` must have had been generated from the same move as this position.
-    ///
-    /// Violating the preconditions may silently corrupt position state.
-    pub fn unmake_move(&mut self, chess_unmove: ChessUnmove) {
+    // Rolls back a move.
+    //
+    // # Preconditions
+    // - `chess_unmove` must have had been generated from the same move as this position.
+    //
+    // Violating the preconditions may silently corrupt position state.
+    fn unmake_move_internal(&mut self, chess_unmove: ChessUnmove) {
         self.set_turn(!self.turn());
         self.set_castling_rights(chess_unmove.castling_rights);
         self.set_en_passant(chess_unmove.en_passant);
@@ -923,12 +953,10 @@ impl Position {
                     .get_piece_at(to)
                     .expect("faulty unmove concept: to is empty");
 
-                self.remove_color_piece(self.turn(), piece, to);
-                self.add_color_piece(self.turn(), piece, from);
+                self.move_color_piece(self.turn(), piece, to, from);
             }
             ChessMoveHint::DoublePawn => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.move_color_piece(self.turn(), Piece::Pawn, to, from);
             }
             ChessMoveHint::KnightPromotion => {
                 self.remove_color_piece(self.turn(), Piece::Knight, to);
@@ -955,18 +983,16 @@ impl Position {
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
-                self.remove_color_piece(self.turn(), piece, to);
+                self.move_color_piece(self.turn(), piece, to, from);
                 self.add_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), piece, from);
             }
             ChessMoveHint::EnPassantCapture => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, to);
+                self.move_color_piece(self.turn(), Piece::Pawn, to, from);
                 self.add_color_piece(
                     !self.turn(),
                     Piece::Pawn,
                     Square::new(from.rank(), to.file()),
                 );
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::KnightPromotionCapture => {
                 let captured_piece = chess_unmove
@@ -1005,32 +1031,20 @@ impl Position {
                 self.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::KingCastle => {
-                self.remove_color_piece(self.turn(), Piece::King, to);
-                self.add_color_piece(self.turn(), Piece::King, from);
-
-                self.remove_color_piece(
+                self.move_color_piece(self.turn(), Piece::King, to, from);
+                self.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::F1),
-                );
-                self.add_color_piece(
-                    self.turn(),
-                    Piece::Rook,
                     self.turn().mirror_square(Square::H1),
                 );
             }
             ChessMoveHint::QueenCastle => {
-                self.remove_color_piece(self.turn(), Piece::King, to);
-                self.add_color_piece(self.turn(), Piece::King, from);
-
-                self.remove_color_piece(
+                self.move_color_piece(self.turn(), Piece::King, to, from);
+                self.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::D1),
-                );
-                self.add_color_piece(
-                    self.turn(),
-                    Piece::Rook,
                     self.turn().mirror_square(Square::A1),
                 );
             }
@@ -1071,5 +1085,113 @@ impl Position {
             && self
                 .board()
                 .can_king_move_to(color.mirror_square(Square::D1), color)
+    }
+}
+
+/// Searches through [`Position`]'s moves.
+///
+/// Even though [`GameSearch`] holds a mutable reference
+/// to the [`Position`], it will restore its original state
+/// once the search is over.
+#[derive(Debug)]
+pub struct GameSearch<'a> {
+    game: &'a mut Position,
+    move_list: MoveList,
+}
+
+/// Possible ending for a chess game.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameEnding {
+    /// Position ends in a draw.
+    Stalemate,
+    /// One of the players wins by checkmate.
+    Checkmate,
+}
+
+impl<'a> GameSearch<'a> {
+    fn new(game: &'a mut Position) -> Self {
+        Self {
+            game,
+            move_list: MoveList::empty(),
+        }
+    }
+}
+
+impl GameSearch<'_> {
+    /// State of the game at this at this point during search.
+    pub fn game(&self) -> &Position {
+        self.game
+    }
+    /// Returns any legal move for this position or a [`GameEnding`]
+    /// if the position has no legal moves.
+    pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
+        let mut any_move = None;
+        let ending = self.for_each_legal_child_node(|node, chess_move| {
+            any_move = Some(chess_move);
+            node.exhaust_moves();
+        });
+        match ending {
+            Some(ending) => Either::Right(ending),
+            None => Either::Left(any_move.unwrap()),
+        }
+    }
+    /// Makes a move and inspects the resulting state of the game
+    /// with a function if the move is legal.
+    /// Returns `true` if the move was legal.
+    #[inline(always)]
+    pub fn map_move_if_legal<F>(&mut self, chess_move: ChessMove, op: F) -> bool
+    where
+        F: FnOnce(&mut Self),
+    {
+        if !self.game.try_make_move(chess_move) {
+            return false;
+        }
+        op(self);
+        self.game.unmake_move_unchecked();
+        true
+    }
+    /// Inspects all legal moves in position with a function.
+    /// Returns `Some(game_ending: GameEnding)` if there are no legal moves.
+    #[inline(always)]
+    pub fn for_each_legal_child_node<F>(&mut self, mut op: F) -> Option<GameEnding>
+    where
+        F: FnMut(&mut Self, ChessMove),
+    {
+        self.move_list.push_group();
+        self.game.push_moves(&mut |chess_move| {
+            self.move_list.push_move(chess_move);
+        });
+
+        let mut has_moves = false;
+        while let Some(chess_move) = self.move_list.pop_move() {
+            if self.game.make_move_unchecked(chess_move) {
+                has_moves = true;
+                op(self, chess_move);
+                self.game.unmake_move_unchecked();
+            }
+        }
+
+        self.move_list.pop_group();
+
+        if has_moves {
+            None
+        } else if self.game.is_check() {
+            Some(GameEnding::Checkmate)
+        } else {
+            Some(GameEnding::Stalemate)
+        }
+    }
+    /// Skips all next moves if currently
+    /// inspecting legal moves using [`Self::for_each_legal_child_node`].
+    ///
+    /// # Panics
+    /// Panics if not currently
+    /// inspecting legal moves using [`Self::for_each_legal_child_node`].
+    pub fn exhaust_moves(&mut self) {
+        loop {
+            if self.move_list.pop_move().is_none() {
+                break;
+            }
+        }
     }
 }

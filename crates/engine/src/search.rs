@@ -4,8 +4,8 @@ use std::{
 };
 
 use board::Color;
-use game::{Game, ParallelSearch, Score, Transposition, Waiter};
-use position::{ChessMove, LanMove};
+use game::{ParallelSearch, Score, Transposition, Waiter};
+use position::{ChessMove, LanMove, Position};
 
 use crate::uci::Go;
 
@@ -23,7 +23,7 @@ pub struct Search {
 
 #[derive(Debug, Clone)]
 struct SearchProgress {
-    pub game: Game,
+    pub game: Position,
     pub moves: HashMap<ChessMove, Option<game::SearchResult>>,
     pub deadline: Option<Instant>,
     pub nodes_max: Option<u64>,
@@ -52,7 +52,7 @@ impl Search {
     pub fn add_to_waiter<'a>(&'a self, waiter: &mut Waiter<'a>) -> usize {
         self.search.add_to_waiter(waiter, None)
     }
-    pub fn go(&mut self, mut game: Game, go: Go) {
+    pub fn go(&mut self, mut game: Position, go: Go) {
         if self.is_running() {
             panic!(concat!(
                 "Do not send the go command to the Search ",
@@ -65,7 +65,7 @@ impl Search {
             .map(|moves| {
                 let mut vec = Vec::new();
                 for lan_move in moves {
-                    let Some(chess_move) = game.position().lan_move(lan_move) else {
+                    let Some(chess_move) = game.lan_move(lan_move) else {
                         continue;
                     };
                     vec.push(chess_move);
@@ -90,7 +90,7 @@ impl Search {
         let deadline = go
             .movetime
             .or_else(|| {
-                let turn = game.position().turn();
+                let turn = game.turn();
                 let inc = match turn {
                     Color::White => go.winc,
                     Color::Black => go.binc,

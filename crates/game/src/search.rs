@@ -13,9 +13,10 @@ use crossbeam::{
     utils::CachePadded,
 };
 use either::Either;
-use position::ChessMove;
+use position::{ChessMove, Position};
 
-use crate::{Game, GameEnding, GameSearch, Transposition, TranspositionTable, Waiter};
+use crate::{Transposition, TranspositionTable, Waiter};
+use position::{GameEnding, GameSearch};
 
 /// How advantageous is a chess position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -198,7 +199,7 @@ impl ParallelSearch {
     /// Panics if search is already running.
     pub fn prepare_search(
         &mut self,
-        game: Game,
+        game: Position,
         depth: u64,
         nodes_max: Option<u64>,
         deadline: Option<Instant>,
@@ -290,7 +291,7 @@ impl Drop for ParallelSearch {
 
 #[derive(Debug, Clone)]
 struct Job {
-    game: Game,
+    game: Position,
     depth: u64,
     nodes_max: Option<u64>,
     deadline: Option<Instant>,
@@ -390,7 +391,7 @@ fn search(
         return evaluate(node, true);
     }
 
-    let position = node.game().position();
+    let position = node.game();
     let hash = position.zobrist();
     if let Some(t) = tt.get_exact(hash) {
         'probe_hash: {
@@ -506,7 +507,7 @@ fn evaluate(node: &mut GameSearch, unfinished: bool) -> SearchResult {
         }
     };
 
-    let position = node.game().position();
+    let position = node.game();
     let board = position.board();
     let player = board.get_color(position.turn());
     let queens = board.get_piece(Piece::Queen);

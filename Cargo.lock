@@ -206,6 +206,7 @@ dependencies = [
  "bitflags",
  "board",
  "const-random",
+ "either",
  "strum",
 ]
 

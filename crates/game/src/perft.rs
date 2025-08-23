@@ -1,10 +1,9 @@
 use position::Position;
 
-use crate::{game::Game, perft::values::PerftValues};
+use crate::perft::values::PerftValues;
 
 mod values {
-    use crate::game::GameSearch;
-    use position::ChessMoveHint;
+    use position::{ChessMoveHint, GameSearch};
 
     /// Values used to test the validity of a perft.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,7 +64,7 @@ mod values {
                 }
                 self.add_move(chess_move.hint());
 
-                if !node.game().position().is_check() {
+                if !node.game().is_check() {
                     return;
                 }
                 self.add_check();
@@ -81,7 +80,7 @@ mod values {
 
 fn collect(fen: &str, depth: u8) -> PerftValues {
     let position = Position::try_from_fen(fen).unwrap();
-    let mut game = Game::from_position(position);
+    let mut game = position;
     let mut node = game.search();
     PerftValues::collect(&mut node, depth - 1)
 }

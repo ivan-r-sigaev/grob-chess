@@ -9,10 +9,10 @@ use std::num::NonZeroU64;
 use crate::zobrist::{
     get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
 };
-use crate::CastlingRights;
+use crate::{CastlingRights, ChessUnmove};
 
 /// A chess position.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Position {
     board: Board,
     turn: Color,
@@ -21,7 +21,14 @@ pub struct Position {
     move_index_rule_50: u32,
     move_index: u32,
     zobrist_hash: u64,
+    history: Vec<PlyHistory>,
     //piece_scores: [PieceScore; 2],
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PlyHistory {
+    pub hash: NonZeroU64,
+    pub unmove: ChessUnmove,
 }
 
 impl PartialEq for Position {
@@ -225,106 +232,99 @@ impl Position {
             move_index: fm,
             move_index_rule_50: fm - hm,
             zobrist_hash,
+            history: Vec::new(),
         })
     }
-}
-
-impl Position {
     /// Returns a hash for the current position.
     #[inline(always)]
     #[must_use]
     pub fn zobrist(&self) -> NonZeroU64 {
         NonZeroU64::new(self.zobrist_hash).unwrap_or(NonZeroU64::MAX)
     }
-
     /// Returns the possible en passant target file if available or `None`.
     #[inline(always)]
     #[must_use]
     pub fn en_passant(&self) -> Option<File> {
         self.en_passant
     }
-
     /// Returns the state of castling rights.
     #[inline(always)]
     #[must_use]
     pub fn castling_rights(&self) -> CastlingRights {
         self.castling_rights
     }
-
     /// Returns a reference to the position's board.
     #[inline(always)]
     #[must_use]
     pub fn board(&self) -> &Board {
         &self.board
     }
-
     /// Returns the color of the player who is about to make a turn.
     #[inline(always)]
     #[must_use]
     pub fn turn(&self) -> Color {
         self.turn
     }
-
     /// Returns the move index when the 50 move rule counter was last reset.
     #[inline(always)]
     #[must_use]
     pub fn move_index_rule_50(&self) -> u32 {
         self.move_index_rule_50
     }
-
     /// Returns the current move index.
     #[inline(always)]
     #[must_use]
     pub fn move_index(&self) -> u32 {
         self.move_index
     }
-
     /// Returns whether the king of the playing player is currently in check.
     pub fn is_check(&self) -> bool {
         self.board.is_king_in_check(self.turn())
     }
-
     /// Returns whether the king of the opponent player is currently in check.
     pub fn was_check_ignored(&self) -> bool {
         self.board.is_king_in_check(!self.turn())
     }
-}
-
-impl Position {
-    /// Sets the currently available en passant file.
+    /// Returns the number of times this position was played before in the game.
+    pub fn count_repetitions(&self) -> usize {
+        let hash = self.zobrist();
+        self.history.iter().filter(|&ply| ply.hash == hash).count()
+    }
+    /// Returns `true` if this is the starting position for the game.
+    pub fn is_history_empty(&self) -> bool {
+        self.history.is_empty()
+    }
+    // Sets the currently available en passant file.
     #[inline(always)]
-    pub fn set_en_passant(&mut self, en_passant: Option<File>) {
+    pub(crate) fn set_en_passant(&mut self, en_passant: Option<File>) {
         self.zobrist_hash ^= get_en_passant_zobrist(self.en_passant);
         self.zobrist_hash ^= get_en_passant_zobrist(en_passant);
         self.en_passant = en_passant;
     }
-
-    /// Sets the state of castling rights.
+    // Sets the state of castling rights.
     #[inline(always)]
-    pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
+    pub(crate) fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
         self.zobrist_hash ^= get_castling_zobrist(self.castling_rights);
         self.zobrist_hash ^= get_castling_zobrist(castling_rights);
         self.castling_rights = castling_rights;
     }
-
-    /// Adds a piece to the board.
-    ///
-    /// # Panics
-    /// If trying to add the piece to an already occupied square
+    // Adds a piece to the board.
+    //
+    // # Panics
+    // If trying to add the piece to an already occupied square
     #[inline(always)]
-    pub fn add_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
+    pub(crate) fn add_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
         debug_assert!(!self.board.get_occupance().has_square(sq));
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_or(color, piece, BitBoard::from(sq));
     }
-
-    /// Removes a piece from the board.
-    ///
-    /// # Panics
-    /// - if trying to remove an unoccupied square
-    /// - if the `sq` contains the piece of different type or color than specified.
+    // Removes a piece from the board.
+    //
+    // # Panics
+    // - if trying to remove an unoccupied square
+    // - if the `sq` contains the piece of different type or color than specified.
     #[inline(always)]
-    pub fn remove_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
+    pub(crate) fn remove_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
         debug_assert!(
             self.board.get_piece(piece).has_square(sq)
                 && self.board.get_color(color).has_square(sq)
@@ -332,15 +332,20 @@ impl Position {
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_and(color, piece, !BitBoard::from(sq));
     }
-
-    /// Moves a piece on the board.
-    ///
-    /// # Panics
-    /// - if trying to move a piece from an unoccupied square
-    /// - if `from` contains a piece with a different type or color than specified
-    /// - if `to` is occupied
+    // Moves a piece on the board.
+    //
+    // # Panics
+    // - if trying to move a piece from an unoccupied square
+    // - if `from` contains a piece with a different type or color than specified
+    // - if `to` is occupied
     #[inline(always)]
-    pub fn move_color_piece(&mut self, color: Color, piece: Piece, from: Square, to: Square) {
+    pub(crate) fn move_color_piece(
+        &mut self,
+        color: Color,
+        piece: Piece,
+        from: Square,
+        to: Square,
+    ) {
         debug_assert!(
             self.board.get_piece(piece).has_square(from)
                 && self.board.get_color(color).has_square(from)
@@ -351,23 +356,31 @@ impl Position {
         self.board
             .mask_xor(color, piece, BitBoard::from(from) | BitBoard::from(to));
     }
-
-    /// Sets the color of the player that is about to make a turn.
+    // Sets the color of the player that is about to make a turn.
     #[inline(always)]
-    pub fn set_turn(&mut self, turn: Color) {
+    pub(crate) fn set_turn(&mut self, turn: Color) {
         self.zobrist_hash ^= get_turn_zobrist(self.turn);
         self.zobrist_hash ^= get_turn_zobrist(turn);
         self.turn = turn;
     }
-
-    /// Sets the current move index.
-    pub fn set_move_index(&mut self, move_index: u32) {
+    // Sets the current move index.
+    pub(crate) fn set_move_index(&mut self, move_index: u32) {
         self.move_index = move_index;
     }
-
-    /// Sets the move index when the 50 move rule was last reset.
-    pub fn set_move_index_rule_50(&mut self, move_index: u32) {
+    // Sets the move index when the 50 move rule was last reset.
+    pub(crate) fn set_move_index_rule_50(&mut self, move_index: u32) {
         self.move_index_rule_50 = move_index;
+    }
+    // Pushes a ply on top of the history vector.
+    pub(crate) fn push_history(&mut self, ply: PlyHistory) {
+        self.history.push(ply);
+    }
+    // Pops the last ply from the history vector.
+    //
+    // # Panics
+    // Panics if the history vector is empty.
+    pub(crate) fn pop_history(&mut self) -> PlyHistory {
+        self.history.pop().unwrap()
     }
 }
 
