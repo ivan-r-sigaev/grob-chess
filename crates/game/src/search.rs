@@ -13,10 +13,10 @@ use crossbeam::{
     utils::CachePadded,
 };
 use either::Either;
-use position::{ChessMove, Position};
+use position::{ChessMove, Game};
 
 use crate::{Transposition, TranspositionTable, Waiter};
-use position::{GameEnding, GameSearch};
+use position::{GameEnding, GameExplorer};
 
 /// How advantageous is a chess position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -199,7 +199,7 @@ impl ParallelSearch {
     /// Panics if search is already running.
     pub fn prepare_search(
         &mut self,
-        game: Position,
+        game: Game,
         depth: u64,
         nodes_max: Option<u64>,
         deadline: Option<Instant>,
@@ -291,7 +291,7 @@ impl Drop for ParallelSearch {
 
 #[derive(Debug, Clone)]
 struct Job {
-    game: Position,
+    game: Game,
     depth: u64,
     nodes_max: Option<u64>,
     deadline: Option<Instant>,
@@ -379,7 +379,7 @@ impl Worker {
 }
 
 fn search(
-    node: &mut GameSearch,
+    node: &mut GameExplorer,
     tt: Arc<TranspositionTable>,
     depth: u64,
     constraints: SearchConstraints,
@@ -478,7 +478,7 @@ fn search(
 }
 
 fn quiescence(
-    node: &mut GameSearch,
+    node: &mut GameExplorer,
     signal: Arc<CachePadded<AtomicU8>>,
     alpha: Score,
     beta: Score,
@@ -493,7 +493,7 @@ fn quiescence(
     evaluate(node, false)
 }
 
-fn evaluate(node: &mut GameSearch, unfinished: bool) -> SearchResult {
+fn evaluate(node: &mut GameExplorer, unfinished: bool) -> SearchResult {
     let nodes = 1;
     let any_move = match node.check_ending() {
         Either::Left(chess_move) => chess_move,

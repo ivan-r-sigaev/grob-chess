@@ -1,6 +1,6 @@
 use crossbeam::channel::{Receiver, Sender, TryRecvError, unbounded};
 use game::Waiter;
-use position::{LanMove, Position};
+use position::{Game, LanMove};
 use std::{
     collections::VecDeque,
     error, fmt,
@@ -92,7 +92,7 @@ pub enum Command {
     Uci,
     IsReady,
     UciNewGame,
-    Position(Position),
+    Position(Game),
     Go(Go),
     Stop,
     PonderHit,
@@ -147,8 +147,8 @@ impl Cursor<'_> {
         };
 
         let maybe_position = match maybe_fen {
-            Some(fen) => Position::try_from_fen(&fen).ok(),
-            None => Some(Position::initial_position()),
+            Some(fen) => Game::try_from_fen(&fen).ok(),
+            None => Some(Game::initial_position()),
         };
 
         let mut maybe_game = maybe_position;
@@ -163,7 +163,7 @@ impl Cursor<'_> {
             }
         }
 
-        let game = maybe_game.unwrap_or_else(Position::initial_position);
+        let game = maybe_game.unwrap_or_else(Game::initial_position);
         Command::Position(game)
     }
     fn parse_go(&mut self) -> Command {

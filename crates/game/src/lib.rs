@@ -11,12 +11,3 @@ mod hashmap;
 mod search;
 mod transposition;
 mod waiter;
-
-#[cfg(test)]
-mod perft;
-
-/*
-    TO BENCHMARK:
-    - bitboard representation (classical / denser)
-    - inlining (???)
-*/

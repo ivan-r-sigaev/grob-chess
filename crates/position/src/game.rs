@@ -1,61 +1,16 @@
-use board::{BitBoard, Board, Color, File, Piece, Square};
-
+use crate::ChessUnmove;
 use std::collections::VecDeque;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::hash::Hash;
 use std::num::NonZeroU64;
 
+use board::{BitBoard, Board, Color, File, Piece, Square};
+
 use crate::zobrist::{
     get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
 };
-use crate::{CastlingRights, ChessUnmove};
-
-/// A chess position.
-#[derive(Debug, Clone)]
-pub struct Position {
-    board: Board,
-    turn: Color,
-    castling_rights: CastlingRights,
-    en_passant: Option<File>,
-    move_index_rule_50: u32,
-    move_index: u32,
-    zobrist_hash: u64,
-    history: Vec<PlyHistory>,
-    //piece_scores: [PieceScore; 2],
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct PlyHistory {
-    pub hash: NonZeroU64,
-    pub unmove: ChessUnmove,
-}
-
-impl PartialEq for Position {
-    #[inline(always)]
-    fn eq(&self, other: &Self) -> bool {
-        self.zobrist_hash == other.zobrist_hash  // Compare hash to maybe get a faster comparison on average.
-        && self.board == other.board
-        && self.turn == other.turn
-        && self.castling_rights == other.castling_rights
-        && self.en_passant == other.en_passant
-        // Should this compare move_index and halfmove_index?
-    }
-}
-
-impl Eq for Position {}
-
-impl Hash for Position {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.board.hash(state);
-        self.turn.hash(state);
-        self.castling_rights.hash(state);
-        self.en_passant.hash(state);
-        self.move_index_rule_50.hash(state);
-        self.move_index.hash(state);
-        self.zobrist_hash.hash(state);
-    }
-}
+use crate::CastlingRights;
 
 /// An error that originated from [FEN] parsing.
 ///
@@ -91,14 +46,33 @@ impl Display for ParseFenError {
 
 impl Error for ParseFenError {}
 
-impl Position {
+/// A chess game.
+#[derive(Debug, Clone)]
+pub struct Game {
+    board: Board,
+    turn: Color,
+    castling_rights: CastlingRights,
+    en_passant: Option<File>,
+    move_index_rule_50: u32,
+    move_index: u32,
+    zobrist_hash: u64,
+    history: Vec<PlyHistory>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PlyHistory {
+    pub hash: NonZeroU64,
+    pub unmove: ChessUnmove,
+}
+
+impl Game {
     /// Returns the initial position for a normal chess game.
     pub fn initial_position() -> Self {
         const INITIAL_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         Self::try_from_fen(INITIAL_FEN).unwrap()
     }
 
-    /// Tries to parse a new position from [FEN].
+    /// Tries to parse a new game from [FEN].
     ///
     /// # Examples
     /// ```rust
@@ -224,7 +198,7 @@ impl Position {
             return Err(ParseFenError::TrailingGarbage);
         }
 
-        Ok(Position {
+        Ok(Game {
             board,
             turn,
             castling_rights,
@@ -384,11 +358,12 @@ impl Position {
     }
 }
 
-impl fmt::Display for Position {
+impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             concat!(
+                // TODO: this does not display history
                 "Chess position {{\n",
                 "  turn: {}\n",
                 "  castling rights: {}\n",

@@ -5,7 +5,7 @@ use std::{
 
 use board::Color;
 use game::{ParallelSearch, Score, Transposition, Waiter};
-use position::{ChessMove, LanMove, Position};
+use position::{ChessMove, Game, LanMove};
 
 use crate::uci::Go;
 
@@ -23,7 +23,7 @@ pub struct Search {
 
 #[derive(Debug, Clone)]
 struct SearchProgress {
-    pub game: Position,
+    pub game: Game,
     pub moves: HashMap<ChessMove, Option<game::SearchResult>>,
     pub deadline: Option<Instant>,
     pub nodes_max: Option<u64>,
@@ -52,7 +52,7 @@ impl Search {
     pub fn add_to_waiter<'a>(&'a self, waiter: &mut Waiter<'a>) -> usize {
         self.search.add_to_waiter(waiter, None)
     }
-    pub fn go(&mut self, mut game: Position, go: Go) {
+    pub fn go(&mut self, mut game: Game, go: Go) {
         if self.is_running() {
             panic!(concat!(
                 "Do not send the go command to the Search ",
