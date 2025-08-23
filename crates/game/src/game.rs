@@ -1,5 +1,7 @@
+use std::num::NonZeroU64;
+
 use either::Either;
-use position::{ChessMove, ChessUnmove, MoveList, Position, PositionHash};
+use position::{ChessMove, ChessUnmove, MoveList, Position};
 
 /// A chess game.
 #[derive(Debug, Clone)]
@@ -10,7 +12,7 @@ pub struct Game {
 
 #[derive(Debug, Clone, Copy)]
 struct PlyHistory {
-    hash: PositionHash,
+    hash: NonZeroU64,
     unmove: ChessUnmove,
 }
 
@@ -30,7 +32,7 @@ impl Game {
         &self.pos
     }
     /// Returns the amount of times a given position repeats in the game's history.
-    pub fn count_repetitions(&self, hash: PositionHash) -> usize {
+    pub fn count_repetitions(&self, hash: NonZeroU64) -> usize {
         self.history.iter().filter(|&ply| ply.hash == hash).count()
     }
     /// Starts a [`GameSearch`].
@@ -56,7 +58,7 @@ impl Game {
     }
     #[must_use]
     fn make_move(&mut self, chess_move: ChessMove) -> bool {
-        let hash = self.pos.position_hash();
+        let hash = self.pos.zobrist();
         let unmove = self.pos.make_move(chess_move);
         if self.pos.was_check_ignored() {
             self.pos.unmake_move(unmove);

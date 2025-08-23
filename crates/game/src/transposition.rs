@@ -1,7 +1,7 @@
-use std::fmt;
+use std::{fmt, num::NonZeroU64};
 
 use parking_lot::RwLock;
-use position::{ChessMove, PositionHash};
+use position::ChessMove;
 
 use crate::{KeyLookup, Score, WeakHashMap};
 
@@ -46,19 +46,15 @@ impl TranspositionTable {
     }
     /// Returns the [`Transposition`] with the exactly matching hash
     /// or `None` if one is not available.
-    pub fn get_exact(&self, hash: PositionHash) -> Option<Transposition> {
-        self.0
-            .read()
-            .get(hash.get())
-            .exact()
-            .map(|(_, value)| *value)
+    pub fn get_exact(&self, hash: NonZeroU64) -> Option<Transposition> {
+        self.0.read().get(hash).exact().map(|(_, value)| *value)
     }
     /// Returns any [`Transposition`] that matches the hash
     /// or `None` if no transpositions match.
     ///
     /// The result may be type-2 hash collision.
-    pub fn get(&self, hash: PositionHash) -> Option<Transposition> {
-        match self.0.read().get(hash.get()) {
+    pub fn get(&self, hash: NonZeroU64) -> Option<Transposition> {
+        match self.0.read().get(hash) {
             KeyLookup::Exact(_, res) => Some(*res),
             KeyLookup::Clash(_, res) => Some(*res),
             KeyLookup::Empty => None,
@@ -68,8 +64,8 @@ impl TranspositionTable {
     ///
     /// This will overwrite the [`Transposition`] with the
     /// clashing hash if one exists.
-    pub fn insert(&self, hash: PositionHash, value: Transposition) {
-        _ = self.0.write().entry(hash.get()).insert(value);
+    pub fn insert(&self, hash: NonZeroU64, value: Transposition) {
+        _ = self.0.write().entry(hash).insert(value);
     }
     /// Clears all saved [`Transposition`]s.
     pub fn clear(&self) {

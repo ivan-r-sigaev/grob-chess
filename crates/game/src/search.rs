@@ -391,7 +391,7 @@ fn search(
     }
 
     let position = node.game().position();
-    let hash = position.position_hash();
+    let hash = position.zobrist();
     if let Some(t) = tt.get_exact(hash) {
         'probe_hash: {
             if position.is_move_applicable(t.best_move) {

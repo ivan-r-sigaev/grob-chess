@@ -4,11 +4,12 @@ use std::collections::VecDeque;
 use std::error::Error;
 use std::fmt::{self, Display};
 use std::hash::Hash;
+use std::num::NonZeroU64;
 
 use crate::zobrist::{
     get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
 };
-use crate::{CastlingRights, PositionHash};
+use crate::CastlingRights;
 
 /// A chess position.
 #[derive(Debug, Clone, Copy)]
@@ -232,8 +233,8 @@ impl Position {
     /// Returns a hash for the current position.
     #[inline(always)]
     #[must_use]
-    pub fn position_hash(&self) -> PositionHash {
-        PositionHash::new(self.zobrist_hash)
+    pub fn zobrist(&self) -> NonZeroU64 {
+        NonZeroU64::new(self.zobrist_hash).unwrap_or(NonZeroU64::MAX)
     }
 
     /// Returns the possible en passant target file if available or `None`.
