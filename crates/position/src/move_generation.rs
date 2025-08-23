@@ -65,7 +65,7 @@ impl ChessMoveHint {
 }
 
 /// Data needed to make a move.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ChessMove {
     to: Square,
     from: Square,

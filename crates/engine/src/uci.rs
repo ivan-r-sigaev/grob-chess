@@ -1,7 +1,8 @@
-use crossbeam::channel::{Receiver, Sender, unbounded};
-use game::Game;
+use crossbeam::channel::{Receiver, Sender, TryRecvError, unbounded};
+use game::{Game, Waiter};
 use position::{LanMove, Position};
 use std::{
+    collections::VecDeque,
     error, fmt,
     io::{self, BufRead, BufReader},
     result,
@@ -14,9 +15,12 @@ use crate::uci::cursor::Cursor;
 
 mod cursor;
 
+/// A convenience wrapper to be able to block on command line input.
+#[derive(Debug)]
 pub struct UciChannel {
     handle: Option<thread::JoinHandle<Result<()>>>,
     command_recv: Receiver<Command>,
+    commands: VecDeque<Command>,
 }
 
 type Result<T> = result::Result<T, Error>;
@@ -39,26 +43,43 @@ impl error::Error for Error {}
 impl UciChannel {
     pub fn spawn() -> Self {
         let (command_send, command_recv) = unbounded();
+        let commands = VecDeque::new();
         let handle = Some(thread::spawn(|| run_uci_channel(command_send)));
         Self {
             handle,
             command_recv,
+            commands,
         }
     }
-    pub fn recv(&self) -> &Receiver<Command> {
-        &self.command_recv
+    pub fn add_to_waiter<'a>(&'a self, waiter: &mut Waiter<'a>) -> usize {
+        waiter.add(&self.command_recv, None)
     }
-    fn drop_in_palce(&mut self) -> thread::Result<Result<()>> {
+    pub fn check(&mut self) -> Option<&Command> {
+        loop {
+            let command = match self.command_recv.try_recv() {
+                Ok(command) => command,
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => panic!("UciChannel got disconnected!"),
+            };
+            self.commands.push_back(command);
+        }
+        self.commands.back()
+    }
+    pub fn pop(&mut self) -> Option<Command> {
+        self.check();
+        self.commands.pop_back()
+    }
+    fn drop_inplace(&mut self) -> thread::Result<Result<()>> {
         self.handle.take().map(|h| h.join()).unwrap_or(Ok(Ok(())))
     }
 }
 
 impl Drop for UciChannel {
     fn drop(&mut self) {
-        let result = self.drop_in_palce();
+        let result = self.drop_inplace();
 
         // Ignore error if already panicking.
-        if !thread::panicking() {
+        if thread::panicking() {
             return;
         }
 

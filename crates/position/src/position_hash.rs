@@ -22,6 +22,10 @@ impl PositionHash {
     pub(crate) fn new(hash: u64) -> Self {
         NonZeroU64::new(hash).map(Self).unwrap_or_default()
     }
+    /// Returns the internal value of the hash.
+    pub fn get(self) -> NonZeroU64 {
+        self.0
+    }
 }
 
 impl Default for PositionHash {

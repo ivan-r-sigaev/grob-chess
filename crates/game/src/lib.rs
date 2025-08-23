@@ -3,12 +3,16 @@
 //! This crate provides types related to chess game representation and search.
 
 pub use game::{Game, GameEnding, GameSearch};
-pub use transposition_table::{
-    CollisionResult, Entry, EntryCollision, OccupiedEntry, TranspositionTable, VacantEntry,
-};
+pub use hashmap::{ClashEntry, EmptyEntry, Entry, ExactEntry, KeyLookup, WeakHashMap};
+pub use search::{ParallelSearch, Score, SearchResult};
+pub use transposition::{Transposition, TranspositionTable};
+pub use waiter::Waiter;
 
 mod game;
-mod transposition_table;
+mod hashmap;
+mod search;
+mod transposition;
+mod waiter;
 
 #[cfg(test)]
 mod perft;
