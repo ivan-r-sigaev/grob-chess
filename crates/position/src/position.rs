@@ -1,8 +1,9 @@
-use crate::game::PlyHistory;
-use crate::{CastlingRights, Game, GameExplorer};
-use board::{BitBoard, Color, File, Piece, Promotion, Rank, Square};
-use std::{fmt, str::FromStr};
+use std::{fmt, num::NonZeroU64, str::FromStr};
+
+use board::{BitBoard, Board, Color, File, Piece, Promotion, Rank, Square};
 use strum::{EnumCount, FromRepr, VariantArray};
+
+use crate::{raw_position::RawPosition, CastlingRights, ParseFenError};
 
 /// A hint specifying what kind of move to perform.
 #[repr(u8)]
@@ -136,14 +137,93 @@ pub struct ChessUnmove {
     move_index_rule_50: u32,
 }
 
-impl ChessUnmove {
-    /// Returns the move that is being rolled back.
-    pub fn original_move(self) -> ChessMove {
-        self.chess_move
+/// A chess move in a [LAN (Long Algebraic Notation)].
+///
+/// [LAN (Long Algebraic Notation)]:
+/// https://www.chessprogramming.org/Algebraic_Chess_Notation#Long_Algebraic_Notation_.28LAN.29
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LanMove {
+    /// The origin square.
+    pub from: Square,
+    /// The destination square.
+    pub to: Square,
+    /// The kind of promotion (if move is a promotion) or `None`.
+    pub promotion: Option<Promotion>,
+}
+
+impl FromStr for LanMove {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (from_str, rest) = s.split_at_checked(2).ok_or(())?;
+        let (to_str, maybe_promotion_str) = rest.split_at_checked(2).ok_or(())?;
+        let from = from_str.parse::<Square>().map_err(|_| ())?;
+        let to = to_str.parse::<Square>().map_err(|_| ())?;
+        let promotion = match maybe_promotion_str {
+            "" => None,
+            promotion_str => Some(promotion_str.parse::<Promotion>().map_err(|_| ())?),
+        };
+        Ok(LanMove {
+            from,
+            to,
+            promotion,
+        })
     }
 }
 
-impl Game {
+impl fmt::Display for LanMove {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.from, self.to)?;
+        if let Some(promotion) = self.promotion {
+            write!(f, "{promotion}")?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Position(RawPosition);
+
+impl Position {
+    /// Tries to parse a positioin from FEN.
+    pub fn try_from_fen(fen: &str) -> Result<Self, ParseFenError> {
+        RawPosition::try_from_fen(fen).map(Self)
+    }
+    /// Returns a hash for the current position.
+    #[must_use]
+    pub fn zobrist(&self) -> NonZeroU64 {
+        self.0.zobrist()
+    }
+    /// Returns the possible en passant target file if available or `None`.
+    #[must_use]
+    pub fn en_passant(&self) -> Option<File> {
+        self.0.en_passant()
+    }
+    /// Returns the state of castling rights.
+    #[must_use]
+    pub fn castling_rights(&self) -> CastlingRights {
+        self.0.castling_rights()
+    }
+    /// Returns a reference to the position's board.
+    #[must_use]
+    pub fn board(&self) -> &Board {
+        self.0.board()
+    }
+    /// Returns the color of the player who is about to make a turn.
+    #[must_use]
+    pub fn turn(&self) -> Color {
+        self.0.turn()
+    }
+    /// Returns the move index when the 50 move rule counter was last reset.
+    #[must_use]
+    pub fn move_index_rule_50(&self) -> u32 {
+        self.0.move_index_rule_50()
+    }
+    /// Returns the current move index.
+    #[must_use]
+    pub fn move_index(&self) -> u32 {
+        self.0.move_index()
+    }
     /// Generate pseudo-legal moves from this position.
     pub fn push_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         if self.board().get_king_checkers(self.turn()).count() >= 2 {
@@ -439,53 +519,40 @@ impl Game {
             push_move(ChessMove { to, from, hint });
         }
     }
-}
 
-/// A chess move in a [LAN (Long Algebraic Notation)].
-///
-/// [LAN (Long Algebraic Notation)]:
-/// https://www.chessprogramming.org/Algebraic_Chess_Notation#Long_Algebraic_Notation_.28LAN.29
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct LanMove {
-    /// The origin square.
-    pub from: Square,
-    /// The destination square.
-    pub to: Square,
-    /// The kind of promotion (if move is a promotion) or `None`.
-    pub promotion: Option<Promotion>,
-}
-
-impl FromStr for LanMove {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (from_str, rest) = s.split_at_checked(2).ok_or(())?;
-        let (to_str, maybe_promotion_str) = rest.split_at_checked(2).ok_or(())?;
-        let from = from_str.parse::<Square>().map_err(|_| ())?;
-        let to = to_str.parse::<Square>().map_err(|_| ())?;
-        let promotion = match maybe_promotion_str {
-            "" => None,
-            promotion_str => Some(promotion_str.parse::<Promotion>().map_err(|_| ())?),
-        };
-        Ok(LanMove {
-            from,
-            to,
-            promotion,
-        })
+    /// Returns whether the kingside castling is allowed for a given color.
+    #[inline(always)]
+    #[must_use]
+    fn is_kingside_castling_allowed(&self, color: Color) -> bool {
+        self.castling_rights()
+            .contains(CastlingRights::kingside(color))
+            && !self.board().is_king_in_check(color)
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::F1), color)
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::G1), color)
     }
-}
 
-impl fmt::Display for LanMove {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.from, self.to)?;
-        if let Some(promotion) = self.promotion {
-            write!(f, "{promotion}")?;
-        }
-        Ok(())
+    /// Returns whether the queenside castling is allowed for a given color.
+    #[inline(always)]
+    #[must_use]
+    fn is_queenside_castling_allowed(&self, color: Color) -> bool {
+        self.castling_rights()
+            .contains(CastlingRights::queenside(color))
+            && !self.board().is_king_in_check(color)
+            && !self
+                .board()
+                .get_occupance()
+                .has_square(color.mirror_square(Square::B1))
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::C1), color)
+            && self
+                .board()
+                .can_king_move_to(color.mirror_square(Square::D1), color)
     }
-}
-
-impl Game {
     /// Returns an equivalent `ChessMove` for a `LanMove` in this position.
     pub fn lan_move(&self, lan_move: LanMove) -> Option<ChessMove> {
         let piece = self.board().get_piece_at(lan_move.from)?;
@@ -530,10 +597,9 @@ impl Game {
 
         result
     }
-
     /// Returns whether a given chess move is at least pseudo-legal in this position.
     #[must_use]
-    pub fn is_move_applicable(&self, chess_move: ChessMove) -> bool {
+    pub fn is_move_pseudo_legal(&self, chess_move: ChessMove) -> bool {
         let from = chess_move.from;
         let to = chess_move.to;
         let hint = chess_move.hint;
@@ -635,63 +701,17 @@ impl Game {
             }
         }
     }
-    /// Make a [`ChessMove`] if it's valid.
+    /// Makes a chess move.
+    ///
+    /// # Preconditions
+    /// - `chess_move` must be at least pseduo-legal for this position.
+    ///
+    /// Violating the preconditions may silently corrupt position state.
     #[must_use]
-    pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
-        if !self.is_move_applicable(chess_move) {
-            return false;
-        }
-        self.make_move_unchecked(chess_move)
-    }
-    /// Unroll the last made move unless it's already the starting position.
-    #[must_use]
-    pub fn try_unmake_move(&mut self) -> bool {
-        if self.is_history_empty() {
-            return false;
-        }
-        self.unmake_move_unchecked();
-        true
-    }
-    pub fn search<'a>(&'a mut self) -> GameExplorer<'a> {
-        GameExplorer::new(self)
-    }
-    // Make a [`ChessMove`].
-    //
-    // # Preconditions
-    // - [`ChessMove`] must be at least pseudo-legal.
-    //
-    // Violating the preconditions will corrupt the position's state.
-    #[must_use]
-    pub(crate) fn make_move_unchecked(&mut self, chess_move: ChessMove) -> bool {
-        let hash = self.zobrist();
-        let unmove = self.make_move_internal(chess_move);
-        if self.was_check_ignored() {
-            self.unmake_move_internal(unmove);
-            return false;
-        }
-
-        self.push_history(PlyHistory { unmove, hash });
-        true
-    }
-    // Unroll the last made move unless it's already the starting position.
-    //
-    // # Panics
-    // Panics if there are no moves in the game's history.
-    pub(crate) fn unmake_move_unchecked(&mut self) {
-        let ply = self.pop_history();
-        self.unmake_move_internal(ply.unmove);
-    }
-    // Makes a chess move.
-    //
-    // # Preconditions
-    // - `chess_move` must be at least pseduo-legal for this position.
-    //
-    // Violating the preconditions may silently corrupt position state.
-    #[must_use]
-    fn make_move_internal(&mut self, chess_move: ChessMove) -> ChessUnmove {
+    pub fn make_move(&mut self, chess_move: ChessMove) -> ChessUnmove {
         // TODO: this check may slow the program down.
         debug_assert!(
-            self.is_move_applicable(chess_move),
+            self.is_move_pseudo_legal(chess_move),
             "{chess_move:?} is not applicable!"
         );
 
@@ -703,7 +723,7 @@ impl Game {
         let en_passant = self.en_passant();
         let castling_rights = self.castling_rights();
         let halfmove_index = self.move_index_rule_50();
-        self.set_move_index(self.move_index() + 1);
+        self.0.set_move_index(self.move_index() + 1);
 
         match hint {
             ChessMoveHint::Quiet => {
@@ -713,67 +733,67 @@ impl Game {
                     .expect("faulty move concept: from is empty");
 
                 capture = None;
-                self.set_en_passant(None);
+                self.0.set_en_passant(None);
                 if piece == Piece::Pawn {
-                    self.set_move_index_rule_50(self.move_index());
+                    self.0.set_move_index_rule_50(self.move_index());
                 }
 
                 if piece == Piece::King {
-                    self.set_castling_rights(
+                    self.0.set_castling_rights(
                         self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                     );
                 } else if piece == Piece::Rook {
                     if from == self.turn().mirror_square(Square::H1) {
-                        self.set_castling_rights(
+                        self.0.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
                     } else if from == self.turn().mirror_square(Square::A1) {
-                        self.set_castling_rights(
+                        self.0.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
                     }
                 }
 
-                self.move_color_piece(self.turn(), piece, from, to);
+                self.0.move_color_piece(self.turn(), piece, from, to);
             }
             ChessMoveHint::DoublePawn => {
                 capture = None;
-                self.set_en_passant(Some(from.file()));
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(Some(from.file()));
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.move_color_piece(self.turn(), Piece::Pawn, from, to);
+                self.0.move_color_piece(self.turn(), Piece::Pawn, from, to);
             }
             ChessMoveHint::BishopPromotion => {
                 capture = None;
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Bishop, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.add_color_piece(self.turn(), Piece::Bishop, to);
             }
             ChessMoveHint::KnightPromotion => {
                 capture = None;
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Knight, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.add_color_piece(self.turn(), Piece::Knight, to);
             }
             ChessMoveHint::RookPromotion => {
                 capture = None;
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Rook, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.add_color_piece(self.turn(), Piece::Rook, to);
             }
             ChessMoveHint::QueenPromotion => {
                 capture = None;
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Queen, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.add_color_piece(self.turn(), Piece::Queen, to);
             }
             ChessMoveHint::Caputre => {
                 let piece = self
@@ -786,38 +806,38 @@ impl Game {
                     .expect("faulty move concept: to is empty");
 
                 capture = Some(captured_piece);
-                self.set_en_passant(None);
+                self.0.set_en_passant(None);
 
                 if piece == Piece::King {
-                    self.set_castling_rights(
+                    self.0.set_castling_rights(
                         self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                     );
                 } else if piece == Piece::Rook {
                     if from == self.turn().mirror_square(Square::H1) {
-                        self.set_castling_rights(
+                        self.0.set_castling_rights(
                             self.castling_rights() & !CastlingRights::kingside(self.turn()),
                         );
                     } else if from == self.turn().mirror_square(Square::A1) {
-                        self.set_castling_rights(
+                        self.0.set_castling_rights(
                             self.castling_rights() & !CastlingRights::queenside(self.turn()),
                         );
                     }
                 }
 
-                self.remove_color_piece(!self.turn(), captured_piece, to);
-                self.move_color_piece(self.turn(), piece, from, to);
+                self.0.remove_color_piece(!self.turn(), captured_piece, to);
+                self.0.move_color_piece(self.turn(), piece, from, to);
             }
             ChessMoveHint::EnPassantCapture => {
                 capture = Some(Piece::Pawn);
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(
+                self.0.remove_color_piece(
                     !self.turn(),
                     Piece::Pawn,
                     Square::new(from.rank(), to.file()),
                 );
-                self.move_color_piece(self.turn(), Piece::Pawn, from, to);
+                self.0.move_color_piece(self.turn(), Piece::Pawn, from, to);
             }
             ChessMoveHint::BishopPromotionCapture => {
                 let captured_piece = self
@@ -826,12 +846,12 @@ impl Game {
                     .expect("faulty move concept: to is empty");
 
                 capture = Some(captured_piece);
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Bishop, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Bishop, to);
             }
             ChessMoveHint::KnightPromotionCapture => {
                 let captured_piece = self
@@ -840,12 +860,12 @@ impl Game {
                     .expect("faulty move concept: to is empty");
 
                 capture = Some(captured_piece);
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Knight, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Knight, to);
             }
             ChessMoveHint::RookPromotionCapture => {
                 let captured_piece = self
@@ -854,12 +874,12 @@ impl Game {
                     .expect("faulty move concept: to is empty");
 
                 capture = Some(captured_piece);
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Rook, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Rook, to);
             }
             ChessMoveHint::QueenPromotionCapture => {
                 let captured_piece = self
@@ -868,22 +888,22 @@ impl Game {
                     .expect("faulty move concept: to is empty");
 
                 capture = Some(captured_piece);
-                self.set_en_passant(None);
-                self.set_move_index_rule_50(self.move_index());
+                self.0.set_en_passant(None);
+                self.0.set_move_index_rule_50(self.move_index());
 
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Queen, to);
+                self.0.remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Queen, to);
             }
             ChessMoveHint::KingCastle => {
                 capture = None;
-                self.set_en_passant(None);
-                self.set_castling_rights(
+                self.0.set_en_passant(None);
+                self.0.set_castling_rights(
                     self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                 );
 
-                self.move_color_piece(self.turn(), Piece::King, from, to);
-                self.move_color_piece(
+                self.0.move_color_piece(self.turn(), Piece::King, from, to);
+                self.0.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::H1),
@@ -892,13 +912,13 @@ impl Game {
             }
             ChessMoveHint::QueenCastle => {
                 capture = None;
-                self.set_en_passant(None);
-                self.set_castling_rights(
+                self.0.set_en_passant(None);
+                self.0.set_castling_rights(
                     self.castling_rights() & !CastlingRights::both_sides(self.turn()),
                 );
 
-                self.move_color_piece(self.turn(), Piece::King, from, to);
-                self.move_color_piece(
+                self.0.move_color_piece(self.turn(), Piece::King, from, to);
+                self.0.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::A1),
@@ -909,17 +929,17 @@ impl Game {
 
         if capture == Some(Piece::Rook) {
             if to == (!self.turn()).mirror_square(Square::H1) {
-                self.set_castling_rights(
+                self.0.set_castling_rights(
                     self.castling_rights() & !CastlingRights::kingside(!self.turn()),
                 );
             } else if to == (!self.turn()).mirror_square(Square::A1) {
-                self.set_castling_rights(
+                self.0.set_castling_rights(
                     self.castling_rights() & !CastlingRights::queenside(!self.turn()),
                 );
             }
         }
 
-        self.set_turn(!self.turn());
+        self.0.set_turn(!self.turn());
 
         ChessUnmove {
             chess_move,
@@ -929,18 +949,19 @@ impl Game {
             move_index_rule_50: halfmove_index,
         }
     }
-    // Rolls back a move.
-    //
-    // # Preconditions
-    // - `chess_unmove` must have had been generated from the same move as this position.
-    //
-    // Violating the preconditions may silently corrupt position state.
-    fn unmake_move_internal(&mut self, chess_unmove: ChessUnmove) {
-        self.set_turn(!self.turn());
-        self.set_castling_rights(chess_unmove.castling_rights);
-        self.set_en_passant(chess_unmove.en_passant);
-        self.set_move_index_rule_50(chess_unmove.move_index_rule_50);
-        self.set_move_index(self.move_index() - 1);
+    /// Rolls back a move.
+    ///
+    /// # Preconditions
+    /// - `chess_unmove` must have had been generated from the same move as this position.
+    ///
+    /// Violating the preconditions may silently corrupt position state.
+    pub fn unmake_move(&mut self, chess_unmove: ChessUnmove) {
+        self.0.set_turn(!self.turn());
+        self.0.set_castling_rights(chess_unmove.castling_rights);
+        self.0.set_en_passant(chess_unmove.en_passant);
+        self.0
+            .set_move_index_rule_50(chess_unmove.move_index_rule_50);
+        self.0.set_move_index(self.move_index() - 1);
 
         let from = chess_unmove.chess_move.from;
         let to = chess_unmove.chess_move.to;
@@ -953,26 +974,26 @@ impl Game {
                     .get_piece_at(to)
                     .expect("faulty unmove concept: to is empty");
 
-                self.move_color_piece(self.turn(), piece, to, from);
+                self.0.move_color_piece(self.turn(), piece, to, from);
             }
             ChessMoveHint::DoublePawn => {
-                self.move_color_piece(self.turn(), Piece::Pawn, to, from);
+                self.0.move_color_piece(self.turn(), Piece::Pawn, to, from);
             }
             ChessMoveHint::KnightPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Knight, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Knight, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::BishopPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Bishop, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Bishop, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::RookPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Rook, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Rook, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::QueenPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Queen, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Queen, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::Caputre => {
                 let piece = self
@@ -983,12 +1004,12 @@ impl Game {
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
-                self.move_color_piece(self.turn(), piece, to, from);
-                self.add_color_piece(!self.turn(), captured_piece, to);
+                self.0.move_color_piece(self.turn(), piece, to, from);
+                self.0.add_color_piece(!self.turn(), captured_piece, to);
             }
             ChessMoveHint::EnPassantCapture => {
-                self.move_color_piece(self.turn(), Piece::Pawn, to, from);
-                self.add_color_piece(
+                self.0.move_color_piece(self.turn(), Piece::Pawn, to, from);
+                self.0.add_color_piece(
                     !self.turn(),
                     Piece::Pawn,
                     Square::new(from.rank(), to.file()),
@@ -999,40 +1020,40 @@ impl Game {
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
-                self.remove_color_piece(self.turn(), Piece::Knight, to);
-                self.add_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Knight, to);
+                self.0.add_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::BishopPromotionCapture => {
                 let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
-                self.remove_color_piece(self.turn(), Piece::Bishop, to);
-                self.add_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Bishop, to);
+                self.0.add_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::RookPromotionCapture => {
                 let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
-                self.remove_color_piece(self.turn(), Piece::Rook, to);
-                self.add_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Rook, to);
+                self.0.add_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::QueenPromotionCapture => {
                 let captured_piece = chess_unmove
                     .capture
                     .expect("faulty unmove concept: no captured piece");
 
-                self.remove_color_piece(self.turn(), Piece::Queen, to);
-                self.add_color_piece(!self.turn(), captured_piece, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.0.remove_color_piece(self.turn(), Piece::Queen, to);
+                self.0.add_color_piece(!self.turn(), captured_piece, to);
+                self.0.add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::KingCastle => {
-                self.move_color_piece(self.turn(), Piece::King, to, from);
-                self.move_color_piece(
+                self.0.move_color_piece(self.turn(), Piece::King, to, from);
+                self.0.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::F1),
@@ -1040,8 +1061,8 @@ impl Game {
                 );
             }
             ChessMoveHint::QueenCastle => {
-                self.move_color_piece(self.turn(), Piece::King, to, from);
-                self.move_color_piece(
+                self.0.move_color_piece(self.turn(), Piece::King, to, from);
+                self.0.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::D1),
@@ -1052,38 +1073,30 @@ impl Game {
     }
 }
 
-impl Game {
-    /// Returns whether the kingside castling is allowed for a given color.
-    #[inline(always)]
-    #[must_use]
-    fn is_kingside_castling_allowed(&self, color: Color) -> bool {
-        self.castling_rights()
-            .contains(CastlingRights::kingside(color))
-            && !self.board().is_king_in_check(color)
-            && self
-                .board()
-                .can_king_move_to(color.mirror_square(Square::F1), color)
-            && self
-                .board()
-                .can_king_move_to(color.mirror_square(Square::G1), color)
-    }
-
-    /// Returns whether the queenside castling is allowed for a given color.
-    #[inline(always)]
-    #[must_use]
-    fn is_queenside_castling_allowed(&self, color: Color) -> bool {
-        self.castling_rights()
-            .contains(CastlingRights::queenside(color))
-            && !self.board().is_king_in_check(color)
-            && !self
-                .board()
-                .get_occupance()
-                .has_square(color.mirror_square(Square::B1))
-            && self
-                .board()
-                .can_king_move_to(color.mirror_square(Square::C1), color)
-            && self
-                .board()
-                .can_king_move_to(color.mirror_square(Square::D1), color)
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            concat!(
+                // TODO: this does not display history
+                "Chess position {{\n",
+                "  turn: {}\n",
+                "  castling rights: {}\n",
+                "  available en passant: {}\n",
+                "  moves since last capture/pawn move: {}\n",
+                "  hash: {}\n",
+                "  board: {}\n}}"
+            ),
+            self.turn(),
+            self.castling_rights(),
+            if let Some(en_passant) = self.en_passant() {
+                &format!("on {en_passant} file")
+            } else {
+                "N/A"
+            },
+            self.move_index() - self.move_index_rule_50(),
+            self.zobrist(),
+            self.board(),
+        )
     }
 }

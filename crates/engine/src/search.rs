@@ -75,7 +75,7 @@ impl Search {
             .filter(|vec| !vec.is_empty())
             .unwrap_or({
                 let mut vec = Vec::new();
-                game.search().for_each_legal_child_node(|_, chess_move| {
+                game.explore().for_each_legal_child_node(|_, chess_move| {
                     vec.push(chess_move);
                 });
                 vec
@@ -109,7 +109,7 @@ impl Search {
         let mate = go.mate;
         let ponder = go.ponder;
         let infinite = go.infinite;
-        let pending_result = game.search().check_ending().right().map(|_| SearchResult {
+        let pending_result = game.explore().check_ending().right().map(|_| SearchResult {
             best_move: None,
             ponder: None,
         });

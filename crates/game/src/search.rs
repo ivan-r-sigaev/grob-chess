@@ -352,7 +352,7 @@ impl Worker {
                 let mut game = job.game;
                 let worst_score = Score::ending(GameEnding::Checkmate);
                 let res = search(
-                    &mut game.search(),
+                    &mut game.explore(),
                     tt.clone(),
                     job.depth,
                     SearchConstraints {
@@ -395,7 +395,7 @@ fn search(
     let hash = position.zobrist();
     if let Some(t) = tt.get_exact(hash) {
         'probe_hash: {
-            if position.is_move_applicable(t.best_move) {
+            if position.is_move_pseudo_legal(t.best_move) {
                 break 'probe_hash;
             }
             if t.depth < depth {

@@ -80,7 +80,7 @@ mod values {
 fn collect(fen: &str, depth: u8) -> PerftValues {
     let position = Game::try_from_fen(fen).unwrap();
     let mut game = position;
-    let mut node = game.search();
+    let mut node = game.explore();
     PerftValues::collect(&mut node, depth - 1)
 }
 
