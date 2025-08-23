@@ -4,7 +4,8 @@ use std::{
 };
 
 use board::Color;
-use game::{ParallelSearch, Score, Transposition, Waiter};
+use crossbeam::channel::Select;
+use game::{ParallelSearch, Score, Transposition};
 use position::{ChessMove, Game, LanMove, MoveOrdering};
 
 use crate::uci::Go;
@@ -49,8 +50,8 @@ impl Search {
     pub fn is_running(&self) -> bool {
         self.progress.is_some()
     }
-    pub fn add_to_waiter<'a>(&'a self, waiter: &mut Waiter<'a>) -> usize {
-        self.search.add_to_waiter(waiter, None)
+    pub fn add_to_select<'a>(&'a self, sel: &mut Select<'a>) -> usize {
+        self.search.add_to_select(sel)
     }
     pub fn go(&mut self, mut game: Game, go: Go) {
         if self.is_running() {

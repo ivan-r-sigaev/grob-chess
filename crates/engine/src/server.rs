@@ -1,4 +1,4 @@
-use game::Waiter;
+use crossbeam::channel::Select;
 use position::Game;
 use std::fmt::Write;
 
@@ -36,18 +36,18 @@ impl Server {
     }
     pub fn run(&mut self) {
         while !self.should_quit {
-            let mut waiter = Waiter::new();
+            let mut sel = Select::new();
             if self.search.is_running() {
-                let uci_index = self.uci.add_to_waiter(&mut waiter);
-                let search_index = self.search.add_to_waiter(&mut waiter);
-                match waiter.wait() {
+                let uci_index = self.uci.add_to_select(&mut sel);
+                let search_index = self.search.add_to_select(&mut sel);
+                match sel.ready() {
                     index if index == uci_index => self.handle_commands(),
                     index if index == search_index => self.update_search(),
                     _ => unreachable!(),
                 }
             } else {
-                self.uci.add_to_waiter(&mut waiter);
-                waiter.wait();
+                self.uci.add_to_select(&mut sel);
+                sel.ready();
                 self.handle_commands();
             }
         }

@@ -9,13 +9,13 @@ use std::{
 
 use board::Piece;
 use crossbeam::{
-    channel::{unbounded, Receiver, Sender},
+    channel::{unbounded, Receiver, Select, Sender},
     utils::CachePadded,
 };
 use either::Either;
 use position::{ChessMove, Game, MoveOrdering};
 
-use crate::{Transposition, TranspositionTable, Waiter};
+use crate::{Transposition, TranspositionTable};
 use position::{GameEnding, GameExplorer};
 
 /// How advantageous is a chess position.
@@ -158,20 +158,16 @@ impl ParallelSearch {
     pub fn pending_count(&self) -> usize {
         self.jobs_count() - self.results.len()
     }
-    /// Tells the waiter to wait until some search jobs are completed.
+    /// Makes a selector wait until some search jobs are completed.
     ///
     /// # Panics
     /// Panics if search is not currently running.
-    pub fn add_to_waiter<'a>(
-        &'a self,
-        waiter: &mut Waiter<'a>,
-        deadline: Option<Instant>,
-    ) -> usize {
+    pub fn add_to_select<'a>(&'a self, sel: &mut Select<'a>) -> usize {
         if !self.is_searching() {
             panic!("Search is paused.");
         }
 
-        waiter.add(&self.res_recv, deadline)
+        sel.recv(&self.res_recv)
     }
     /// Tries to collect the search results if all jobs are completed.
     ///
