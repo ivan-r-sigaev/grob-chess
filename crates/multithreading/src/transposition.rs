@@ -1,7 +1,7 @@
 use std::{fmt, num::NonZeroU64};
 
+use game::ChessMove;
 use parking_lot::RwLock;
-use position::ChessMove;
 
 use crate::{KeyLookup, Score, WeakHashMap};
 

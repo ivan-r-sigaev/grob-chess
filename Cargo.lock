@@ -121,8 +121,19 @@ version = "0.1.0"
 dependencies = [
  "board",
  "crossbeam",
+ "game",
  "multithreading",
- "position",
+]
+
+[[package]]
+name = "game"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "board",
+ "const-random",
+ "either",
+ "strum",
 ]
 
 [[package]]
@@ -165,8 +176,8 @@ dependencies = [
  "board",
  "crossbeam",
  "either",
+ "game",
  "parking_lot",
- "position",
  "strum",
 ]
 
@@ -197,17 +208,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-targets",
-]
-
-[[package]]
-name = "position"
-version = "0.1.0"
-dependencies = [
- "bitflags",
- "board",
- "const-random",
- "either",
- "strum",
 ]
 
 [[package]]

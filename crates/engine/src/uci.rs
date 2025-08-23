@@ -1,5 +1,5 @@
 use crossbeam::channel::{Receiver, Select, Sender, TryRecvError, unbounded};
-use position::{Game, LanMove};
+use game::{Game, LanMove};
 use std::{
     collections::VecDeque,
     error, fmt,

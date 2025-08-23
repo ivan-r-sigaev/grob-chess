@@ -1,5 +1,5 @@
 use crossbeam::channel::Select;
-use position::Game;
+use game::Game;
 use std::fmt::Write;
 
 use crate::{

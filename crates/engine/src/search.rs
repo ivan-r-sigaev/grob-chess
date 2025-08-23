@@ -5,8 +5,8 @@ use std::{
 
 use board::Color;
 use crossbeam::channel::Select;
+use game::{ChessMove, Game, LanMove, MoveOrdering};
 use multithreading::{ParallelSearch, Score, Transposition};
-use position::{ChessMove, Game, LanMove, MoveOrdering};
 
 use crate::uci::Go;
 
