@@ -70,7 +70,7 @@ impl Server {
             }
             Command::UciNewGame => self.search.clear_tt(),
             Command::Position(game) => self.game = game,
-            Command::Go(go) => self.search.go(go),
+            Command::Go(go) => self.search.go(self.game.clone(), go),
             Command::Stop => {
                 if self.search.is_running() {
                     self.stop_search()

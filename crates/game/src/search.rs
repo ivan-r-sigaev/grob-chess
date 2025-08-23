@@ -19,9 +19,9 @@ use crate::{Game, GameEnding, GameSearch, Transposition, TranspositionTable, Wai
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Score {
     /// Length of a forced mate sequence in turns (good).
-    Mating(u32),
+    Mating(u64),
     /// Length of a forced mate sequence in turns (bad).
-    Mated(u32),
+    Mated(u64),
     /// Score in centi-pawns (1/100 of a pawn).
     Cp(i32),
 }
