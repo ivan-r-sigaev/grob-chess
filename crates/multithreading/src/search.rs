@@ -387,7 +387,7 @@ fn search(
 
     let position = node.game();
     let hash = position.zobrist();
-    if let Some(t) = tt.get_exact(hash) {
+    if let Some(t) = tt.get(hash) {
         'probe_hash: {
             if position.is_move_pseudo_legal(t.best_move) {
                 break 'probe_hash;

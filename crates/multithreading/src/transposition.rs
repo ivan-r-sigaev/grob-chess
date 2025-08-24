@@ -3,7 +3,7 @@ use std::{fmt, num::NonZeroU64};
 use game::ChessMove;
 use parking_lot::RwLock;
 
-use crate::{KeyLookup, Score, WeakHashMap};
+use crate::{cache::Cache, search::Score};
 
 /// A [transposition].
 ///
@@ -27,7 +27,7 @@ pub struct Transposition {
 /// it can safely be shared between threads.
 ///
 /// [transposition table]: https://www.chessprogramming.org/Transposition_Table
-pub struct TranspositionTable(RwLock<WeakHashMap<Transposition>>);
+pub struct TranspositionTable(RwLock<Cache<Transposition>>);
 
 impl TranspositionTable {
     /// Constructs a [`TranspositionTable`] that can hold
@@ -35,9 +35,8 @@ impl TranspositionTable {
     ///
     /// # Panics
     /// - Panics if `capacity` is zero.
-    /// - Panics if `capacity * size_of::<Transposition>()` exceeds `isize::MAX`.
     pub fn new(capacity: usize) -> Self {
-        Self(RwLock::new(WeakHashMap::new(capacity)))
+        Self(RwLock::new(Cache::new(capacity)))
     }
     /// Returns the maximum number of [`Transposition`]s this
     /// table can hold at the same time.
@@ -46,26 +45,36 @@ impl TranspositionTable {
     }
     /// Returns the [`Transposition`] with the exactly matching hash
     /// or `None` if one is not available.
-    pub fn get_exact(&self, hash: NonZeroU64) -> Option<Transposition> {
-        self.0.read().get(hash).exact().map(|(_, value)| *value)
-    }
-    /// Returns any [`Transposition`] that matches the hash
-    /// or `None` if no transpositions match.
-    ///
-    /// The result may be type-2 hash collision.
     pub fn get(&self, hash: NonZeroU64) -> Option<Transposition> {
-        match self.0.read().get(hash) {
-            KeyLookup::Exact(_, res) => Some(*res),
-            KeyLookup::Clash(_, res) => Some(*res),
-            KeyLookup::Empty => None,
-        }
+        self.0
+            .read()
+            .get(hash)
+            .filter(|item| item.is_exact())
+            .map(|item| *item)
     }
-    /// Saves the [`Transposition`] to the table.
+    /// Saves the [`Transposition`] to the table and returns the repaced [`Transposition`].
     ///
     /// This will overwrite the [`Transposition`] with the
     /// clashing hash if one exists.
-    pub fn insert(&self, hash: NonZeroU64, value: Transposition) {
-        _ = self.0.write().entry(hash).insert(value);
+    pub fn insert(&self, hash: NonZeroU64, value: Transposition) -> Option<Transposition> {
+        self.0.write().insert(hash, value)
+    }
+    /// Inserts the new value or replaces the old one if the predicate returns `true`.
+    pub fn insert_or_replace_if<P>(
+        &self,
+        hash: NonZeroU64,
+        value: Transposition,
+        pred: P,
+    ) -> Option<Transposition>
+    where
+        P: FnOnce(&Transposition) -> bool,
+    {
+        let mut read = self.0.upgradable_read();
+        if read.get(hash).is_none_or(|item| pred(item.get())) {
+            read.with_upgraded(|cache| cache.insert(hash, value))
+        } else {
+            None
+        }
     }
     /// Clears all saved [`Transposition`]s.
     pub fn clear(&self) {
