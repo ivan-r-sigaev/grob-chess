@@ -107,6 +107,25 @@ impl Game {
     pub fn lan_move(&self, lan_move: LanMove) -> Option<ChessMove> {
         self.position.lan_move(lan_move)
     }
+    /// Makes a [`ChessMove`].
+    ///
+    /// # Panics
+    /// Panics if [`ChessMove`] is not legal.
+    pub fn make_move(&mut self, chess_move: ChessMove) {
+        let is_legal = self.try_make_move(chess_move);
+        assert!(is_legal, "Attempted to make an illegal move!");
+    }
+    /// Unroll the last made move.
+    ///
+    /// # Panics
+    /// Panics if there are no previous positions for this game.
+    pub fn unmake_move(&mut self) {
+        let is_legal = self.try_unmake_move();
+        assert!(
+            is_legal,
+            "Attempted to unroll the game past the starting position!"
+        )
+    }
     /// Make a [`ChessMove`] if it's valid.
     #[must_use]
     pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
@@ -115,13 +134,14 @@ impl Game {
         }
         self.make_move_unchecked(chess_move)
     }
-    /// Unroll the last made move unless it's already the starting position.
+    /// Unroll the last made move unless there are no previous positions for this game.
     #[must_use]
     pub fn try_unmake_move(&mut self) -> bool {
         if self.is_history_empty() {
             return false;
         }
-        self.unmake_move_unchecked();
+        self.position
+            .unmake_move(self.history.pop().unwrap().unmove);
         true
     }
     /// Returns an explorer for this game.
@@ -145,14 +165,6 @@ impl Game {
 
         self.history.push(PlyHistory { unmove, hash });
         true
-    }
-    /// Unroll the last made move unless it's already the starting position.
-    ///
-    /// # Panics
-    /// Panics if there are no moves in the game's history.
-    fn unmake_move_unchecked(&mut self) {
-        let ply = self.history.pop().unwrap();
-        self.position.unmake_move(ply.unmove);
     }
 }
 
@@ -219,7 +231,7 @@ impl GameExplorer<'_> {
             return false;
         }
         op(self);
-        self.game.unmake_move_unchecked();
+        self.game.unmake_move();
         true
     }
     /// Inspects all legal moves in position with a function.
@@ -241,7 +253,7 @@ impl GameExplorer<'_> {
             if self.game.make_move_unchecked(chess_move) {
                 has_moves = true;
                 op(self, chess_move);
-                self.game.unmake_move_unchecked();
+                self.game.unmake_move();
             }
         }
 

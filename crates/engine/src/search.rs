@@ -244,7 +244,7 @@ impl Search {
         let progress = self.progress.as_mut().unwrap();
         for &chess_move in progress.moves.keys() {
             let mut game = progress.game.clone();
-            assert!(game.try_make_move(chess_move));
+            game.make_move(chess_move);
             self.search.prepare_search(
                 game,
                 progress.running_depth,
