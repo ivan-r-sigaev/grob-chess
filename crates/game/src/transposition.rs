@@ -2,7 +2,7 @@ use std::{fmt, num::NonZeroU64};
 
 use parking_lot::RwLock;
 
-use crate::{cache::Cache, search::Score, position::ChessMove};
+use crate::{cache::Cache, position::ChessMove, search::Score};
 
 /// A [transposition].
 ///

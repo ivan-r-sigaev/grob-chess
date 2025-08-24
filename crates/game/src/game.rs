@@ -4,8 +4,8 @@ use either::Either;
 
 use crate::castling_rights::CastlingRights;
 use crate::move_list::MoveList;
-use crate::position::{ChessMove, ChessUnmove, LanMove, Position};
-use crate::raw_position::ParseFenError;
+use crate::position::{ChessMove, ChessUnmove, LanMove};
+use crate::position_base::{ParseFenError, Position};
 use crate::{Board, Color, File};
 
 /// A chess game.

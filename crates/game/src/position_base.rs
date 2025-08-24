@@ -39,11 +39,9 @@ impl fmt::Display for ParseFenError {
 
 impl Error for ParseFenError {}
 
-/// A raw chess position.
-///
-/// This type protects some of position's invariants from itself.
+/// A chess position.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct RawPosition {
+pub struct Position {
     board: Board,
     turn: Color,
     castling_rights: CastlingRights,
@@ -53,7 +51,7 @@ pub struct RawPosition {
     zobrist_hash: u64,
 }
 
-impl RawPosition {
+impl Position {
     /// Tries to parse a positioin from FEN.
     pub fn try_from_fen(fen: &str) -> Result<Self, ParseFenError> {
         let mut words: VecDeque<&str> = fen.split_whitespace().collect();
@@ -168,7 +166,7 @@ impl RawPosition {
             return Err(ParseFenError::TrailingGarbage);
         }
 
-        Ok(RawPosition {
+        Ok(Position {
             board,
             turn,
             castling_rights,
