@@ -10,9 +10,7 @@ use std::{
     time::Duration,
 };
 
-use crate::uci::cursor::Cursor;
-
-mod cursor;
+use crate::uci_cursor::Cursor;
 
 /// A convenience wrapper to be able to block on command line input.
 #[derive(Debug)]
