@@ -54,7 +54,7 @@ impl Not for Color {
     ///
     /// # Examples
     /// ```rust
-    /// use board::Color;
+    /// use game::Color;
     ///
     /// assert_eq!(!Color::White, Color::Black);
     /// assert_eq!(!Color::Black, Color::White);
