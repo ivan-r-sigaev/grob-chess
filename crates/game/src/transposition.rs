@@ -1,9 +1,8 @@
 use std::{fmt, num::NonZeroU64};
 
-use game::ChessMove;
 use parking_lot::RwLock;
 
-use crate::{cache::Cache, search::Score};
+use crate::{cache::Cache, search::Score, position::ChessMove};
 
 /// A [transposition].
 ///

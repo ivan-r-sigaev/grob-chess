@@ -12,9 +12,8 @@ use crossbeam::{
     utils::CachePadded,
 };
 use either::Either;
-use game::{ChessMove, Game, GameEnding, GameExplorer, MoveOrdering, Piece};
 
-use crate::{Transposition, TranspositionTable};
+use crate::{ChessMove, Game, GameEnding, GameExplorer, MoveOrdering, Piece, Transposition, TranspositionTable};
 
 /// How advantageous is a chess position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

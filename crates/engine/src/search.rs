@@ -4,8 +4,7 @@ use std::{
 };
 
 use crossbeam::channel::Select;
-use game::{ChessMove, Color, Game, LanMove, MoveOrdering};
-use multithreading::{ParallelSearch, Score, Transposition};
+use game::{ChessMove, Color, Game, LanMove, MoveOrdering, ParallelSearch, Score, Transposition};
 
 use crate::uci::Go;
 
@@ -24,7 +23,7 @@ pub struct Search {
 #[derive(Debug, Clone)]
 struct SearchProgress {
     pub game: Game,
-    pub moves: HashMap<ChessMove, Option<multithreading::SearchResult>>,
+    pub moves: HashMap<ChessMove, Option<game::SearchResult>>,
     pub deadline: Option<Instant>,
     pub nodes_max: Option<u64>,
     pub depth_max: Option<u64>,
@@ -203,7 +202,7 @@ impl Search {
     }
     fn collect(
         progress: &mut SearchProgress,
-        results: Vec<multithreading::SearchResult>,
+        results: Vec<game::SearchResult>,
     ) -> (ChessMove, bool, bool) {
         let mut best_move = None;
         let mut score = None;

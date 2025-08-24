@@ -10,7 +10,12 @@ pub use pieces::{Color, Piece, Promotion};
 pub use position::{ChessMove, ChessMoveHint, LanMove, PackedChessMove};
 pub use raw_position::ParseFenError;
 pub use square::{File, NegDiag, PosDiag, Rank, Square};
+pub use search::{ParallelSearch, Score, SearchResult};
+pub use transposition::{Transposition, TranspositionTable};
 
+mod cache;
+mod search;
+mod transposition;
 mod bitboard;
 mod board;
 mod castling_rights;

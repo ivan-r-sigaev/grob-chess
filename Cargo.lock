@@ -114,7 +114,6 @@ version = "0.1.0"
 dependencies = [
  "crossbeam",
  "game",
- "multithreading",
 ]
 
 [[package]]
@@ -123,7 +122,9 @@ version = "0.1.0"
 dependencies = [
  "bitflags",
  "const-random",
+ "crossbeam",
  "either",
+ "parking_lot",
  "strum",
 ]
 
@@ -158,17 +159,6 @@ checksum = "96936507f153605bddfcda068dd804796c84324ed2510809e5b2a624c81da765"
 dependencies = [
  "autocfg",
  "scopeguard",
-]
-
-[[package]]
-name = "multithreading"
-version = "0.1.0"
-dependencies = [
- "crossbeam",
- "either",
- "game",
- "parking_lot",
- "strum",
 ]
 
 [[package]]
