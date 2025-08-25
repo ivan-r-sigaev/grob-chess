@@ -79,6 +79,12 @@ impl TranspositionTable {
     pub fn clear(&self) {
         self.0.write().clear();
     }
+    /// Resize the transposition table. 
+    /// 
+    /// Calling this will also have the same effect as [`Self::clear`].
+    pub fn resize(&self, new_capacity: usize) {
+        *self.0.write() = Cache::new(new_capacity);
+    }
 }
 
 impl fmt::Debug for TranspositionTable {
