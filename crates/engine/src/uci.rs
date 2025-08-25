@@ -1,9 +1,7 @@
-use crossbeam::channel::{Receiver, Select, Sender, TryRecvError, unbounded};
+use crossbeam::channel::{Receiver, SendError, bounded};
 use game::{Game, LanMove};
 use std::{
-    collections::VecDeque,
-    error, fmt,
-    io::{self, BufRead, BufReader},
+    io::{self, BufRead, BufReader, Read},
     result,
     str::FromStr,
     thread,
@@ -12,103 +10,83 @@ use std::{
 
 use crate::uci_cursor::Cursor;
 
-/// A convenience wrapper to be able to block on command line input.
-#[derive(Debug)]
-pub struct UciChannel {
-    handle: Option<thread::JoinHandle<Result<()>>>,
-    command_recv: Receiver<Command>,
-    commands: VecDeque<Command>,
-}
-
-type Result<T> = result::Result<T, Error>;
-
-#[allow(dead_code)]
-#[derive(Debug)]
-pub enum Error {
-    Disconnected,
-    Io(io::Error),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{self:?}")
-    }
-}
-
-impl error::Error for Error {}
-
-impl UciChannel {
-    pub fn spawn() -> Self {
-        let (command_send, command_recv) = unbounded();
-        let commands = VecDeque::new();
-        let handle = Some(thread::spawn(|| run_uci_channel(command_send)));
-        Self {
-            handle,
-            command_recv,
-            commands,
-        }
-    }
-    pub fn add_to_select<'a>(&'a self, sel: &mut Select<'a>) -> usize {
-        sel.recv(&self.command_recv)
-    }
-    pub fn check(&mut self) -> Option<&Command> {
-        loop {
-            let command = match self.command_recv.try_recv() {
-                Ok(command) => command,
-                Err(TryRecvError::Empty) => break,
-                Err(TryRecvError::Disconnected) => panic!("UciChannel got disconnected!"),
+/// Spawns a thread that will parse UCI commands from a given `Read` trait object
+/// and returns a channel from it.
+///
+/// Thread will exit gracefully if the reciever diconnects.
+///
+/// Thread will forward the error and exit gracefully if the read causes an error.
+pub fn spawn_uci_parser(read: Box<dyn Read + Send>) -> Receiver<io::Result<Command>> {
+    let (s, r) = bounded(0);
+    _ = thread::spawn(move || {
+        let mut lines = BufReader::new(read).lines();
+        for result in &mut lines {
+            match result {
+                Ok(line) => {
+                    let Ok(command) = line.parse::<Command>() else {
+                        continue;
+                    };
+                    if let Err(SendError(_)) = s.send(Ok(command)) {
+                        break;
+                    }
+                }
+                Err(e) => {
+                    _ = s.send(Err(e));
+                    break;
+                }
             };
-            self.commands.push_back(command);
         }
-        self.commands.back()
-    }
-    pub fn pop(&mut self) -> Option<Command> {
-        self.check();
-        self.commands.pop_back()
-    }
-    fn drop_inplace(&mut self) -> thread::Result<Result<()>> {
-        self.handle.take().map(|h| h.join()).unwrap_or(Ok(Ok(())))
-    }
+    });
+    r
 }
 
-impl Drop for UciChannel {
-    fn drop(&mut self) {
-        let result = self.drop_inplace();
-
-        // Ignore error if already panicking.
-        if thread::panicking() {
-            return;
-        }
-
-        result.unwrap().unwrap()
-    }
-}
-
+/// A UCI command.
 #[derive(Debug, Clone)]
 pub enum Command {
+    /// \>\> uci - UCI handshake.
     Uci,
+    /// \>\> isready - UCI ping.
     IsReady,
+    /// \>\> ucinewgame - clear hash table.
     UciNewGame,
+    /// \>\> position ... - setup position.
     Position(Game),
+    /// \>\> go ... - start search.
     Go(Go),
+    /// \>\> stop - stop search.
     Stop,
+    /// \>\> ponderhit - exit pondering mode.
     PonderHit,
+    /// \>\> quit - terminate the program.
     Quit,
 }
 
+/// Parameters for the "go" UCI command.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Go {
+    /// Search only theese moves.
     pub searchmoves: Option<Vec<LanMove>>,
+    /// Search in ponder mode.
     pub ponder: bool,
+    /// Remaining time for white.
     pub wtime: Option<Duration>,
+    /// Remaining time for black.
     pub btime: Option<Duration>,
+    /// Time increment for white.
     pub winc: Option<Duration>,
+    /// Time increment for black.
     pub binc: Option<Duration>,
+    /// Moves until the next time control (cyclic time controls).
     pub movestogo: Option<u64>,
+    /// Do not search beyond this depth.
     pub depth: Option<u64>,
+    /// Do not search more than this many nodes.
     pub nodes: Option<u64>,
+    /// Do not search further if mate in that many (or less) moves is found.
     pub mate: Option<u64>,
+    /// Stop the search if it continues for longer than that.
     pub movetime: Option<Duration>,
+    /// Do not exit if the search unless explicitly told to.
     pub infinite: bool,
 }
 
@@ -205,18 +183,4 @@ impl Cursor<'_> {
         }
         res
     }
-}
-
-fn run_uci_channel(command_send: Sender<Command>) -> Result<()> {
-    let handle = io::stdin().lock();
-    let mut lines = BufReader::new(handle).lines();
-    for result in &mut lines {
-        let Ok(command) = result.map_err(Error::Io)?.parse::<Command>() else {
-            continue;
-        };
-        command_send
-            .send(command)
-            .map_err(|_| Error::Disconnected)?;
-    }
-    Ok(())
 }
