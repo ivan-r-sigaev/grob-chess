@@ -4,7 +4,7 @@ use std::{
 };
 
 use crossbeam::channel::Select;
-use game::{ChessMove, Color, Game, LanMove, MoveOrdering, ParallelSearch, Score, Transposition};
+use game::{ChessMove, Color, Game, LanMove, MoveOrdering, ParallelSearch, Score};
 
 use crate::uci::Go;
 
@@ -37,9 +37,8 @@ struct SearchProgress {
 impl Search {
     pub fn new() -> Self {
         const THREAD_COUNT: usize = 1;
-        const TT_CAPACITY_IN_BYTES: usize = 16 * 1024 * 1024;
-        const TT_CAPACITY: usize = TT_CAPACITY_IN_BYTES / size_of::<Transposition>();
-        let search = ParallelSearch::new(THREAD_COUNT, TT_CAPACITY);
+        const TT_CAPACITY_MB: usize = 16;
+        let search = ParallelSearch::new(THREAD_COUNT, TT_CAPACITY_MB);
         Self {
             search,
             progress: None,

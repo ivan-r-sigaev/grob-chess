@@ -2,7 +2,9 @@ use std::{fmt, num::NonZeroU64};
 
 use parking_lot::RwLock;
 
-use crate::{cache::Cache, position::ChessMove, search::Score};
+use crate::{
+    position::ChessMove, search::transposition::table_base::TranspositionTableBase, Score,
+};
 
 /// A [transposition].
 ///
@@ -26,22 +28,25 @@ pub struct Transposition {
 /// it can safely be shared between threads.
 ///
 /// [transposition table]: https://www.chessprogramming.org/Transposition_Table
-pub struct TranspositionTable(RwLock<Cache<Transposition>>);
+pub struct TranspositionTable(RwLock<TranspositionTableBase<Transposition>>);
 
 impl TranspositionTable {
+    /// Size of a single [`Transposition`] within the [`TranspositionTable`].
+    pub const ITEM_SIZE: usize = TranspositionTableBase::<Transposition>::ITEM_SIZE;
+
     /// Constructs a [`TranspositionTable`] that can hold
     /// a specified number of transpositions.
     ///
     /// # Panics
     /// - Panics if `capacity` is zero.
     pub fn new(capacity: usize) -> Self {
-        Self(RwLock::new(Cache::new(capacity)))
+        Self(RwLock::new(TranspositionTableBase::new(capacity)))
     }
-    /// Returns the maximum number of [`Transposition`]s this
-    /// table can hold at the same time.
-    pub fn capacity(&self) -> usize {
-        self.0.read().capacity()
-    }
+    // /// Returns the maximum number of [`Transposition`]s this
+    // /// table can hold at the same time.
+    // pub fn capacity(&self) -> usize {
+    //     self.0.read().capacity()
+    // }
     /// Returns the [`Transposition`] with the exactly matching hash
     /// or `None` if one is not available.
     pub fn get(&self, hash: NonZeroU64) -> Option<Transposition> {
@@ -58,33 +63,33 @@ impl TranspositionTable {
     pub fn insert(&self, hash: NonZeroU64, value: Transposition) -> Option<Transposition> {
         self.0.write().insert(hash, value)
     }
-    /// Inserts the new value or replaces the old one if the predicate returns `true`.
-    pub fn insert_or_replace_if<P>(
-        &self,
-        hash: NonZeroU64,
-        value: Transposition,
-        pred: P,
-    ) -> Option<Transposition>
-    where
-        P: FnOnce(&Transposition) -> bool,
-    {
-        let mut read = self.0.upgradable_read();
-        if read.get(hash).is_none_or(|item| pred(item.get())) {
-            read.with_upgraded(|cache| cache.insert(hash, value))
-        } else {
-            None
-        }
-    }
+    // /// Inserts the new value or replaces the old one if the predicate returns `true`.
+    // pub fn insert_or_replace_if<P>(
+    //     &self,
+    //     hash: NonZeroU64,
+    //     value: Transposition,
+    //     pred: P,
+    // ) -> Option<Transposition>
+    // where
+    //     P: FnOnce(&Transposition) -> bool,
+    // {
+    //     let mut read = self.0.upgradable_read();
+    //     if read.get(hash).is_none_or(|item| pred(item.get())) {
+    //         read.with_upgraded(|cache| cache.insert(hash, value))
+    //     } else {
+    //         None
+    //     }
+    // }
     /// Clears all saved [`Transposition`]s.
     pub fn clear(&self) {
         self.0.write().clear();
     }
-    /// Resize the transposition table. 
-    /// 
-    /// Calling this will also have the same effect as [`Self::clear`].
-    pub fn resize(&self, new_capacity: usize) {
-        *self.0.write() = Cache::new(new_capacity);
-    }
+    // /// Resize the transposition table.
+    // ///
+    // /// Calling this will also have the same effect as [`Self::clear`].
+    // pub fn resize(&self, new_capacity: usize) {
+    //     *self.0.write() = Cache::new(new_capacity);
+    // }
 }
 
 impl fmt::Debug for TranspositionTable {

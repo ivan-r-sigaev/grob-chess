@@ -11,11 +11,9 @@ pub use position::{ChessMove, ChessMoveHint, LanMove, PackedChessMove};
 pub use position_base::ParseFenError;
 pub use search::{ParallelSearch, Score, SearchResult};
 pub use square::{File, NegDiag, PosDiag, Rank, Square};
-pub use transposition::{Transposition, TranspositionTable};
 
 mod bitboard;
 mod board;
-mod cache;
 mod castling_rights;
 mod game;
 mod move_calculation;
@@ -25,7 +23,6 @@ mod position;
 mod position_base;
 mod search;
 mod square;
-mod transposition;
 mod zobrist;
 
 #[cfg(test)]

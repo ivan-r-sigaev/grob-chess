@@ -2,7 +2,7 @@ use std::{num::NonZeroU64, ops::Deref};
 
 /// The underlying type for the transposition table.
 #[derive(Debug, Clone)]
-pub struct Cache<T>(Box<[Option<Item<T>>]>);
+pub struct TranspositionTableBase<T>(Box<[Option<Item<T>>]>);
 
 type Item<T> = (NonZeroU64, T);
 
@@ -40,7 +40,10 @@ impl<T> Deref for Ref<'_, T> {
     }
 }
 
-impl<T> Cache<T> {
+impl<T> TranspositionTableBase<T> {
+    /// Size of a single item in bytes.
+    pub const ITEM_SIZE: usize = size_of::<Option<Item<T>>>();
+
     /// Create a [`WeakHashMap`] that can hold a specified number of items.
     ///
     /// # Panics
