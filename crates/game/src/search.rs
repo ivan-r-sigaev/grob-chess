@@ -1,4 +1,6 @@
-pub use scheduler::{ParallelSearch, SearchResult};
+pub use scheduler::{
+    spawn_search_server, SearchRequest, SearchResult, ServerCommand, ServerResponse,
+};
 pub use score::Score;
 
 mod scheduler;

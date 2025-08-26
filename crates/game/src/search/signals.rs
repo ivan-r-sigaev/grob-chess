@@ -43,6 +43,9 @@ impl WorkerSignalerMaster {
     pub fn is_running(&self) -> bool {
         self.signal.load(Ordering::Relaxed) == SIGNAL_GO
     }
+    pub fn worker_count(&self) -> usize {
+        self.worker_count
+    }
     pub fn go(&self) {
         self.check_workers();
         if self.is_running() {

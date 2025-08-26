@@ -3,8 +3,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crossbeam::channel::Select;
-use game::{ChessMove, Color, Game, LanMove, MoveOrdering, ParallelSearch, Score};
+use crossbeam::channel::{Receiver, RecvError, Select, Sender, TryRecvError};
+use game::{
+    ChessMove, Color, Game, LanMove, MoveOrdering, Score, SearchRequest, ServerCommand,
+    ServerResponse, spawn_search_server,
+};
 
 use crate::uci::Go;
 
@@ -16,7 +19,8 @@ pub struct SearchResult {
 
 #[derive(Debug)]
 pub struct Search {
-    search: ParallelSearch,
+    server_send: Sender<ServerCommand>,
+    server_recv: Receiver<ServerResponse>,
     progress: Option<SearchProgress>,
 }
 
@@ -28,19 +32,21 @@ struct SearchProgress {
     pub nodes_max: Option<u64>,
     pub depth_max: Option<u64>,
     pub mate: Option<u64>,
+    pub pending_count: usize,
+    pub running_depth: u64,
     pub ponder: bool,
     pub infinite: bool,
-    pub running_depth: u64,
     pub pending_result: Option<SearchResult>,
 }
 
 impl Search {
     pub fn new() -> Self {
-        const THREAD_COUNT: usize = 1;
-        const TT_CAPACITY_MB: usize = 16;
-        let search = ParallelSearch::new(THREAD_COUNT, TT_CAPACITY_MB);
+        const WORKER_COUNT: usize = 1;
+        const TT_MAX_MIB: usize = 16;
+        let (server_send, server_recv) = spawn_search_server(WORKER_COUNT, TT_MAX_MIB);
         Self {
-            search,
+            server_send,
+            server_recv,
             progress: None,
         }
     }
@@ -48,7 +54,13 @@ impl Search {
         self.progress.is_some()
     }
     pub fn add_to_select<'a>(&'a self, sel: &mut Select<'a>) -> usize {
-        self.search.add_to_select(sel)
+        if !self.is_running() {
+            panic!(concat!(
+                "Do not try to wait on the search sever ",
+                "unless there is an ongoing search",
+            ));
+        }
+        sel.recv(&self.server_recv)
     }
     pub fn go(&mut self, mut game: Game, go: Go) {
         if self.is_running() {
@@ -121,6 +133,7 @@ impl Search {
             mate,
             ponder,
             infinite,
+            pending_count: 0,
             running_depth: 0,
             pending_result,
         });
@@ -131,19 +144,14 @@ impl Search {
         self.prepare();
     }
     pub fn stop(&mut self) -> SearchResult {
-        let Some(ref mut progress) = self.progress else {
-            panic!(concat!(
-                "Do not use the check method ",
-                "unless there is an ongoing search.",
-            ));
-        };
-        if let Some(pending) = progress.pending_result {
+        if let Some(pending) = self.get_progress().pending_result {
             self.progress = None;
             return pending;
         }
 
-        let results = self.search.stop();
-        let (best_move, _, _) = Self::collect(progress, results);
+        self.server_send.send(ServerCommand::Cancel).unwrap();
+        self.recv();
+        let (best_move, _, _) = self.collect();
         self.progress = None;
         SearchResult {
             best_move: Some(best_move.lan()),
@@ -151,15 +159,12 @@ impl Search {
         }
     }
     pub fn check(&mut self) -> Option<SearchResult> {
-        let Some(ref mut progress) = self.progress else {
-            panic!(concat!(
-                "Do not use the check method ",
-                "unless there is an ongoing search.",
-            ));
-        };
-        let results = self.search.try_collect()?;
+        if !self.try_recv() {
+            return None;
+        }
 
-        let (best_move, should_stop, should_hold) = Self::collect(progress, results);
+        let (best_move, should_stop, should_hold) = self.collect();
+        let progress = self.get_progress();
 
         if should_stop {
             let result = Some(SearchResult {
@@ -187,7 +192,7 @@ impl Search {
             ));
         }
 
-        self.search.clear_tt();
+        self.server_send.send(ServerCommand::ClearHash).unwrap();
     }
     pub fn ponderhit(&mut self) {
         let Some(ref mut progress) = self.progress else {
@@ -199,28 +204,21 @@ impl Search {
 
         progress.ponder = false;
     }
-    fn collect(
-        progress: &mut SearchProgress,
-        results: Vec<game::SearchResult>,
-    ) -> (ChessMove, bool, bool) {
+    fn collect(&mut self) -> (ChessMove, bool, bool) {
+        let progress = self.get_progress();
         let mut best_move = None;
         let mut score = None;
         let mut nodes = 0;
         let mut unfinished = false;
 
-        for (i, (&chess_move, &fallback)) in progress.moves.iter().enumerate() {
-            let recent = results[i];
-            let result = match fallback {
-                Some(res) if recent.unfinished => res,
-                None | Some(_) => recent,
-            };
-
+        for (&chess_move, &result) in progress.moves.iter() {
+            let result = result.unwrap();
             if score.is_none_or(|s| result.score > s) {
                 score = Some(result.score);
                 best_move = Some(chess_move);
             }
             nodes += result.nodes;
-            unfinished |= result.unfinished;
+            unfinished |= result.is_canceled;
         }
 
         let best_move = best_move.unwrap();
@@ -240,17 +238,61 @@ impl Search {
         (best_move, should_stop, should_hold)
     }
     fn prepare(&mut self) {
+        assert!(self.get_progress().pending_count == 0);
         let progress = self.progress.as_mut().unwrap();
+        progress.pending_count = progress.moves.len();
+        let mut vec = Vec::with_capacity(progress.pending_count);
         for &chess_move in progress.moves.keys() {
             let mut game = progress.game.clone();
             game.make_move(chess_move);
-            self.search.prepare_search(
+            vec.push(SearchRequest {
                 game,
-                progress.running_depth,
-                progress.nodes_max,
-                progress.deadline,
-            );
+                depth: progress.running_depth,
+                nodes: progress.nodes_max,
+                deadline: progress.deadline,
+            });
         }
-        self.search.go();
+        self.server_send
+            .send(ServerCommand::ProcessBatch(vec))
+            .unwrap();
+    }
+    fn recv(&mut self) {
+        while self.get_progress().pending_count > 0 {
+            let response = match self.server_recv.recv() {
+                Ok(response) => response,
+                Err(RecvError) => panic!("Search server disconnected!"),
+            };
+            self.update(response);
+            self.get_progress().pending_count -= 1;
+        }
+    }
+    fn try_recv(&mut self) -> bool {
+        while self.get_progress().pending_count > 0 {
+            let response = match self.server_recv.try_recv() {
+                Ok(response) => response,
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => panic!("Search server disconnected!"),
+            };
+            self.update(response);
+            self.get_progress().pending_count -= 1;
+        }
+
+        self.get_progress().pending_count == 0
+    }
+    fn update(&mut self, response: ServerResponse) {
+        let key = *self
+            .get_progress()
+            .moves
+            .keys()
+            .nth(response.batch_index)
+            .unwrap();
+        let maybe_result = self.get_progress().moves.get_mut(&key).unwrap();
+        let result = maybe_result.get_or_insert(response.result);
+        if !response.result.is_canceled {
+            *result = response.result;
+        }
+    }
+    fn get_progress(&mut self) -> &mut SearchProgress {
+        self.progress.as_mut().unwrap()
     }
 }

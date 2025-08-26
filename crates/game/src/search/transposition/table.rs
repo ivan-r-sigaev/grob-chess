@@ -29,7 +29,7 @@ pub struct Transposition {
 pub struct TranspositionTable(RwLock<TranspositionTableBase<Transposition>>);
 
 impl TranspositionTable {
-    /// Size of a single [`Transposition`] within the [`TranspositionTable`].
+    /// Size of a single [`Transposition`] within the [`TranspositionTable`] in bytes.
     pub const ITEM_SIZE: usize = TranspositionTableBase::<Transposition>::ITEM_SIZE;
 
     /// Constructs a [`TranspositionTable`] that can hold
@@ -82,12 +82,12 @@ impl TranspositionTable {
     pub fn clear(&self) {
         self.0.write().clear();
     }
-    // /// Resize the transposition table.
-    // ///
-    // /// Calling this will also have the same effect as [`Self::clear`].
-    // pub fn resize(&self, new_capacity: usize) {
-    //     *self.0.write() = Cache::new(new_capacity);
-    // }
+    /// Resize the transposition table.
+    ///
+    /// Calling this will also have the same effect as [`Self::clear`].
+    pub fn resize(&self, new_capacity: usize) {
+        *self.0.write() = TranspositionTableBase::new(new_capacity);
+    }
 }
 
 impl fmt::Debug for TranspositionTable {

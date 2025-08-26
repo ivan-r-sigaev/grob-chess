@@ -1,179 +1,228 @@
-use std::{sync::Arc, time::Instant};
+use std::{sync::Arc, thread, time::Instant};
 
-use crossbeam::channel::{unbounded, Receiver, Select, Sender};
+use crossbeam::{
+    channel::{bounded, unbounded, Receiver, RecvError, SendError, Sender},
+    select,
+};
 
 use crate::{
     search::{
         transposition::TranspositionTable,
-        worker::{Job, JobResult, WorkerGroup},
+        worker::{Job, WorkerGroup},
     },
     ChessMove, Game, Score,
 };
 
+/// A command for the parallel search server.
+#[derive(Debug, Clone)]
+pub enum ServerCommand {
+    /// Start processing multiple [`SearchRequest`]s.
+    ///
+    /// Server will try to prioritize processing
+    /// [`SearchRequest`]s in the same order as they
+    /// apper in the batch, but it might return the
+    /// [`ServerResponse`]s in a different order.
+    /// Check [`ServerResponse::batch_index`] to find out about
+    /// the position of the corresponding [`SearchRequest`]
+    /// inside of the batch.
+    ///
+    /// Sending another batch while the previous one hasn't
+    /// finished yet will have the same effect as sending
+    /// [`ServerCommand::Cancel`] in between the batches.
+    ProcessBatch(Vec<SearchRequest>),
+    /// If the server is currenty processing a batch it will try
+    /// to finish it ASAP, but the search quality will suffer.
+    ///
+    /// All [`SearchResult`]s finished in this way will have
+    /// the [`SearchResult::is_canceled`] flag set to `true`.
+    Cancel,
+    /// Immediately clears all data from the transposition table.
+    ///
+    /// # Performance
+    /// This is a slow operation and it may cause the ongoing search
+    /// to miss its deadline.
+    ClearHash,
+    /// Immediately resize the transposition table to be as large
+    /// as possible but no more than a specified number of mebibytes (MiB).
+    ///
+    /// Transposition table size limit cannot be smaller than 1 MiB.
+    ///
+    /// # Performance
+    /// This is a slow operation and it may cause the ongoing search
+    /// to miss its deadline.
+    SetHashSize { max_mib: usize },
+    /// Change the amount of worker threads to be used in the future
+    /// searches.
+    ///
+    /// This will **NOT** influence the amount of threads used in the
+    /// ongoing search.
+    ///
+    /// Search will always use at least one worker thread.
+    SetWorkerCount(usize),
+}
+
+/// Request to search a position.
+#[derive(Debug, Clone)]
+pub struct SearchRequest {
+    /// Game position to search.
+    pub game: Game,
+    /// Depth of the search.
+    pub depth: u64,
+    /// Searched nodes limit.
+    pub nodes: Option<u64>,
+    /// Search time limit.
+    pub deadline: Option<Instant>,
+}
+
+/// Processing results for a [`SearchRequest`] originating from
+/// [`ServerCommand::ProcessBatch`].
+#[derive(Debug, Clone, Copy)]
+pub struct ServerResponse {
+    /// Index of the corresponding [`SearchRequest`] inside of
+    /// [`ServerCommand::ProcessBatch`].
+    pub batch_index: usize,
+    /// Result of the search.
+    pub result: SearchResult,
+}
+
 /// Result of searching a position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SearchResult {
-    /// Best move in a position
-    ///
-    /// `None` only if there are no legal moves.
-    pub best_move: Option<ChessMove>,
-    /// Position's quality for the player who is making a move.
+    /// Proposed score of the position.
     pub score: Score,
-    /// How many non-unique positions in the game tree were searched.
+    /// Number of nodes searched.
     pub nodes: u64,
-    /// `true` if search was unable to be fully completed for any reason.
-    pub unfinished: bool,
+    /// Proposed best move (or `None` if no legal moves are available).
+    pub best_move: Option<ChessMove>,
+    /// Whether the corresponding[`SearchRequest`] was abruptly
+    /// canceled with [`ServerCommand::Cancel`].
+    pub is_canceled: bool,
+}
+
+/// Spawns a thread that will process the [`ServerCommand`]s and return
+/// appropriate [`ServerResponse`]s.
+///
+/// The server will exit gracefully whenever at least one of its channels
+/// gets disconnected.
+pub fn spawn_search_server(
+    worker_count: usize,
+    tt_max_capacity_mib: usize,
+) -> (Sender<ServerCommand>, Receiver<ServerResponse>) {
+    let (cmd_send, cmd_recv) = unbounded();
+    let (rsp_send, rsp_recv) = bounded(0);
+    thread::spawn(move || {
+        SearchScheduler::new(worker_count, tt_max_capacity_mib, rsp_send, cmd_recv).run()
+    });
+    (cmd_send, rsp_recv)
 }
 
 /// Parallel search scheduler.
 #[derive(Debug)]
-pub struct ParallelSearch {
+struct SearchScheduler {
     workers: WorkerGroup,
+    rsp_send: Sender<ServerResponse>,
+    cmd_recv: Receiver<ServerCommand>,
     job_send: Sender<Job>,
-    res_recv: Receiver<JobResult>,
-    results: Vec<JobResult>,
-    jobs_count: usize,
+    res_recv: Receiver<ServerResponse>,
+    pending_count: usize,
+    worker_count: usize,
     tt: Arc<TranspositionTable>,
 }
 
-impl ParallelSearch {
-    /// Construct a new [`ParallelSearch`] with the specified amount of
-    /// worker threads and a given transposition table capacity.
-    ///
-    /// # Panics
-    /// - Panics if `thread_count` is zero.
-    /// - Panics if `tt_capacity` is zero.
-    pub fn new(thread_count: usize, tt_capacity_mb: usize) -> Self {
-        assert!(thread_count != 0, "Thread count must be at least one!");
+#[derive(Debug)]
+struct ShouldQuit;
 
-        let tt_capacity = tt_capacity_mb / TranspositionTable::ITEM_SIZE;
+type Result = std::result::Result<(), ShouldQuit>;
+
+impl SearchScheduler {
+    fn new(
+        worker_count: usize,
+        tt_max_capacity_mib: usize,
+        rsp_send: Sender<ServerResponse>,
+        cmd_recv: Receiver<ServerCommand>,
+    ) -> Self {
         let (job_send, job_recv) = unbounded();
         let (res_send, res_recv) = unbounded();
+        let tt_capacity = tt_max_capacity_mib.max(1) * 1024 * 1024 / TranspositionTable::ITEM_SIZE;
         let tt = Arc::new(TranspositionTable::new(tt_capacity));
-        let workers = WorkerGroup::new(thread_count, job_recv, res_send, tt.clone());
+        let workers = WorkerGroup::new(worker_count.max(1), job_recv, res_send, tt.clone());
 
         Self {
             workers,
+            rsp_send,
+            cmd_recv,
             job_send,
             res_recv,
-            results: Vec::new(),
-            jobs_count: 0,
+            worker_count,
+            pending_count: 0,
             tt,
         }
     }
-    /// Returns `true` if the parallel search currently running.
-    pub fn is_searching(&self) -> bool {
+    fn run(&mut self) {
+        loop {
+            if let Err(ShouldQuit) = self.run_inner() {
+                break;
+            }
+        }
+    }
+    fn run_inner(&mut self) -> Result {
+        if !self.is_running() {
+            self.handle_command(self.cmd_recv.recv().map_err(|RecvError| ShouldQuit)?)
+        } else {
+            select! {
+                recv(self.cmd_recv) -> result => self.handle_command(result.map_err(|RecvError| ShouldQuit)?),
+                recv(self.res_recv) -> result => self.forward_response(result.unwrap()),
+            }
+        }
+    }
+    fn is_running(&self) -> bool {
         self.workers.signaler().is_running()
     }
-    /// Returns how many search jobs are running/prepared to run.
-    pub fn jobs_count(&self) -> usize {
-        self.jobs_count
+    fn handle_command(&mut self, cmd: ServerCommand) -> Result {
+        match cmd {
+            ServerCommand::ProcessBatch(batch) => self.process_batch(batch)?,
+            ServerCommand::Cancel => self.cancel()?,
+            ServerCommand::ClearHash => self.clear_hash(),
+            ServerCommand::SetHashSize { max_mib } => self.resize_hash(max_mib),
+            ServerCommand::SetWorkerCount(worker_count) => self.worker_count = worker_count,
+        }
+        Ok(())
     }
-    /// Returns how many search jobs are not yet completed.
-    pub fn pending_count(&self) -> usize {
-        self.jobs_count() - self.results.len()
+    fn forward_response(&mut self, rsp: ServerResponse) -> Result {
+        self.rsp_send.send(rsp).map_err(|SendError(_)| ShouldQuit)?;
+        self.pending_count -= 1;
+        Ok(())
     }
-    /// Makes a selector wait until some search jobs are completed.
-    ///
-    /// # Panics
-    /// Panics if search is not currently running.
-    pub fn add_to_select<'a>(&'a self, sel: &mut Select<'a>) -> usize {
-        if !self.is_searching() {
-            panic!("Search is paused.");
+    fn process_batch(&mut self, batch: Vec<SearchRequest>) -> Result {
+        if self.is_running() {
+            self.cancel()?;
         }
 
-        sel.recv(&self.res_recv)
-    }
-    /// Tries to collect the search results if all jobs are completed.
-    ///
-    /// # Panics
-    /// Panics if search is not currently running.
-    pub fn try_collect(&mut self) -> Option<Vec<SearchResult>> {
-        if !self.is_searching() {
-            panic!("Search is paused.");
+        self.pending_count = batch.len();
+        for (batch_index, request) in batch.into_iter().enumerate() {
+            let job = Job {
+                request,
+                batch_index,
+            };
+            self.job_send.send(job).unwrap();
         }
-
-        while let Ok(search_result) = self.res_recv.try_recv() {
-            self.results.push(search_result);
-        }
-
-        if self.pending_count() == 0 {
-            Some(self.collect_results())
-        } else {
-            None
-        }
-    }
-    /// Prepares a search job.
-    ///
-    /// # Panics
-    /// Panics if search is already running.
-    pub fn prepare_search(
-        &mut self,
-        game: Game,
-        depth: u64,
-        nodes_max: Option<u64>,
-        deadline: Option<Instant>,
-    ) -> usize {
-        if self.is_searching() {
-            panic!("Search is already running.");
-        }
-
-        let index = self.jobs_count;
-        self.jobs_count += 1;
-        let search_job = Job {
-            game,
-            depth,
-            nodes_max,
-            deadline,
-            index,
-        };
-        self.job_send.send(search_job).unwrap();
-        index
-    }
-    /// Starts to search the prepared search jobs.
-    ///
-    /// # Panics
-    /// Panics if search is alraedy running.
-    pub fn go(&mut self) {
-        if self.is_searching() {
-            panic!("Search is already running.");
-        }
-
-        self.results.reserve(self.jobs_count);
         self.workers.signaler().go();
+        Ok(())
     }
-    /// Forces all the jobs to immediately be completed even if
-    /// it means that they will not be fully searched.
-    ///
-    /// # Panics
-    /// Panics if search is not currently running.
-    pub fn stop(&mut self) -> Vec<SearchResult> {
-        if !self.is_searching() {
-            panic!("Search is paused.");
-        }
-
+    fn cancel(&mut self) -> Result {
         self.workers.signaler().stop();
-        while self.pending_count() != 0 {
-            self.results.push(self.res_recv.recv().unwrap());
+        while self.pending_count != 0 {
+            let rsp = self.res_recv.recv().map_err(|RecvError| ShouldQuit)?;
+            self.forward_response(rsp)?;
         }
-
-        self.collect_results()
+        self.workers.resize(self.worker_count);
+        Ok(())
     }
-    /// Clears the transposition table.
-    pub fn clear_tt(&mut self) {
+    fn clear_hash(&mut self) {
         self.tt.clear();
     }
-    fn collect_results(&mut self) -> Vec<SearchResult> {
-        assert!(self.is_searching() && self.pending_count() == 0);
-        self.jobs_count = 0;
-        self.workers.signaler().stop();
-
-        let mut result = Vec::with_capacity(self.results.len());
-        self.results.sort_by(|a, b| a.index.cmp(&b.index));
-        for job_result in self.results.drain(..) {
-            result.push(job_result.res);
-        }
-
-        result
+    fn resize_hash(&mut self, max_mib: usize) {
+        let new_capacity = max_mib * 1024 * 1024 / TranspositionTable::ITEM_SIZE;
+        self.tt.resize(new_capacity);
     }
 }

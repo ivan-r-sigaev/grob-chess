@@ -9,29 +9,20 @@ use crate::{
         signals::{WorkerSignaler, WorkerSignalerMaster},
         transposition::{Transposition, TranspositionTable},
     },
-    Game, GameEnding, GameExplorer, MoveOrdering, Piece, Score,
+    GameEnding, GameExplorer, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
 };
 
 #[derive(Debug, Clone)]
 pub struct Job {
-    pub game: Game,
-    pub depth: u64,
-    pub nodes_max: Option<u64>,
-    pub deadline: Option<Instant>,
-    pub index: usize,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct JobResult {
-    pub res: SearchResult,
-    pub index: usize,
+    pub request: SearchRequest,
+    pub batch_index: usize,
 }
 
 #[derive(Debug)]
 pub struct WorkerGroup {
     signaler: Option<WorkerSignalerMaster>,
     job_recv: Receiver<Job>,
-    res_send: Sender<JobResult>,
+    res_send: Sender<ServerResponse>,
     tt: Arc<TranspositionTable>,
 }
 
@@ -39,7 +30,7 @@ impl WorkerGroup {
     pub fn new(
         worker_count: usize,
         job_recv: Receiver<Job>,
-        res_send: Sender<JobResult>,
+        res_send: Sender<ServerResponse>,
         tt: Arc<TranspositionTable>,
     ) -> Self {
         let mut res = Self {
@@ -54,10 +45,14 @@ impl WorkerGroup {
     pub fn signaler(&self) -> &WorkerSignalerMaster {
         self.signaler.as_ref().unwrap()
     }
-    // pub fn resize(&mut self, new_worker_count: usize) {
-    //     self.clear();
-    //     self.spawn_workers(new_worker_count);
-    // }
+    pub fn resize(&mut self, new_worker_count: usize) {
+        if new_worker_count == self.signaler().worker_count() {
+            return;
+        }
+
+        self.clear();
+        self.spawn_workers(new_worker_count);
+    }
     fn clear(&mut self) {
         if let Some(signaler) = self.signaler.take() {
             signaler.quit();
@@ -112,7 +107,7 @@ impl SearchConstraints {
 struct Worker {
     signaler: WorkerSignaler,
     job_recv: Receiver<Job>,
-    res_send: Sender<JobResult>,
+    res_send: Sender<ServerResponse>,
     tt: Arc<TranspositionTable>,
 }
 
@@ -122,21 +117,21 @@ impl Worker {
             self.signaler.wakeup();
 
             while let Ok(job) = self.job_recv.try_recv() {
-                let mut game = job.game;
+                let mut game = job.request.game;
                 let worst_score = Score::ending(GameEnding::Checkmate);
-                let res = self.search(
+                let result = self.search(
                     &mut game.explore(),
-                    job.depth,
+                    job.request.depth,
                     SearchConstraints {
-                        nodes_max: job.nodes_max,
-                        deadline: job.deadline,
+                        nodes_max: job.request.nodes,
+                        deadline: job.request.deadline,
                     },
                     worst_score,
                     worst_score.prev(),
                 );
-                let result = JobResult {
-                    res,
-                    index: job.index,
+                let result = ServerResponse {
+                    result,
+                    batch_index: job.batch_index,
                 };
                 self.res_send.send(result).unwrap();
             }
@@ -175,7 +170,7 @@ impl Worker {
                     best_move: Some(t.best_move),
                     score: t.score,
                     nodes: 1,
-                    unfinished: false,
+                    is_canceled: false,
                 };
             }
         }
@@ -187,7 +182,7 @@ impl Worker {
         let mut best_move = None;
         let mut best_score = None;
         let mut nodes = 1;
-        let mut unfinished = false;
+        let mut is_canceled = false;
         let maybe_ending =
             node.for_each_legal_child_node(MoveOrdering::MvvLva, |node, chess_move| {
                 let result = self.search(node, depth - 1, constraints, alpha, beta);
@@ -210,7 +205,7 @@ impl Worker {
                     || constraints.time_fails()
                     || self.signaler.should_stop()
                 {
-                    unfinished = true;
+                    is_canceled = true;
                     node.exhaust_moves();
                 }
             });
@@ -235,7 +230,7 @@ impl Worker {
             best_move,
             score,
             nodes,
-            unfinished,
+            is_canceled,
         }
     }
     fn quiescence(&mut self, node: &mut GameExplorer, alpha: Score, beta: Score) -> SearchResult {
@@ -248,7 +243,7 @@ impl Worker {
         // TODO: implement quiescence search.
         self.evaluate(node, false)
     }
-    fn evaluate(&mut self, node: &mut GameExplorer, unfinished: bool) -> SearchResult {
+    fn evaluate(&mut self, node: &mut GameExplorer, is_canceled: bool) -> SearchResult {
         let nodes = 1;
         let any_move = match node.check_ending() {
             Either::Left(chess_move) => chess_move,
@@ -257,7 +252,7 @@ impl Worker {
                     best_move: None,
                     score: Score::ending(ending),
                     nodes,
-                    unfinished,
+                    is_canceled,
                 }
             }
         };
@@ -282,7 +277,7 @@ impl Worker {
             best_move: Some(any_move),
             score,
             nodes,
-            unfinished,
+            is_canceled,
         }
     }
 }

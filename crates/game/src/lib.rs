@@ -8,7 +8,9 @@ pub use game::{
 pub use primitives::{
     BitBoard, Board, CastlingRights, Color, File, NegDiag, Piece, PosDiag, Promotion, Rank, Square,
 };
-pub use search::{ParallelSearch, Score, SearchResult};
+pub use search::{
+    spawn_search_server, Score, SearchRequest, SearchResult, ServerCommand, ServerResponse,
+};
 
 mod game;
 mod primitives;
