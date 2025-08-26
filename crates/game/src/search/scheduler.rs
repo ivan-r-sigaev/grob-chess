@@ -195,7 +195,7 @@ impl SearchScheduler {
             ServerCommand::Cancel => self.cancel()?,
             ServerCommand::ClearHash => self.tt.clear(),
             ServerCommand::SetHashSize { max_mib } => self.set_hash_size(max_mib),
-            ServerCommand::SetWorkerCount(worker_count) => self.worker_count = worker_count,
+            ServerCommand::SetWorkerCount(worker_count) => self.set_worker_count(worker_count),
         }
         Ok(())
     }
@@ -234,7 +234,11 @@ impl SearchScheduler {
     }
     /// Execute [`ServerCommand::SetHashSize`].
     fn set_hash_size(&mut self, max_mib: usize) {
-        let new_capacity = max_mib * 1024 * 1024 / TranspositionTable::ITEM_SIZE;
+        let new_capacity = max_mib.max(1) * 1024 * 1024 / TranspositionTable::ITEM_SIZE;
         self.tt.resize(new_capacity);
+    }
+    /// Execute [`ServerCommand::SetWorkerCount`]
+    fn set_worker_count(&mut self, worker_count: usize) {
+        self.worker_count = worker_count.max(1)
     }
 }
