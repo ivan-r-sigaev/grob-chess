@@ -1,7 +1,9 @@
 use std::{collections::VecDeque, error::Error, fmt, num::NonZeroU64};
 
 use crate::{
-    zobrist::{get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist},
+    game::position::zobrist::{
+        get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
+    },
     BitBoard, Board, CastlingRights, Color, File, Piece, Square,
 };
 
