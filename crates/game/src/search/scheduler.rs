@@ -129,12 +129,17 @@ struct SearchScheduler {
     tt: Arc<TranspositionTable>,
 }
 
+/// Simple utility type to improve control flow.
 #[derive(Debug)]
 struct ShouldQuit;
 
 type Result = std::result::Result<(), ShouldQuit>;
 
 impl SearchScheduler {
+    /// Constructs a new [`SearchScheduler`].
+    ///
+    /// Transposition table capacity (MiB) and worker count
+    /// are clamped to the be `>= 1`.
     fn new(
         worker_count: usize,
         tt_max_capacity_mib: usize,
@@ -158,6 +163,11 @@ impl SearchScheduler {
             tt,
         }
     }
+    /// Run the scheduler's command execution loop.
+    ///
+    /// This function will exit gracefully once either
+    /// [`SearchScheduler::rsp_send`] or [`SearchScheduler::cmd_recv`]
+    /// disconnects.
     fn run(&mut self) {
         loop {
             if let Err(ShouldQuit) = self.run_inner() {
@@ -165,36 +175,39 @@ impl SearchScheduler {
             }
         }
     }
+    /// Run the body of the scheduler's loop.
+    ///
+    /// Returning `Err(ShouldQuit)` will cause the scheduler
+    ///  to finish running.
     fn run_inner(&mut self) -> Result {
-        if !self.is_running() {
-            self.handle_command(self.cmd_recv.recv().map_err(|RecvError| ShouldQuit)?)
-        } else {
-            select! {
-                recv(self.cmd_recv) -> result => self.handle_command(result.map_err(|RecvError| ShouldQuit)?),
-                recv(self.res_recv) -> result => self.forward_response(result.unwrap()),
+        select! {
+            recv(self.cmd_recv) -> result => {
+                let cmd = result.map_err(|RecvError| ShouldQuit)?;
+                self.handle_command(cmd)
             }
+            recv(self.res_recv) -> result => self.forward_response(result.unwrap()),
         }
     }
-    fn is_running(&self) -> bool {
-        self.workers.signaler().is_running()
-    }
+    /// Process the server command.
     fn handle_command(&mut self, cmd: ServerCommand) -> Result {
         match cmd {
             ServerCommand::ProcessBatch(batch) => self.process_batch(batch)?,
             ServerCommand::Cancel => self.cancel()?,
-            ServerCommand::ClearHash => self.clear_hash(),
-            ServerCommand::SetHashSize { max_mib } => self.resize_hash(max_mib),
+            ServerCommand::ClearHash => self.tt.clear(),
+            ServerCommand::SetHashSize { max_mib } => self.set_hash_size(max_mib),
             ServerCommand::SetWorkerCount(worker_count) => self.worker_count = worker_count,
         }
         Ok(())
     }
+    /// Forward the search result to the user.
     fn forward_response(&mut self, rsp: ServerResponse) -> Result {
         self.rsp_send.send(rsp).map_err(|SendError(_)| ShouldQuit)?;
         self.pending_count -= 1;
         Ok(())
     }
+    /// Execute [`ServerCommand::ProcessBatch`].
     fn process_batch(&mut self, batch: Vec<SearchRequest>) -> Result {
-        if self.is_running() {
+        if self.workers.signaler().is_running() {
             self.cancel()?;
         }
 
@@ -209,6 +222,7 @@ impl SearchScheduler {
         self.workers.signaler().go();
         Ok(())
     }
+    /// Execute [`ServerCommand::Cancel`].
     fn cancel(&mut self) -> Result {
         self.workers.signaler().stop();
         while self.pending_count != 0 {
@@ -218,10 +232,8 @@ impl SearchScheduler {
         self.workers.resize(self.worker_count);
         Ok(())
     }
-    fn clear_hash(&mut self) {
-        self.tt.clear();
-    }
-    fn resize_hash(&mut self, max_mib: usize) {
+    /// Execute [`ServerCommand::SetHashSize`].
+    fn set_hash_size(&mut self, max_mib: usize) {
         let new_capacity = max_mib * 1024 * 1024 / TranspositionTable::ITEM_SIZE;
         self.tt.resize(new_capacity);
     }

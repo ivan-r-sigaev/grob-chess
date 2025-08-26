@@ -12,12 +12,19 @@ use crate::{
     GameEnding, GameExplorer, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
 };
 
+/// A search job to be computed by the [`Worker`].
 #[derive(Debug, Clone)]
 pub struct Job {
+    /// The job's contents.
     pub request: SearchRequest,
+    /// [`ServerResponse::batch_index`] for the corresponding
+    /// result must be the same as this.
     pub batch_index: usize,
 }
 
+/// Manages a group of worker threads coordinated by signaler.
+///
+/// [`WorkerGroup`] will release all of its worker threads on [`Drop`].
 #[derive(Debug)]
 pub struct WorkerGroup {
     signaler: Option<WorkerSignalerMaster>,
@@ -27,6 +34,7 @@ pub struct WorkerGroup {
 }
 
 impl WorkerGroup {
+    /// Creates a new [`WorkerGroup`].
     pub fn new(
         worker_count: usize,
         job_recv: Receiver<Job>,
@@ -42,9 +50,12 @@ impl WorkerGroup {
         res.spawn_workers(worker_count);
         res
     }
+    /// Returns a signaler for the worker threads.
     pub fn signaler(&self) -> &WorkerSignalerMaster {
         self.signaler.as_ref().unwrap()
     }
+    /// Tells all of the current worker threads to quit, then
+    /// spawns a specified number of new threads.
     pub fn resize(&mut self, new_worker_count: usize) {
         if new_worker_count == self.signaler().worker_count() {
             return;
