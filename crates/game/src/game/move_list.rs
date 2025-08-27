@@ -1,4 +1,4 @@
-use crate::{ChessMove, PackedChessMove};
+use crate::{game::position::PackedChessMove, ChessMove};
 
 /// Stores chess moves during search.
 #[derive(Debug, Clone)]
@@ -16,15 +16,6 @@ impl MoveList {
             moves: Vec::new(),
             lens: Vec::new(),
         }
-    }
-    /// Returns a slice to the current move group.
-    ///
-    /// # Panics
-    /// Panics if there is no current move group.
-    pub fn group(&self) -> &[PackedChessMove] {
-        let end = self.moves.len();
-        let start = end - self.group_len();
-        &self.moves[start..end]
     }
     /// Returns a mutable slice to the current move group.
     ///

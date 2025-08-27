@@ -1,18 +1,20 @@
-//! Game
+//! Position
 //!
-//! This crate provides types related to chess game representation and search.
+//! This crate provides types related to game representation and move generation.
 
-pub use game::{Game, GameEnding, GameSearch};
-pub use hashmap::{ClashEntry, EmptyEntry, Entry, ExactEntry, KeyLookup, WeakHashMap};
-pub use search::{ParallelSearch, Score, SearchResult};
-pub use transposition::{Transposition, TranspositionTable};
-pub use waiter::Waiter;
+pub use game::{
+    ChessMove, ChessMoveHint, Game, GameEnding, GameExplorer, LanMove, MoveOrdering, ParseFenError,
+};
+pub use primitives::{
+    BitBoard, Board, CastlingRights, Color, File, NegDiag, Piece, PosDiag, Promotion, Rank, Square,
+};
+pub use search::{
+    spawn_search_server, Score, SearchRequest, SearchResult, ServerCommand, ServerResponse,
+};
 
 mod game;
-mod hashmap;
+mod primitives;
 mod search;
-mod transposition;
-mod waiter;
 
 #[cfg(test)]
 mod perft;

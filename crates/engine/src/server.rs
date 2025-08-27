@@ -1,80 +1,71 @@
-use game::{Game, Waiter};
-use position::Position;
-use std::fmt::Write;
-
-use crate::{
-    search::{Search, SearchResult},
-    uci::{Command, UciChannel},
+use crossbeam::{
+    channel::{Receiver, Sender},
+    select,
+};
+use game::Game;
+use std::{
+    collections::VecDeque,
+    fmt::Write,
+    io::{self, stdin},
 };
 
-#[derive(Debug)]
-pub struct Server {
-    should_quit: bool,
-    uci: UciChannel,
-    is_uci_blocked: bool,
-    game: Game,
-    search: Search,
-}
+use crate::{
+    search::{SearchCommand, SearchResult, spawn_uci_server},
+    uci::{Command, spawn_uci_parser},
+};
 
 const ENGINE_NAME: &str = "Pico Chess";
 const AUTHOR_NAME: &str = "Ivan Sigaev";
 
+#[derive(Debug)]
+pub struct Server {
+    game: Game,
+    command_recv: Receiver<io::Result<Command>>,
+    pending_commands: VecDeque<Command>,
+    search_send: Sender<SearchCommand>,
+    search_recv: Receiver<SearchResult>,
+    should_quit: bool,
+    expecting_res: bool,
+}
+
 impl Server {
     pub fn new() -> Self {
-        let should_quit = false;
-        let uci = UciChannel::spawn();
-        let is_uci_blocked = false;
-        let search = Search::new();
-        let game = Game::from_position(Position::initial_position());
+        let command_recv = spawn_uci_parser(Box::new(stdin()));
+        let (search_send, search_recv) = spawn_uci_server();
+        let game = Game::initial_position();
         Self {
-            should_quit,
-            uci,
-            is_uci_blocked,
             game,
-            search,
+            command_recv,
+            pending_commands: VecDeque::new(),
+            search_send,
+            search_recv,
+            should_quit: false,
+            expecting_res: false,
         }
     }
     pub fn run(&mut self) {
         while !self.should_quit {
-            let mut waiter = Waiter::new();
-            if self.search.is_running() {
-                let uci_index = self.uci.add_to_waiter(&mut waiter);
-                let search_index = self.search.add_to_waiter(&mut waiter);
-                match waiter.wait() {
-                    index if index == uci_index => self.handle_commands(),
-                    index if index == search_index => self.update_search(),
-                    _ => unreachable!(),
+            select! {
+                recv(self.command_recv) -> result => {
+                    _ = self.handle_command(result.unwrap().unwrap());
                 }
-            } else {
-                self.uci.add_to_waiter(&mut waiter);
-                waiter.wait();
-                self.handle_commands();
+                recv(self.search_recv) -> result => self.update_search(result.unwrap()),
             }
         }
     }
-    fn handle_commands(&mut self) {
-        while self.uci.check().is_some() {
-            if self.is_uci_blocked {
-                break;
-            }
-            self.handle_command();
-            if self.should_quit {
-                break;
-            }
-        }
-    }
-    fn handle_command(&mut self) {
-        if self.search.is_running()
-            && matches!(
-                self.uci.check().unwrap(),
-                Command::UciNewGame | Command::Position(_) | Command::Go(_)
-            )
+    fn handle_command(&mut self, command: Command) -> bool {
+        if !self.pending_commands.is_empty()
+            || (self.expecting_res
+                && matches!(
+                    command,
+                    Command::UciNewGame | Command::Position(_) | Command::Go(_)
+                ))
         {
-            self.is_uci_blocked = true;
-            return;
+            self.pending_commands.push_back(command);
+            return false;
         }
 
-        match self.uci.pop().unwrap() {
+        match command {
             Command::Uci => {
                 println!("id name {ENGINE_NAME}");
                 println!("id author {AUTHOR_NAME}");
@@ -83,49 +74,57 @@ impl Server {
             Command::IsReady => {
                 println!("readyok");
             }
-            Command::UciNewGame => self.search.clear_tt(),
+            Command::UciNewGame => self.search_send.send(SearchCommand::UciNewGame).unwrap(),
             Command::Position(game) => self.game = game,
-            Command::Go(go) => self.search.go(self.game.clone(), go),
+            Command::Go(go) => {
+                self.expecting_res = true;
+                self.search_send
+                    .send(SearchCommand::Go(Box::new(go), self.game.clone()))
+                    .unwrap()
+            }
             Command::Stop => {
-                if self.search.is_running() {
+                if self.expecting_res {
                     self.stop_search()
                 }
             }
             Command::PonderHit => {
-                if self.search.is_running() {
-                    self.search.ponderhit()
+                if self.expecting_res {
+                    self.search_send.send(SearchCommand::PonderHit).unwrap()
                 }
             }
             Command::Quit => {
-                if self.search.is_running() {
+                if self.expecting_res {
                     self.stop_search();
                 }
                 self.should_quit = true;
             }
         }
-    }
-    fn update_search(&mut self) {
-        let Some(result) = self.search.check() else {
-            return;
-        };
-        Self::display_search_result(result);
 
-        if self.is_uci_blocked {
-            self.is_uci_blocked = false;
-            self.handle_commands();
+        true
+    }
+    fn update_search(&mut self, res: SearchResult) {
+        assert!(self.expecting_res);
+        Self::display_search_result(res);
+        self.expecting_res = false;
+
+        while let Some(command) = self.pending_commands.pop_front() {
+            if !self.handle_command(command) {
+                break;
+            }
         }
     }
     fn stop_search(&mut self) {
-        let result = self.search.stop();
-        Self::display_search_result(result);
+        self.search_send.send(SearchCommand::Stop).unwrap();
+        let res = self.search_recv.recv().unwrap();
+        self.update_search(res);
     }
-    fn display_search_result(result: SearchResult) {
+    fn display_search_result(res: SearchResult) {
         let mut msg = String::from("bestmove ");
-        match result.best_move {
+        match res.best_move {
             Some(best_move) => write!(msg, "{best_move}").unwrap(),
             None => write!(msg, "(none)").unwrap(),
         };
-        if let Some(ponder) = result.ponder {
+        if let Some(ponder) = res.ponder {
             write!(msg, " ponder {ponder}").unwrap();
         };
         println!("{msg}");

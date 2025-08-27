@@ -17,12 +17,9 @@ not yet present.
 git clone https://github.com/ivan-r-sgiaev/pico_chess.git
 cd pico_chess
 
-# Build all crates
-cargo build
-
 # Run tests
 cargo test
 
-# Compile and run the engine (warninig: the UCI is not fully working yet)
-cargo run
+# Compile and run the engine
+cargo run --release
 ```

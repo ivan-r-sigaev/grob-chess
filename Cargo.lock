@@ -15,13 +15,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
 
 [[package]]
-name = "board"
-version = "0.1.0"
-dependencies = [
- "strum",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -119,21 +112,19 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 name = "engine"
 version = "0.1.0"
 dependencies = [
- "board",
  "crossbeam",
  "game",
- "position",
 ]
 
 [[package]]
 name = "game"
 version = "0.1.0"
 dependencies = [
- "board",
+ "bitflags",
+ "const-random",
  "crossbeam",
  "either",
  "parking_lot",
- "position",
  "strum",
 ]
 
@@ -197,16 +188,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-targets",
-]
-
-[[package]]
-name = "position"
-version = "0.1.0"
-dependencies = [
- "bitflags",
- "board",
- "const-random",
- "strum",
 ]
 
 [[package]]
