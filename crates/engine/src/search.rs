@@ -160,7 +160,7 @@ impl UciServer {
                     Color::White => go.wtime,
                     Color::Black => go.btime,
                 }
-                .map(|time| time + inc)
+                .map(|time| time / 20 + inc / 2)
             })
             .map(|d| Instant::now() + d);
         _ = go.movestogo;

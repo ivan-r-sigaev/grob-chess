@@ -116,7 +116,7 @@ impl Server {
     fn stop_search(&mut self) {
         self.search_send.send(SearchCommand::Stop).unwrap();
         let res = self.search_recv.recv().unwrap();
-        Self::display_search_result(res);
+        self.update_search(res);
     }
     fn display_search_result(res: SearchResult) {
         let mut msg = String::from("bestmove ");
