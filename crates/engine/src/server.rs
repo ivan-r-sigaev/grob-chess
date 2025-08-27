@@ -1,4 +1,7 @@
-use crossbeam::channel::{Receiver, Select, TryRecvError};
+use crossbeam::{
+    channel::{Receiver, Sender},
+    select,
+};
 use game::Game;
 use std::{
     collections::VecDeque,
@@ -7,7 +10,7 @@ use std::{
 };
 
 use crate::{
-    search::{Search, SearchResult},
+    search::{SearchCommand, SearchResult, spawn_uci_server},
     uci::{Command, spawn_uci_parser},
 };
 
@@ -16,65 +19,47 @@ const AUTHOR_NAME: &str = "Ivan Sigaev";
 
 #[derive(Debug)]
 pub struct Server {
-    should_quit: bool,
+    game: Game,
     command_recv: Receiver<io::Result<Command>>,
     pending_commands: VecDeque<Command>,
-    game: Game,
-    search: Search,
+    search_send: Sender<SearchCommand>,
+    search_recv: Receiver<SearchResult>,
+    should_quit: bool,
+    expecting_res: bool,
 }
 
 impl Server {
     pub fn new() -> Self {
-        let should_quit = false;
         let command_recv = spawn_uci_parser(Box::new(stdin()));
-        let search = Search::new();
+        let (search_send, search_recv) = spawn_uci_server();
         let game = Game::initial_position();
         Self {
-            should_quit,
+            game,
             command_recv,
             pending_commands: VecDeque::new(),
-            game,
-            search,
+            search_send,
+            search_recv,
+            should_quit: false,
+            expecting_res: false,
         }
     }
     pub fn run(&mut self) {
         while !self.should_quit {
-            let mut sel = Select::new();
-            if self.search.is_running() {
-                let uci_index = sel.recv(&self.command_recv);
-                let search_index = self.search.add_to_select(&mut sel);
-                match sel.ready() {
-                    index if index == uci_index => self.handle_commands(),
-                    index if index == search_index => self.update_search(),
-                    _ => unreachable!(),
+            select! {
+                recv(self.command_recv) -> result => {
+                    _ = self.handle_command(result.unwrap().unwrap());
                 }
-            } else {
-                sel.recv(&self.command_recv);
-                sel.ready();
-                self.handle_commands();
-            }
-        }
-    }
-    fn handle_commands(&mut self) {
-        while let Some(command) = self.try_recv_command() {
-            if !self.pending_commands.is_empty() {
-                self.pending_commands.push_back(command);
-                break;
-            }
-            if !self.handle_command(command) {
-                break;
-            }
-            if self.should_quit {
-                break;
+                recv(self.search_recv) -> result => self.update_search(result.unwrap()),
             }
         }
     }
     fn handle_command(&mut self, command: Command) -> bool {
-        if self.search.is_running()
-            && matches!(
-                command,
-                Command::UciNewGame | Command::Position(_) | Command::Go(_)
-            )
+        if !self.pending_commands.is_empty()
+            || (self.expecting_res
+                && matches!(
+                    command,
+                    Command::UciNewGame | Command::Position(_) | Command::Go(_)
+                ))
         {
             self.pending_commands.push_back(command);
             return false;
@@ -89,21 +74,26 @@ impl Server {
             Command::IsReady => {
                 println!("readyok");
             }
-            Command::UciNewGame => self.search.clear_tt(),
+            Command::UciNewGame => self.search_send.send(SearchCommand::UciNewGame).unwrap(),
             Command::Position(game) => self.game = game,
-            Command::Go(go) => self.search.go(self.game.clone(), go),
+            Command::Go(go) => {
+                self.expecting_res = true;
+                self.search_send
+                    .send(SearchCommand::Go(Box::new(go), self.game.clone()))
+                    .unwrap()
+            }
             Command::Stop => {
-                if self.search.is_running() {
+                if self.expecting_res {
                     self.stop_search()
                 }
             }
             Command::PonderHit => {
-                if self.search.is_running() {
-                    self.search.ponderhit()
+                if self.expecting_res {
+                    self.search_send.send(SearchCommand::PonderHit).unwrap()
                 }
             }
             Command::Quit => {
-                if self.search.is_running() {
+                if self.expecting_res {
                     self.stop_search();
                 }
                 self.should_quit = true;
@@ -112,11 +102,10 @@ impl Server {
 
         true
     }
-    fn update_search(&mut self) {
-        let Some(result) = self.search.check() else {
-            return;
-        };
-        Self::display_search_result(result);
+    fn update_search(&mut self, res: SearchResult) {
+        assert!(self.expecting_res);
+        Self::display_search_result(res);
+        self.expecting_res = false;
 
         while let Some(command) = self.pending_commands.pop_front() {
             if !self.handle_command(command) {
@@ -125,25 +114,19 @@ impl Server {
         }
     }
     fn stop_search(&mut self) {
-        let result = self.search.stop();
-        Self::display_search_result(result);
+        self.search_send.send(SearchCommand::Stop).unwrap();
+        let res = self.search_recv.recv().unwrap();
+        Self::display_search_result(res);
     }
-    fn display_search_result(result: SearchResult) {
+    fn display_search_result(res: SearchResult) {
         let mut msg = String::from("bestmove ");
-        match result.best_move {
+        match res.best_move {
             Some(best_move) => write!(msg, "{best_move}").unwrap(),
             None => write!(msg, "(none)").unwrap(),
         };
-        if let Some(ponder) = result.ponder {
+        if let Some(ponder) = res.ponder {
             write!(msg, " ponder {ponder}").unwrap();
         };
         println!("{msg}");
-    }
-    fn try_recv_command(&self) -> Option<Command> {
-        match self.command_recv.try_recv() {
-            Ok(res) => Some(res.unwrap()),
-            Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => panic!("UCI reader has disconnected!"),
-        }
     }
 }

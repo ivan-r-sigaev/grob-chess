@@ -50,7 +50,10 @@ pub enum ServerCommand {
     /// # Performance
     /// This is a slow operation and it may cause the ongoing search
     /// to miss its deadline.
-    SetHashSize { max_mib: usize },
+    SetHashSize {
+        /// The size limit in mebibytes (MiB).
+        max_mib: usize,
+    },
     /// Change the amount of worker threads to be used in the future
     /// searches.
     ///
