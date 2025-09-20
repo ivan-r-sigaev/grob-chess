@@ -109,15 +109,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
-name = "engine"
-version = "0.1.0"
+name = "getrandom"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "335ff9f135e4384c8150d6f27c6daed433577f86b4750418338c01a1a2528592"
 dependencies = [
- "crossbeam",
- "game",
+ "cfg-if",
+ "libc",
+ "wasi",
 ]
 
 [[package]]
-name = "game"
+name = "grob_core"
 version = "0.1.0"
 dependencies = [
  "bitflags",
@@ -129,14 +132,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "getrandom"
-version = "0.2.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "335ff9f135e4384c8150d6f27c6daed433577f86b4750418338c01a1a2528592"
+name = "grob_uci"
+version = "0.1.0"
 dependencies = [
- "cfg-if",
- "libc",
- "wasi",
+ "crossbeam",
+ "grob_core",
 ]
 
 [[package]]

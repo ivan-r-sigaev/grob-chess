@@ -380,7 +380,7 @@ impl Square {
     ///
     /// # Examples
     /// ```rust
-    /// use game::Square;
+    /// use grob_core::Square;
     ///
     /// assert_eq!(Square::A1.shifted(1), Square::B1);
     /// assert_eq!(Square::A1.shifted(-1), Square::H8);
