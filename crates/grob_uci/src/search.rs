@@ -7,7 +7,7 @@ use crossbeam::{
     channel::{Receiver, RecvError, SendError, Sender, unbounded},
     select,
 };
-use game::{
+use grob_core::{
     ChessMove, Color, Game, LanMove, MoveOrdering, Score, SearchRequest, ServerCommand,
     ServerResponse, spawn_search_server,
 };
@@ -64,7 +64,7 @@ struct SearchProgress {
     /// or a suggested ponder move).
     game: Game,
     /// Sorted vector of the searched moves.
-    moves: Vec<(ChessMove, Option<game::SearchResult>)>,
+    moves: Vec<(ChessMove, Option<grob_core::SearchResult>)>,
     /// Limits of the search.
     limits: SearchLimits,
     /// Current iterative deepening depth.

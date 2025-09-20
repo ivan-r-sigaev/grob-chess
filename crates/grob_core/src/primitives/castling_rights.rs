@@ -45,8 +45,8 @@ impl CastlingRights {
     ///
     /// # Examples
     /// ```rust
-    /// use game::CastlingRights;
-    /// use game::Color;
+    /// use grob_core::CastlingRights;
+    /// use grob_core::Color;
     ///
     /// let white = CastlingRights::both_sides(Color::White);
     /// let white_king = CastlingRights::WHITE_KING;

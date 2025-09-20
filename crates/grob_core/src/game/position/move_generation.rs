@@ -578,9 +578,9 @@ impl fmt::Display for Position {
             self.turn(),
             self.castling_rights(),
             if let Some(en_passant) = self.en_passant() {
-                &format!("on {en_passant} file")
+                format!("on {en_passant} file")
             } else {
-                "N/A"
+                String::from("N/A")
             },
             self.move_index() - self.move_index_rule_50(),
             self.zobrist(),

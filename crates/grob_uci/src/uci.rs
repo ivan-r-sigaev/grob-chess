@@ -1,5 +1,5 @@
 use crossbeam::channel::{Receiver, SendError, bounded};
-use game::{Game, LanMove};
+use grob_core::{Game, LanMove};
 use std::{
     io::{self, BufRead, BufReader, Read},
     result,

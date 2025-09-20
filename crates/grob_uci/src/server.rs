@@ -2,7 +2,7 @@ use crossbeam::{
     channel::{Receiver, Sender},
     select,
 };
-use game::Game;
+use grob_core::Game;
 use std::{
     collections::VecDeque,
     fmt::Write,
@@ -14,7 +14,7 @@ use crate::{
     uci::{Command, spawn_uci_parser},
 };
 
-const ENGINE_NAME: &str = "Pico Chess";
+const ENGINE_NAME: &str = "Grob";
 const AUTHOR_NAME: &str = "Ivan Sigaev";
 
 #[derive(Debug)]

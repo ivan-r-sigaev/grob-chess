@@ -1,8 +1,8 @@
 [package]
-name = "engine"
+name = "grob_uci"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-game = { path = "../game" }
+grob_core = { path = "../grob_core" }
 crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
