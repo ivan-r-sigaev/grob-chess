@@ -62,17 +62,17 @@ impl Game {
     pub fn turn(&self) -> Color {
         self.position.turn()
     }
-    /// Returns the move index when the 50 move rule counter was last reset.
+    /// Returns the current state of halfmove clock.
     #[inline(always)]
     #[must_use]
-    pub fn move_index_rule_50(&self) -> u32 {
-        self.position.move_index_rule_50()
+    pub fn halfmove_clock(&self) -> u32 {
+        self.position.halfmove_clock()
     }
     /// Returns the current move index.
     #[inline(always)]
     #[must_use]
     pub fn move_index(&self) -> u32 {
-        self.position.move_index()
+        self.position.ply_index()
     }
     /// Returns whether the king of the playing player is currently in check.
     pub fn is_check(&self) -> bool {

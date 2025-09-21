@@ -1,8 +1,10 @@
 use std::{collections::VecDeque, error::Error, fmt, num::NonZeroU64};
 
 use crate::{
-    game::position::zobrist::{
-        get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
+    game::position::{
+        zobrist::{
+            get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
+        },
     },
     BitBoard, Board, CastlingRights, Color, File, Piece, Rank, Square,
 };
@@ -37,15 +39,15 @@ impl fmt::Display for ParseFenError {
 impl Error for ParseFenError {}
 
 /// A chess position.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Position {
     board: Board,
-    turn: Color,
-    castling_rights: CastlingRights,
-    en_passant: Option<File>,
+    zobrist_hash: u64,
     move_index_rule_50: u32,
     move_index: u32,
-    zobrist_hash: u64,
+    turn: Color,
+    en_passant: Option<File>,
+    castling_rights: CastlingRights,
 }
 
 impl Position {
@@ -237,20 +239,20 @@ impl Position {
     pub fn turn(&self) -> Color {
         self.turn
     }
-    /// Returns the move index when the 50 move rule counter was last reset.
+    /// Returns the current state of the halfmove clock.
     #[must_use]
-    pub fn move_index_rule_50(&self) -> u32 {
-        self.move_index_rule_50
+    pub fn halfmove_clock(&self) -> u32 {
+        self.move_index - self.move_index_rule_50
     }
-    /// Returns the current move index.
+    /// Returns the number of plies played so far.
     #[must_use]
-    pub fn move_index(&self) -> u32 {
+    pub fn ply_index(&self) -> u32 {
         self.move_index
     }
     /// Sets the currently available en passant file.
     ///
     /// This will update the zobrist hash.
-    pub fn set_en_passant(&mut self, en_passant: Option<File>) {
+    pub(super) fn set_en_passant(&mut self, en_passant: Option<File>) {
         self.zobrist_hash ^= get_en_passant_zobrist(self.en_passant);
         self.zobrist_hash ^= get_en_passant_zobrist(en_passant);
         self.en_passant = en_passant;
@@ -258,7 +260,7 @@ impl Position {
     /// Sets the state of castling rights.
     ///
     /// This will update the zobrist hash.
-    pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
+    pub(super) fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
         self.zobrist_hash ^= get_castling_zobrist(self.castling_rights);
         self.zobrist_hash ^= get_castling_zobrist(castling_rights);
         self.castling_rights = castling_rights;
@@ -270,7 +272,7 @@ impl Position {
     /// # Panics
     /// If trying to add the piece to an already occupied square
     #[inline(always)]
-    pub fn add_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
+    pub(super) fn add_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
         debug_assert!(!self.board.get_occupance().has_square(sq));
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_or(color, piece, BitBoard::from(sq));
@@ -283,7 +285,7 @@ impl Position {
     /// - if trying to remove an unoccupied square
     /// - if the `sq` contains the piece of different type or color than specified.
     #[inline(always)]
-    pub fn remove_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
+    pub(super) fn remove_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
         debug_assert!(
             self.board.get_piece(piece).has_square(sq)
                 && self.board.get_color(color).has_square(sq)
@@ -300,7 +302,13 @@ impl Position {
     /// - if `from` contains a piece with a different type or color than specified
     /// - if `to` is occupied
     #[inline(always)]
-    pub fn move_color_piece(&mut self, color: Color, piece: Piece, from: Square, to: Square) {
+    pub(super) fn move_color_piece(
+        &mut self,
+        color: Color,
+        piece: Piece,
+        from: Square,
+        to: Square,
+    ) {
         debug_assert!(
             self.board.get_piece(piece).has_square(from)
                 && self.board.get_color(color).has_square(from)
@@ -311,21 +319,27 @@ impl Position {
         self.board
             .mask_xor(color, piece, BitBoard::from(from) | BitBoard::from(to));
     }
-    /// Sets the color of the player that is about to make a turn.
+    /// Changes the color of side to move.
     ///
     /// This will update the zobrist hash.
     #[inline(always)]
-    pub fn set_turn(&mut self, turn: Color) {
+    pub(super) fn swap_turn(&mut self) {
         self.zobrist_hash ^= get_turn_zobrist(self.turn);
-        self.zobrist_hash ^= get_turn_zobrist(turn);
-        self.turn = turn;
+        self.turn = !self.turn;
+        self.zobrist_hash ^= get_turn_zobrist(self.turn);
     }
-    /// Sets the current move index.
-    pub fn set_move_index(&mut self, move_index: u32) {
-        self.move_index = move_index;
+    /// Incremetns the move index and returns the previous state of halfmove clock.
+    pub(super) fn next_move_index(&mut self, reset_hm_clock: bool) -> u32 {
+        let res = self.move_index - self.move_index_rule_50;
+        self.move_index += 1;
+        if reset_hm_clock {
+            self.move_index_rule_50 = self.move_index;
+        }
+        res
     }
-    /// Sets the move index when the 50 move rule was last reset.
-    pub fn set_move_index_rule_50(&mut self, move_index: u32) {
-        self.move_index_rule_50 = move_index;
+    /// Decremetns the move index and set the state of halfmove clock.
+    pub(super) fn prev_move_index(&mut self, hm_clock_state: u32) {
+        self.move_index = self.move_index.strict_sub(1);
+        self.move_index_rule_50 = self.move_index.strict_sub(hm_clock_state);
     }
 }

@@ -582,7 +582,7 @@ impl fmt::Display for Position {
             } else {
                 String::from("N/A")
             },
-            self.move_index() - self.move_index_rule_50(),
+            self.halfmove_clock(),
             self.zobrist(),
             self.board(),
         )
