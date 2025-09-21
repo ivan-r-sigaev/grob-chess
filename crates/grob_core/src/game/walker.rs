@@ -1,26 +1,9 @@
 use either::Either;
 
-use crate::{game::move_list::MoveList, ChessMove, Game};
+mod move_list;
 
-/// Expores through [`Game`]'s moves.
-///
-/// Even though [`GameExplorer`] holds a mutable reference
-/// to the [`Game`], it will restore its original state
-/// once the search is over.
-#[derive(Debug)]
-pub struct GameExplorer<'a> {
-    game: &'a mut Game,
-    move_list: MoveList,
-}
-
-impl<'a> GameExplorer<'a> {
-    pub(super) fn new(game: &'a mut Game) -> Self {
-        Self {
-            game,
-            move_list: MoveList::empty(),
-        }
-    }
-}
+use crate::{ChessMove, Game};
+use move_list::MoveList;
 
 /// Possible ending for a chess game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,7 +27,32 @@ pub enum MoveOrdering {
     MvvLva,
 }
 
-impl GameExplorer<'_> {
+/// Expores through [`Game`]'s moves.
+///
+/// Even though [`GameExplorer`] holds a mutable reference
+/// to the [`Game`], it will restore its original state
+/// once the search is over.
+#[derive(Debug)]
+pub struct GameTreeWalker<'game> {
+    game: &'game mut Game,
+    move_list: MoveList,
+}
+
+impl Game {
+    /// Explores the available moves.
+    pub fn walk<'game>(&'game mut self) -> GameTreeWalker<'game> {
+        GameTreeWalker::new(self)
+    }
+}
+
+impl<'game> GameTreeWalker<'game> {
+    fn new(game: &'game mut Game) -> Self {
+        let move_list = MoveList::empty();
+        Self { game, move_list }
+    }
+}
+
+impl GameTreeWalker<'_> {
     /// State of the game at this at this point during search.
     pub fn game(&self) -> &Game {
         self.game

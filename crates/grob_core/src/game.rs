@@ -1,8 +1,12 @@
-mod base;
-mod explorer;
-mod move_list;
-mod position;
+pub mod walker;
 
-pub use base::Game;
-pub use explorer::{GameEnding, GameExplorer, MoveOrdering};
-pub use position::{ChessMove, ChessMoveHint, LanMove, ParseFenError};
+mod base;
+mod lan;
+mod make;
+mod movegen;
+mod zobrist;
+
+pub use base::{Game, ParseFenError};
+pub use lan::LanMove;
+pub use movegen::{ChessMove, ChessMoveHint, PackedChessMove};
+pub use walker::{GameEnding, GameTreeWalker, MoveOrdering};

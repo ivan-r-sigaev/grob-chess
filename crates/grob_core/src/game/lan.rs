@@ -1,6 +1,6 @@
 use std::{fmt, str::FromStr};
 
-use crate::{game::position::Position, ChessMove, Piece, Promotion, Square};
+use crate::{game::Game, ChessMove, Piece, Promotion, Square};
 
 /// A chess move in a [LAN (Long Algebraic Notation)].
 ///
@@ -46,7 +46,7 @@ impl fmt::Display for LanMove {
     }
 }
 
-impl Position {
+impl Game {
     /// Returns an equivalent `ChessMove` for a `LanMove` in this position.
     pub fn lan_move(&self, lan_move: LanMove) -> Option<ChessMove> {
         let piece = self.board().get_piece_at(lan_move.from)?;

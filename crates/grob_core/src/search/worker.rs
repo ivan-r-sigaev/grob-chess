@@ -9,7 +9,7 @@ use crate::{
         signals::{WorkerSignaler, WorkerSignalerMaster},
         transposition::{Transposition, TranspositionTable},
     },
-    GameEnding, GameExplorer, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
+    GameEnding, GameTreeWalker, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
 };
 
 /// A search job to be computed by the [`Worker`].
@@ -131,7 +131,7 @@ impl Worker {
                 let mut game = job.request.game;
                 let worst_score = Score::ending(GameEnding::Checkmate);
                 let result = self.search(
-                    &mut game.explore(),
+                    &mut game.walk(),
                     job.request.depth,
                     SearchConstraints {
                         nodes_max: job.request.nodes,
@@ -156,7 +156,7 @@ impl Worker {
     }
     fn search(
         &mut self,
-        node: &mut GameExplorer,
+        node: &mut GameTreeWalker,
         depth: u64,
         constraints: SearchConstraints,
         mut alpha: Score,
@@ -244,7 +244,7 @@ impl Worker {
             is_canceled,
         }
     }
-    fn quiescence(&mut self, node: &mut GameExplorer, alpha: Score, beta: Score) -> SearchResult {
+    fn quiescence(&mut self, node: &mut GameTreeWalker, alpha: Score, beta: Score) -> SearchResult {
         if self.signaler.should_stop() {
             return self.evaluate(node, true);
         }
@@ -254,7 +254,7 @@ impl Worker {
         // TODO: implement quiescence search.
         self.evaluate(node, false)
     }
-    fn evaluate(&mut self, node: &mut GameExplorer, is_canceled: bool) -> SearchResult {
+    fn evaluate(&mut self, node: &mut GameTreeWalker, is_canceled: bool) -> SearchResult {
         let nodes = 1;
         let any_move = match node.check_ending() {
             Either::Left(chess_move) => chess_move,

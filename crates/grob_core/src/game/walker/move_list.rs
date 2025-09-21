@@ -1,4 +1,4 @@
-use crate::{game::position::PackedChessMove, ChessMove};
+use crate::{game::PackedChessMove, ChessMove};
 
 /// Stores chess moves during search.
 #[derive(Debug, Clone)]
