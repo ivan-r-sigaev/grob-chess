@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, num::NonZeroU16};
 
 use strum::{EnumCount, FromRepr, VariantArray};
 
@@ -44,6 +44,10 @@ pub enum ChessMoveHint {
 }
 
 impl ChessMoveHint {
+    /// Value of the first gap/niche in this enum.
+    pub const NICHE1: u8 = 6;
+    /// Value of the second gap/niche in this enum.
+    pub const NICHE2: u8 = 7;
     /// Is this move a capture.
     #[inline(always)]
     #[must_use]
@@ -101,30 +105,29 @@ impl ChessMove {
 
 /// Compact version of a [`ChessMove`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PackedChessMove {
-    data: u16,
-}
+pub struct PackedChessMove(NonZeroU16);
 
 impl PackedChessMove {
     /// Converts [`ChessMove`] to it's compact form.
     #[inline(always)]
     #[must_use]
     pub fn new(chess_move: ChessMove) -> Self {
-        Self {
-            data: (((chess_move.hint as u16) & 0xf) << 12)
-                | (((chess_move.from as u16) & 0x3f) << 6)
-                | ((chess_move.to as u16) & 0x3f),
-        }
+        let data = (((chess_move.hint as u16) & 0xf) << 12)
+            | (((chess_move.from as u16) & 0x3f) << 6)
+            | ((chess_move.to as u16) & 0x3f);
+        Self(NonZeroU16::new(data ^ Self::IMPOSSIBLE_DATA).unwrap())
     }
     /// Unpacks the [`ChessMove`] from it's compact form.
     #[inline(always)]
     #[must_use]
     pub fn get(self) -> ChessMove {
-        let to = Square::from_repr((self.data & 0x3f) as u8).unwrap();
-        let from = Square::from_repr(((self.data >> 6) & 0x3f) as u8).unwrap();
-        let hint = ChessMoveHint::from_repr(((self.data >> 12) & 0x0f) as u8).unwrap();
+        let data = self.0.get() ^ Self::IMPOSSIBLE_DATA;
+        let to = Square::from_repr((data & 0x3f) as u8).unwrap();
+        let from = Square::from_repr(((data >> 6) & 0x3f) as u8).unwrap();
+        let hint = ChessMoveHint::from_repr(((data >> 12) & 0x0f) as u8).unwrap();
         ChessMove { to, from, hint }
     }
+    const IMPOSSIBLE_DATA: u16 = (ChessMoveHint::NICHE1 as u16) << 12;
 }
 
 impl Game {
@@ -586,5 +589,16 @@ impl fmt::Display for Game {
             self.zobrist(),
             self.board(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ChessMoveHint;
+
+    #[test]
+    fn test_chess_move_hint_niches() {
+        assert!(ChessMoveHint::from_repr(ChessMoveHint::NICHE1).is_none());
+        assert!(ChessMoveHint::from_repr(ChessMoveHint::NICHE2).is_none());
     }
 }
