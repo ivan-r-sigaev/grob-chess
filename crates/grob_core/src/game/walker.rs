@@ -38,8 +38,15 @@ pub struct GameTreeWalker<'game> {
     move_list: MoveList,
 }
 
+impl Game {
+    /// Explores the available moves.
+    pub fn walk<'game>(&'game mut self) -> GameTreeWalker<'game> {
+        GameTreeWalker::new(self)
+    }
+}
+
 impl<'game> GameTreeWalker<'game> {
-    pub fn new(game: &'game mut Game) -> Self {
+    fn new(game: &'game mut Game) -> Self {
         let move_list = MoveList::empty();
         Self { game, move_list }
     }

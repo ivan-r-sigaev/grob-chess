@@ -7,7 +7,7 @@ use crate::{
             get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
         },
     },
-    BitBoard, Board, CastlingRights, Color, File, GameTreeWalker, Piece, Rank, Square,
+    BitBoard, Board, CastlingRights, Color, File, Piece, Rank, Square,
 };
 
 /// An error that originated from [FEN] parsing.
@@ -229,10 +229,6 @@ impl Game {
             zobrist_hash,
             history,
         })
-    }
-    /// Explores the available moves.
-    pub fn walk<'game>(&'game mut self) -> GameTreeWalker<'game> {
-        GameTreeWalker::new(self)
     }
     /// Returns a hash for the current position.
     #[must_use]

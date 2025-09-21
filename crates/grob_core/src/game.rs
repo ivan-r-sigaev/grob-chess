@@ -1,3 +1,5 @@
+pub mod walker;
+
 mod base;
 mod lan;
 mod make;
@@ -7,3 +9,4 @@ mod zobrist;
 pub use base::{Game, ParseFenError};
 pub use lan::LanMove;
 pub use movegen::{ChessMove, ChessMoveHint, PackedChessMove};
+pub use walker::{GameEnding, GameTreeWalker, MoveOrdering};
