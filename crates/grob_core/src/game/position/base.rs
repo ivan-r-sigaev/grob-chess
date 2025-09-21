@@ -4,15 +4,10 @@ use crate::{
     game::position::zobrist::{
         get_castling_zobrist, get_en_passant_zobrist, get_square_zobrist, get_turn_zobrist,
     },
-    BitBoard, Board, CastlingRights, Color, File, Piece, Square,
+    BitBoard, Board, CastlingRights, Color, File, Piece, Rank, Square,
 };
 
 /// An error that originated from [FEN] parsing.
-///
-/// If a FEN string contains multiple errors the error in the part
-/// nearest to the string beginning will be retruned (e.g. FEN with
-/// erroneous castling rights and trailing garbage will return
-/// [`ParseFenError::BadCastlingRights`]).
 ///
 /// [fen]: https://www.chessprogramming.org/Forsyth-Edwards_Notation
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -59,100 +54,127 @@ impl Position {
         let mut words: VecDeque<&str> = fen.split_whitespace().collect();
         let mut zobrist_hash = 0;
 
-        let fen_board = words.pop_front().ok_or(ParseFenError::BadBoard)?;
-        let rows: Vec<&str> = fen_board.split('/').collect();
-        if rows.len() != 8 {
-            return Err(ParseFenError::BadBoard);
-        }
-        let mut board = Board::empty();
-        let mut sq: Square = Square::A1;
-        for y in (0..8).rev() {
-            let mut row_size = 0;
-            for ch in rows[y].chars() {
-                if ('1'..='8').contains(&ch) {
-                    let inc = u8::try_from(ch).unwrap() - u8::try_from('1').unwrap();
-                    row_size += inc;
-                    sq = sq.shifted(inc as i8);
-                } else {
-                    let color = match ch.is_ascii_lowercase() {
-                        true => Color::Black,
-                        false => Color::White,
-                    };
+        let board = {
+            let fen = words.pop_front().ok_or(ParseFenError::BadBoard)?;
+            let rows: Vec<&str> = fen.split('/').collect();
+            if rows.len() != 8 {
+                return Err(ParseFenError::BadBoard);
+            }
 
-                    let piece = ch
-                        .to_string()
-                        .parse::<Piece>()
-                        .map_err(|_| ParseFenError::BadBoard)?;
+            let mut board = Board::empty();
+            let mut sq: Square = Square::A1;
+            for y in (0..8).rev() {
+                let mut row_len = 0;
+                for ch in rows[y].chars() {
+                    if matches!(ch, '1'..='8') {
+                        let inc = ch.to_digit(10).unwrap() - 1;
+                        row_len += inc;
+                        sq = sq.shifted(inc as i8);
+                    } else {
+                        let piece = ch
+                            .to_string()
+                            .parse::<Piece>()
+                            .map_err(|_| ParseFenError::BadBoard)?;
 
-                    board.mask_or(color, piece, BitBoard::from(sq));
-                    zobrist_hash ^= get_square_zobrist(color, piece, sq);
+                        let color = match ch.is_ascii_lowercase() {
+                            true => Color::Black,
+                            false => Color::White,
+                        };
+
+                        board.mask_or(color, piece, BitBoard::from(sq));
+                        zobrist_hash ^= get_square_zobrist(color, piece, sq);
+                    }
+                    sq = sq.shifted(1);
+                    row_len += 1;
+                    if row_len > 8 {
+                        return Err(ParseFenError::BadBoard);
+                    }
                 }
-                sq = sq.shifted(1);
-                row_size += 1;
-                if row_size > 8 {
+                if row_len < 8 {
                     return Err(ParseFenError::BadBoard);
                 }
             }
-            if row_size < 8 {
+            if board.get_color_piece(Color::White, Piece::King).count() != 1 {
                 return Err(ParseFenError::BadBoard);
             }
-        }
-        if board.get_color_piece(Color::White, Piece::King).count() != 1 {
-            return Err(ParseFenError::BadBoard);
-        }
-        if board.get_color_piece(Color::Black, Piece::King).count() != 1 {
-            return Err(ParseFenError::BadBoard);
-        }
-
-        let turn = words
-            .pop_front()
-            .and_then(|s| s.parse::<Color>().ok())
-            .ok_or(ParseFenError::BadTurn)?;
-        zobrist_hash ^= get_turn_zobrist(turn);
-
-        let castling_rights = words
-            .pop_front()
-            .and_then(|s| s.parse::<CastlingRights>().ok())
-            .ok_or(ParseFenError::BadTurn)?;
-        let castling_rights_max = {
-            let mut cr = CastlingRights::all();
-            let w_king = board.get_color_piece(Color::White, Piece::King);
-            if !w_king.has_square(Square::E1) {
-                cr &= !CastlingRights::both_sides(Color::White);
-            } else {
-                let w_rooks = board.get_color_piece(Color::White, Piece::Rook);
-                if !w_rooks.has_square(Square::H1) {
-                    cr &= !CastlingRights::WHITE_KING;
-                }
-                if !w_rooks.has_square(Square::A1) {
-                    cr &= !CastlingRights::WHITE_QUEEN;
-                }
+            if board.get_color_piece(Color::Black, Piece::King).count() != 1 {
+                return Err(ParseFenError::BadBoard);
             }
-            let b_king = board.get_color_piece(Color::Black, Piece::King);
-            if !b_king.has_square(Square::E8) {
-                cr &= !CastlingRights::both_sides(Color::Black);
-            } else {
-                let b_rooks = board.get_color_piece(Color::Black, Piece::Rook);
-                if !b_rooks.has_square(Square::H8) {
-                    cr &= !CastlingRights::BLACK_KING;
-                }
-                if !b_rooks.has_square(Square::A8) {
-                    cr &= !CastlingRights::BLACK_QUEEN;
-                }
-            }
-            cr
-        };
-        if !castling_rights_max.contains(castling_rights) {
-            return Err(ParseFenError::BadCastlingRights);
-        }
-        zobrist_hash ^= get_castling_zobrist(castling_rights);
 
-        let en_passant_fen = words.pop_front().ok_or(ParseFenError::BadEnPassant)?;
-        let en_passant = match en_passant_fen {
-            "-" => None,
-            s => Some(s.parse::<File>().map_err(|_| ParseFenError::BadEnPassant)?),
+            board
         };
-        zobrist_hash ^= get_en_passant_zobrist(en_passant);
+
+        let turn = {
+            let turn = words
+                .pop_front()
+                .and_then(|s| s.parse::<Color>().ok())
+                .ok_or(ParseFenError::BadTurn)?;
+            zobrist_hash ^= get_turn_zobrist(turn);
+
+            if board.is_king_in_check(!turn) {
+                return Err(ParseFenError::BadBoard);
+            }
+            turn
+        };
+
+        let castling_rights = {
+            let castling_rights = words
+                .pop_front()
+                .and_then(|s| s.parse::<CastlingRights>().ok())
+                .ok_or(ParseFenError::BadTurn)?;
+            let castling_rights_max = {
+                let mut cr = CastlingRights::all();
+                let w_king = board.get_color_piece(Color::White, Piece::King);
+                if !w_king.has_square(Square::E1) {
+                    cr &= !CastlingRights::both_sides(Color::White);
+                } else {
+                    let w_rooks = board.get_color_piece(Color::White, Piece::Rook);
+                    if !w_rooks.has_square(Square::H1) {
+                        cr &= !CastlingRights::WHITE_KING;
+                    }
+                    if !w_rooks.has_square(Square::A1) {
+                        cr &= !CastlingRights::WHITE_QUEEN;
+                    }
+                }
+                let b_king = board.get_color_piece(Color::Black, Piece::King);
+                if !b_king.has_square(Square::E8) {
+                    cr &= !CastlingRights::both_sides(Color::Black);
+                } else {
+                    let b_rooks = board.get_color_piece(Color::Black, Piece::Rook);
+                    if !b_rooks.has_square(Square::H8) {
+                        cr &= !CastlingRights::BLACK_KING;
+                    }
+                    if !b_rooks.has_square(Square::A8) {
+                        cr &= !CastlingRights::BLACK_QUEEN;
+                    }
+                }
+                cr
+            };
+            if !castling_rights_max.contains(castling_rights) {
+                return Err(ParseFenError::BadCastlingRights);
+            }
+            zobrist_hash ^= get_castling_zobrist(castling_rights);
+            castling_rights
+        };
+
+        let en_passant = {
+            let fen = words.pop_front().ok_or(ParseFenError::BadEnPassant)?;
+            let en_passant = match fen {
+                "-" => None,
+                s => {
+                    let file = s.parse::<File>().map_err(|_| ParseFenError::BadEnPassant)?;
+                    let sq = Square::new(turn.mirror_rank(Rank::R5), file);
+                    if board.get_piece_at(sq) != Some(Piece::Pawn)
+                        || board.get_color_at(sq) != Some(!turn)
+                    {
+                        return Err(ParseFenError::BadEnPassant);
+                    }
+                    Some(file)
+                }
+            };
+            zobrist_hash ^= get_en_passant_zobrist(en_passant);
+            en_passant
+        };
 
         let hm = words
             .pop_front()
@@ -164,6 +186,18 @@ impl Position {
             .and_then(|s| s.parse::<u32>().ok())
             .ok_or(ParseFenError::BadFullmoveClock)?;
 
+        if fm == 0 {
+            return Err(ParseFenError::BadFullmoveClock);
+        }
+
+        let move_index = (fm - 1) * 2 + (turn == Color::Black) as u32;
+
+        if hm > move_index {
+            return Err(ParseFenError::BadHalfmoveClock);
+        }
+
+        let move_index_rule_50 = move_index - hm;
+
         if !words.is_empty() {
             return Err(ParseFenError::TrailingGarbage);
         }
@@ -173,8 +207,8 @@ impl Position {
             turn,
             castling_rights,
             en_passant,
-            move_index: fm,
-            move_index_rule_50: fm - hm,
+            move_index,
+            move_index_rule_50,
             zobrist_hash,
         })
     }
