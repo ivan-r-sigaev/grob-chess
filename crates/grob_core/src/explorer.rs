@@ -1,26 +1,9 @@
 use either::Either;
 
-use crate::{game::move_list::MoveList, ChessMove, Game};
+mod move_list;
 
-/// Expores through [`Game`]'s moves.
-///
-/// Even though [`GameExplorer`] holds a mutable reference
-/// to the [`Game`], it will restore its original state
-/// once the search is over.
-#[derive(Debug)]
-pub struct GameExplorer<'a> {
-    game: &'a mut Game,
-    move_list: MoveList,
-}
-
-impl<'a> GameExplorer<'a> {
-    pub(super) fn new(game: &'a mut Game) -> Self {
-        Self {
-            game,
-            move_list: MoveList::empty(),
-        }
-    }
-}
+use crate::{ChessMove, Game};
+use move_list::MoveList;
 
 /// Possible ending for a chess game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,6 +25,24 @@ pub enum MoveOrdering {
     ///
     /// [MVV-LVA]: https://www.chessprogramming.org/MVV-LVA
     MvvLva,
+}
+
+/// Expores through [`Game`]'s moves.
+///
+/// Even though [`GameExplorer`] holds a mutable reference
+/// to the [`Game`], it will restore its original state
+/// once the search is over.
+#[derive(Debug)]
+pub struct GameExplorer<'game> {
+    game: &'game mut Game,
+    move_list: MoveList,
+}
+
+impl<'game> GameExplorer<'game> {
+    pub fn new(game: &'game mut Game) -> Self {
+        let move_list = MoveList::empty();
+        Self { game, move_list }
+    }
 }
 
 impl GameExplorer<'_> {

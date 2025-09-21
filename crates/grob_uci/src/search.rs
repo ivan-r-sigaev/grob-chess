@@ -181,6 +181,7 @@ impl UciServer {
             pending_count: 0,
             running_depth: 0,
         });
+
         if self.progress_mut().game.explore().check_ending().is_right() {
             return Ok(());
         }

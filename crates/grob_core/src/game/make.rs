@@ -1,10 +1,11 @@
 use crate::{
-    game::position::Position, CastlingRights, ChessMove, ChessMoveHint, File, Piece, Square,
+    game::{base::PlyHistory, Game},
+    CastlingRights, ChessMove, ChessMoveHint, File, Piece, Square,
 };
 
 /// Data needed to rollback a move.
 #[derive(Debug, Clone, Copy)]
-pub struct ChessUnmove {
+pub(super) struct ChessUnmove {
     chess_move: ChessMove,
     // Capture does not need to be wrapped, but it's safer.
     // Could maybe remove if it'll be bad for performance.
@@ -14,21 +15,39 @@ pub struct ChessUnmove {
     halfmove_clock: u32,
 }
 
-impl Position {
-    /// Makes a chess move.
+impl Game {
+    /// Plays the [`ChessMove`].
+    ///
+    /// # Panics
+    /// Panics if the move is illegal or only pseudo-legal.
+    pub fn make_move(&mut self, chess_move: ChessMove) {
+        assert!(self.try_make_move(chess_move), "Move is not legal!")
+    }
+    /// Reutrns `true` and plays the [`ChessMove`] and if the it is legal
+    /// or returns `false` if the move is illegal or pseudo-legal.
+    pub fn try_make_move(&mut self, chess_move: ChessMove) -> bool {
+        if self.is_move_pseudo_legal(chess_move) {
+            self.make_move_unchecked(chess_move)
+        } else {
+            false
+        }
+    }
+    /// Returns `true` and plays the [`ChessMove`] if it is legal or
+    /// returns `false` if the move is only pseduo-legal.
     ///
     /// # Preconditions
-    /// - `chess_move` must be at least pseduo-legal for this position.
+    /// - `chess_move` must always be *at least pseduo-legal*.
     ///
-    /// Violating the preconditions may silently corrupt position state.
+    /// Violating the preconditions will corrupt the position.
     #[must_use]
-    pub fn make_move(&mut self, chess_move: ChessMove) -> ChessUnmove {
+    pub fn make_move_unchecked(&mut self, chess_move: ChessMove) -> bool {
         // TODO: this check may slow the program down.
         debug_assert!(
             self.is_move_pseudo_legal(chess_move),
-            "{chess_move:?} is not applicable!"
+            "{chess_move:?} is not pseduo-legal!"
         );
 
+        let hash = self.zobrist();
         let from = chess_move.orig_square();
         let to = chess_move.dest_square();
         let hint = chess_move.hint();
@@ -161,21 +180,38 @@ impl Position {
 
         let halfmove_clock = self.next_move_index(reset_hm_clock);
 
-        ChessUnmove {
+        let unmove = ChessUnmove {
             chess_move,
             capture,
             en_passant,
             castling_rights,
             halfmove_clock,
+        };
+
+        self.push_history(PlyHistory { hash, unmove });
+
+        let is_legal = !self.was_check_ignored();
+        if !is_legal {
+            self.unmake_move();
         }
+
+        is_legal
     }
-    /// Rolls back a move.
+    /// Rolls back the last played move.
     ///
-    /// # Preconditions
-    /// - `chess_unmove` must have had been generated from the same move as this position.
-    ///
-    /// Violating the preconditions may silently corrupt position state.
-    pub fn unmake_move(&mut self, chess_unmove: ChessUnmove) {
+    /// # Panics
+    /// Panics if there are no moves to roll back.
+    pub fn unmake_move(&mut self) {
+        assert!(self.try_unmake_move(), "There are no moves to unmake!")
+    }
+    /// Rolls back the last played move and returns `true` or
+    /// returns `false` if there are no moves to roll back.
+    #[must_use]
+    pub fn try_unmake_move(&mut self) -> bool {
+        let Some(ply_history) = self.pop_history() else {
+            return false;
+        };
+        let chess_unmove = ply_history.unmove;
         self.swap_turn();
         self.set_castling_rights(chess_unmove.castling_rights);
         self.set_en_passant(chess_unmove.en_passant);
@@ -262,5 +298,6 @@ impl Position {
                 );
             }
         }
+        true
     }
 }

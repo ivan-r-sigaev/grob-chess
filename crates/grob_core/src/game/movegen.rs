@@ -3,7 +3,7 @@ use std::fmt;
 use strum::{EnumCount, FromRepr, VariantArray};
 
 use crate::{
-    game::position::{lan::LanMove, Position},
+    game::{lan::LanMove, Game},
     BitBoard, CastlingRights, Color, Piece, Promotion, Rank, Square,
 };
 
@@ -127,7 +127,7 @@ impl PackedChessMove {
     }
 }
 
-impl Position {
+impl Game {
     /// Generate pseudo-legal moves from this position.
     pub fn push_moves(&self, push_move: &mut impl FnMut(ChessMove)) {
         if self.board().get_king_checkers(self.turn()).count() >= 2 {
@@ -561,7 +561,7 @@ impl Position {
     }
 }
 
-impl fmt::Display for Position {
+impl fmt::Display for Game {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

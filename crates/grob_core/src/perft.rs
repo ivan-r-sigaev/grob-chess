@@ -78,10 +78,8 @@ mod values {
 }
 
 fn collect(fen: &str, depth: u8) -> PerftValues {
-    let position = Game::try_from_fen(fen).unwrap();
-    let mut game = position;
-    let mut node = game.explore();
-    PerftValues::collect(&mut node, depth - 1)
+    let mut game = Game::try_from_fen(fen).unwrap();
+    PerftValues::collect(&mut game.explore(), depth - 1)
 }
 
 fn perft(fen: &str, depth: u8, expected: PerftValues) {
