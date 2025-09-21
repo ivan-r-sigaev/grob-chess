@@ -141,7 +141,7 @@ impl UciServer {
             .filter(|vec| !vec.is_empty())
             .unwrap_or({
                 let mut vec = Vec::new();
-                game.explore()
+                game.walk()
                     .for_each_legal_child_node(MoveOrdering::MvvLva, |_, chess_move| {
                         vec.push((chess_move, None));
                     });
@@ -182,7 +182,7 @@ impl UciServer {
             running_depth: 0,
         });
 
-        if self.progress_mut().game.explore().check_ending().is_right() {
+        if self.progress_mut().game.walk().check_ending().is_right() {
             return Ok(());
         }
 

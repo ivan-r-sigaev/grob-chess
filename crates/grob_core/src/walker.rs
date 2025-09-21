@@ -33,19 +33,19 @@ pub enum MoveOrdering {
 /// to the [`Game`], it will restore its original state
 /// once the search is over.
 #[derive(Debug)]
-pub struct GameExplorer<'game> {
+pub struct GameTreeWalker<'game> {
     game: &'game mut Game,
     move_list: MoveList,
 }
 
-impl<'game> GameExplorer<'game> {
+impl<'game> GameTreeWalker<'game> {
     pub fn new(game: &'game mut Game) -> Self {
         let move_list = MoveList::empty();
         Self { game, move_list }
     }
 }
 
-impl GameExplorer<'_> {
+impl GameTreeWalker<'_> {
     /// State of the game at this at this point during search.
     pub fn game(&self) -> &Game {
         self.game

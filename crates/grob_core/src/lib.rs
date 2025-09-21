@@ -9,13 +9,13 @@ pub use search::{
     spawn_search_server, Score, SearchRequest, SearchResult, ServerCommand, ServerResponse,
 };
 
-pub use explorer::{GameEnding, GameExplorer, MoveOrdering};
 pub use game::{ChessMove, ChessMoveHint, Game, LanMove, ParseFenError};
+pub use walker::{GameEnding, GameTreeWalker, MoveOrdering};
 
-mod explorer;
 mod game;
 mod primitives;
 mod search;
+mod walker;
 
 #[cfg(test)]
 mod perft;
