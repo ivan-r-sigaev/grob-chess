@@ -18,9 +18,6 @@ mod game;
 mod primitives;
 mod search;
 
-#[cfg(test)]
-mod perft;
-
 /*
     TO BENCHMARK:
     - bitboard representation (classical / denser)
