@@ -3,6 +3,8 @@ pub use scheduler::{
 };
 pub use score::Score;
 
+#[allow(unused)]
+mod pv;
 mod scheduler;
 mod score;
 mod signals;
