@@ -131,21 +131,24 @@ impl GameTreeWalker<'_> {
             }
         }
     }
+    /// Generates the move into the move list and orders them
+    /// according to the policy.
     fn generate_moves(&mut self, policy: MoveOrdering) {
         self.game.push_moves(&mut |chess_move| {
             self.move_list.push_move(chess_move);
         });
-        if policy == MoveOrdering::CapturesFirst {
-            return;
-        }
-
-        let moves = self.move_list.group_mut();
-        moves.sort_by_cached_key(|k| {
-            let piece = self.game.board().get_piece_at(k.get().dest_square());
-            match piece {
-                Some(piece) => piece as i32,
-                None => -1,
+        match policy {
+            MoveOrdering::CapturesFirst => {}
+            MoveOrdering::MvvLva => {
+                let moves = self.move_list.group_mut();
+                moves.sort_by_cached_key(|k| {
+                    let piece = self.game.board().get_piece_at(k.get().dest_square());
+                    match piece {
+                        Some(piece) => piece as i32,
+                        None => -1,
+                    }
+                });
             }
-        });
+        }
     }
 }
