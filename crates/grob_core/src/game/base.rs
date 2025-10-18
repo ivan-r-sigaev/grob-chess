@@ -306,7 +306,7 @@ impl Game {
     /// If trying to add the piece to an already occupied square
     #[inline(always)]
     pub(super) fn add_color_piece(&mut self, color: Color, piece: Piece, sq: Square) {
-        debug_assert!(!self.board.get_occupance().has_square(sq));
+        debug_assert!(!self.board.get_occupied().has_square(sq));
         self.zobrist_hash ^= get_square_zobrist(color, piece, sq);
         self.board.mask_or(color, piece, BitBoard::from(sq));
     }
@@ -346,7 +346,7 @@ impl Game {
             self.board.get_piece(piece).has_square(from)
                 && self.board.get_color(color).has_square(from)
         );
-        debug_assert!(!self.board.get_occupance().has_square(to));
+        debug_assert!(!self.board.get_occupied().has_square(to));
         self.zobrist_hash ^= get_square_zobrist(color, piece, from);
         self.zobrist_hash ^= get_square_zobrist(color, piece, to);
         self.board

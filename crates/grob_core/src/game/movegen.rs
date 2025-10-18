@@ -188,7 +188,7 @@ impl Game {
     }
     /// Generate pseudo-legal bishop-like quiet moves from this position.
     pub fn push_bishop_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_bishop_sliders(self.turn()) {
             let attacks = BitBoard::bishop_attacks(occ, from);
@@ -197,7 +197,7 @@ impl Game {
     }
     /// Generate pseudo-legal bishop-like attacks from this position.
     pub fn push_bishop_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_bishop_sliders(self.turn()) {
             let attacks = BitBoard::bishop_attacks(occ, from);
@@ -206,7 +206,7 @@ impl Game {
     }
     /// Generate pseudo-legal rook-like quiet moves from this position.
     pub fn push_rook_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_rook_sliders(self.turn()) {
             let attacks = BitBoard::rook_attacks(occ, from);
@@ -215,7 +215,7 @@ impl Game {
     }
     /// Generate pseudo-legal rook-like attacks from this position.
     pub fn push_rook_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_rook_sliders(self.turn()) {
             let attacks = BitBoard::rook_attacks(occ, from);
@@ -224,7 +224,7 @@ impl Game {
     }
     /// Generate pseudo-legal quiet pawn moves from this position.
     pub fn push_pawn_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let empty = !self.board().get_occupance();
+        let empty = !self.board().get_occupied();
 
         let single_pushes = BitBoard::pawn_pushes(
             self.board().get_color_piece(self.turn(), Piece::Pawn),
@@ -403,7 +403,7 @@ impl Game {
         hint: ChessMoveHint,
     ) {
         let board = self.board();
-        Self::push_for_each(push_move, attacks & !board.get_occupance(), from, hint);
+        Self::push_for_each(push_move, attacks & !board.get_occupied(), from, hint);
     }
     fn push_for_each(
         push_move: &mut impl FnMut(ChessMove),
@@ -449,7 +449,7 @@ impl Game {
             && !self.board().is_king_in_check(color)
             && !self
                 .board()
-                .get_occupance()
+                .get_occupied()
                 .has_square(color.mirror_square(Square::B1))
             && self
                 .board()
@@ -478,7 +478,7 @@ impl Game {
             return false;
         }
 
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
         let empty = self.board().get_empty();
         let target = self.board().get_piece_at(to);
         let target_color = self.board().get_color_at(to);
