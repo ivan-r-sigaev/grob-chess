@@ -135,7 +135,7 @@ impl Game {
         let castling_rights = {
             let castling_rights = words
                 .pop_front()
-                .and_then(|s| s.parse::<CastlingRights>().ok())
+                .and_then(CastlingRights::from_fen_segment)
                 .ok_or(ParseFenError::BadTurn)?;
             let castling_rights_max = {
                 let mut cr = CastlingRights::all();
