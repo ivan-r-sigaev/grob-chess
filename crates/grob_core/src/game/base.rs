@@ -76,7 +76,13 @@ impl Game {
         let turn = {
             let turn = words
                 .pop_front()
-                .and_then(|s| s.parse::<Color>().ok())
+                .and_then(|s| {
+                    Some(match s {
+                        "w" => Color::White,
+                        "b" => Color::Black,
+                        _ => return None,
+                    })
+                })
                 .ok_or(ParseFenError::BadTurn)?;
 
             if board.is_king_in_check(!turn) {

@@ -565,7 +565,7 @@ impl fmt::Display for Game {
             concat!(
                 // TODO: this does not display history
                 "Chess position {{\n",
-                "  turn: {}\n",
+                "  turn: {:?}\n",
                 "  castling rights: {}\n",
                 "  available en passant: {}\n",
                 "  moves since last capture/pawn move: {}\n",

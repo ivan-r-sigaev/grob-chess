@@ -43,13 +43,7 @@ impl Board {
                     row_len += inc;
                     sq = sq.shifted(inc as i8);
                 } else {
-                    let piece = ch.to_string().parse::<Piece>().ok()?;
-
-                    let color = match ch.is_ascii_lowercase() {
-                        true => Color::Black,
-                        false => Color::White,
-                    };
-
+                    let (color, piece) = piece_from_fen(ch)?;
                     board.mask_or(color, piece, BitBoard::from(sq));
                 }
                 sq = sq.shifted(1);
@@ -278,20 +272,55 @@ impl Board {
     pub fn ascii_image(&self) -> String {
         let mut img = String::new();
         for rank in Rank::iter().rev() {
-            img += "  ";
+            img.push(' ');
             for file in File::iter() {
                 let sq = Square::new(rank, file);
                 let color_piece = self.get_color_piece_at(sq);
                 if let Some((color, piece)) = color_piece {
-                    img += &format!("{color}{piece}");
+                    img.push(piece_to_fen(color, piece));
                 } else {
-                    img += "__";
+                    img.push('_');
                 }
                 img += " ";
             }
             img += "\n"
         }
         img
+    }
+}
+
+/// Converts the piece in FEN notation to color/piece kind combintion.
+fn piece_from_fen(ch: char) -> Option<(Color, Piece)> {
+    let piece = match ch.to_ascii_lowercase() {
+        'p' => Piece::Pawn,
+        'n' => Piece::Knight,
+        'b' => Piece::Bishop,
+        'r' => Piece::Rook,
+        'q' => Piece::Queen,
+        'k' => Piece::King,
+        _ => return None,
+    };
+    let color = match ch.is_ascii_lowercase() {
+        true => Color::Black,
+        false => Color::White,
+    };
+    Some((color, piece))
+}
+
+/// Converts the color and piece kind to FEN piece.
+fn piece_to_fen(color: Color, piece: Piece) -> char {
+    let letter = match piece {
+        Piece::Pawn => 'p',
+        Piece::Knight => 'k',
+        Piece::Bishop => 'b',
+        Piece::Rook => 'r',
+        Piece::Queen => 'q',
+        Piece::King => 'k',
+    };
+    if color == Color::White {
+        letter.to_ascii_uppercase()
+    } else {
+        letter
     }
 }
 
