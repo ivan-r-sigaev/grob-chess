@@ -1,7 +1,6 @@
 mod bitboard;
 mod board;
 mod castling_rights;
-mod move_calculation;
 mod pieces;
 mod square;
 

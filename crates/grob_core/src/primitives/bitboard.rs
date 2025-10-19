@@ -9,11 +9,13 @@ use std::{
 };
 use strum::EnumCount;
 
+mod move_calculation;
+
 /// A [bitboard]. Wraps u64 occupancy mask.
 ///
 /// [bitboard]: https://www.chessprogramming.org/Bitboard_Board-Definition
 #[derive(Debug, Clone, Copy)]
-pub struct BitBoard(pub u64);
+pub struct BitBoard(u64);
 
 impl BitBoard {
     /// Empty bitboard.
