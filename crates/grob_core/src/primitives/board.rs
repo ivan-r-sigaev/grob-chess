@@ -15,8 +15,6 @@ pub struct Board {
 }
 
 impl Board {
-    // TODO: it may be better to add a constructor from FEN.
-
     /// Constructs a new empty [`Board`].
     #[inline(always)]
     #[must_use]
@@ -25,6 +23,53 @@ impl Board {
             colors: [BitBoard::EMPTY; Color::COUNT],
             pieces: [BitBoard::EMPTY; Piece::COUNT],
         }
+    }
+    /// Constructs the board from FEN segment.
+    ///
+    /// FEN must contain a valid chess board.
+    pub fn from_fen_segment(fen: &str) -> Option<Self> {
+        let rows = fen.split('/').collect::<Vec<_>>();
+        if rows.len() != 8 {
+            return None;
+        }
+
+        let mut board = Board::empty();
+        let mut sq: Square = Square::A1;
+        for y in (0..8).rev() {
+            let mut row_len = 0;
+            for ch in rows[y].chars() {
+                if matches!(ch, '1'..='8') {
+                    let inc = ch.to_digit(10).unwrap() - 1;
+                    row_len += inc;
+                    sq = sq.shifted(inc as i8);
+                } else {
+                    let piece = ch.to_string().parse::<Piece>().ok()?;
+
+                    let color = match ch.is_ascii_lowercase() {
+                        true => Color::Black,
+                        false => Color::White,
+                    };
+
+                    board.mask_or(color, piece, BitBoard::from(sq));
+                }
+                sq = sq.shifted(1);
+                row_len += 1;
+                if row_len > 8 {
+                    return None;
+                }
+            }
+            if row_len < 8 {
+                return None;
+            }
+        }
+        if board.get_color_piece(Color::White, Piece::King).count() != 1 {
+            return None;
+        }
+        if board.get_color_piece(Color::Black, Piece::King).count() != 1 {
+            return None;
+        }
+
+        Some(board)
     }
     /// Returns all pieces of specified color.
     #[inline(always)]
@@ -89,6 +134,12 @@ impl Board {
         } else {
             None
         }
+    }
+    /// Returns the color and the kind of the piece at the specified square.
+    pub fn get_color_piece_at(&self, sq: Square) -> Option<(Color, Piece)> {
+        let color = self.get_color_at(sq)?;
+        let piece = self.get_piece_at(sq).unwrap();
+        Some((color, piece))
     }
     /// Returns all piece attacking (putting pressure on) the specified square.
     #[inline(always)]
@@ -230,9 +281,8 @@ impl Board {
             img += "  ";
             for file in File::iter() {
                 let sq = Square::new(rank, file);
-                let piece = self.get_piece_at(sq);
-                let color = self.get_color_at(sq);
-                if let Some((color, piece)) = color.zip(piece) {
+                let color_piece = self.get_color_piece_at(sq);
+                if let Some((color, piece)) = color_piece {
                     img += &format!("{color}{piece}");
                 } else {
                     img += "__";

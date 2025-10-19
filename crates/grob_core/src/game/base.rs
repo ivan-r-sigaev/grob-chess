@@ -67,56 +67,10 @@ impl Game {
     /// Tries to parse a positioin from FEN.
     pub fn try_from_fen(fen: &str) -> Result<Self, ParseFenError> {
         let mut words: VecDeque<&str> = fen.split_whitespace().collect();
-        let mut zobrist_hash = 0;
 
         let board = {
             let fen = words.pop_front().ok_or(ParseFenError::BadBoard)?;
-            let rows: Vec<&str> = fen.split('/').collect();
-            if rows.len() != 8 {
-                return Err(ParseFenError::BadBoard);
-            }
-
-            let mut board = Board::empty();
-            let mut sq: Square = Square::A1;
-            for y in (0..8).rev() {
-                let mut row_len = 0;
-                for ch in rows[y].chars() {
-                    if matches!(ch, '1'..='8') {
-                        let inc = ch.to_digit(10).unwrap() - 1;
-                        row_len += inc;
-                        sq = sq.shifted(inc as i8);
-                    } else {
-                        let piece = ch
-                            .to_string()
-                            .parse::<Piece>()
-                            .map_err(|_| ParseFenError::BadBoard)?;
-
-                        let color = match ch.is_ascii_lowercase() {
-                            true => Color::Black,
-                            false => Color::White,
-                        };
-
-                        board.mask_or(color, piece, BitBoard::from(sq));
-                        zobrist_hash ^= get_square_zobrist(color, piece, sq);
-                    }
-                    sq = sq.shifted(1);
-                    row_len += 1;
-                    if row_len > 8 {
-                        return Err(ParseFenError::BadBoard);
-                    }
-                }
-                if row_len < 8 {
-                    return Err(ParseFenError::BadBoard);
-                }
-            }
-            if board.get_color_piece(Color::White, Piece::King).count() != 1 {
-                return Err(ParseFenError::BadBoard);
-            }
-            if board.get_color_piece(Color::Black, Piece::King).count() != 1 {
-                return Err(ParseFenError::BadBoard);
-            }
-
-            board
+            Board::from_fen_segment(fen).ok_or(ParseFenError::BadBoard)?
         };
 
         let turn = {
@@ -124,7 +78,6 @@ impl Game {
                 .pop_front()
                 .and_then(|s| s.parse::<Color>().ok())
                 .ok_or(ParseFenError::BadTurn)?;
-            zobrist_hash ^= get_turn_zobrist(turn);
 
             if board.is_king_in_check(!turn) {
                 return Err(ParseFenError::BadBoard);
@@ -168,27 +121,19 @@ impl Game {
             if !castling_rights_max.contains(castling_rights) {
                 return Err(ParseFenError::BadCastlingRights);
             }
-            zobrist_hash ^= get_castling_zobrist(castling_rights);
             castling_rights
         };
 
-        let en_passant = {
-            let fen = words.pop_front().ok_or(ParseFenError::BadEnPassant)?;
-            let en_passant = match fen {
-                "-" => None,
-                s => {
-                    let file = s.parse::<File>().map_err(|_| ParseFenError::BadEnPassant)?;
-                    let sq = Square::new(turn.mirror_rank(Rank::R5), file);
-                    if board.get_piece_at(sq) != Some(Piece::Pawn)
-                        || board.get_color_at(sq) != Some(!turn)
-                    {
-                        return Err(ParseFenError::BadEnPassant);
-                    }
-                    Some(file)
+        let en_passant = match words.pop_front().ok_or(ParseFenError::BadEnPassant)? {
+            "-" => None,
+            s => {
+                let file = s.parse::<File>().map_err(|_| ParseFenError::BadEnPassant)?;
+                let sq = Square::new(turn.mirror_rank(Rank::R5), file);
+                if board.get_color_piece_at(sq) != Some((!turn, Piece::Pawn)) {
+                    return Err(ParseFenError::BadEnPassant);
                 }
-            };
-            zobrist_hash ^= get_en_passant_zobrist(en_passant);
-            en_passant
+                Some(file)
+            }
         };
 
         let hm = words
@@ -218,6 +163,18 @@ impl Game {
         }
 
         let history = Vec::new();
+
+        let zobrist_hash = {
+            let mut hash = 0;
+            for sq in board.get_occupied() {
+                let (color, piece) = board.get_color_piece_at(sq).unwrap();
+                hash ^= get_square_zobrist(color, piece, sq);
+            }
+            hash ^= get_turn_zobrist(turn);
+            hash ^= get_castling_zobrist(castling_rights);
+            hash ^= get_en_passant_zobrist(en_passant);
+            hash
+        };
 
         Ok(Game {
             board,

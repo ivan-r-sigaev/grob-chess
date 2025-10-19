@@ -465,13 +465,8 @@ impl Game {
         let to = chess_move.to;
         let hint = chess_move.hint;
 
-        let piece = match self.board().get_piece_at(from) {
-            Some(piece) => piece,
-            None => return false,
-        };
-
-        let color = match self.board().get_color_at(from) {
-            Some(color) => color,
+        let (color, piece) = match self.board().get_color_piece_at(from) {
+            Some(res) => res,
             None => return false,
         };
         if color != self.turn() {
@@ -480,11 +475,11 @@ impl Game {
 
         let occ = self.board().get_occupied();
         let empty = self.board().get_empty();
-        let target = self.board().get_piece_at(to);
-        let target_color = self.board().get_color_at(to);
 
-        if let Some(tgt_color) = target_color {
-            if tgt_color == color {
+        let target = self.board().get_color_piece_at(to);
+
+        if let Some((target_color, _)) = target {
+            if target_color == color {
                 return false;
             }
         }
@@ -540,8 +535,7 @@ impl Game {
                 let target_sq = Square::new(from.rank(), to.file());
                 Square::new(color.mirror_rank(Rank::R6), file) == to
                     && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
-                    && self.board().get_piece_at(target_sq) == Some(Piece::Pawn)
-                    && self.board().get_color_at(target_sq) == Some(!color)
+                    && self.board().get_color_piece_at(target_sq) == Some((!color, Piece::Pawn))
             }
             ChessMoveHint::KnightPromotion
             | ChessMoveHint::BishopPromotion
