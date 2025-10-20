@@ -89,28 +89,18 @@ impl Position {
     }
     /// Sets (or resets) the en passant file.
     ///
-    /// #Panics
-    /// In debug mode panics when trying to set en passant
-    /// that is not possible considering the state of the board.
+    /// #Preconditions
+    /// If the en passant is set it should be logically possible.
     pub fn set_en_passant(&mut self, en_passant: Option<File>) {
-        if let Some(en_passant_file) = en_passant {
-            debug_assert!(is_en_passant_allowed(
-                self.board,
-                self.turn,
-                en_passant_file
-            ));
-        }
         self.zobrist ^= zobrist::get_en_passant_zobrist(self.en_passant);
         self.zobrist ^= zobrist::get_en_passant_zobrist(en_passant);
         self.en_passant = en_passant;
     }
     /// Sets the castling rights.
     ///
-    /// #Panics
-    /// In debug mode panics when trying to set casling rights
-    /// that are logically impossible for this position.
+    /// #Preconditions
+    /// Any set castling rights should be at least hypothetically possible to perform.
     pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
-        debug_assert!(is_castling_allowed(self.board, self.castling));
         self.zobrist ^= zobrist::get_castling_zobrist(self.castling);
         self.zobrist ^= zobrist::get_castling_zobrist(castling_rights);
         self.castling = castling_rights;
