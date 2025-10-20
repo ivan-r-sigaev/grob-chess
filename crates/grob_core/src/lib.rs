@@ -1,22 +1,15 @@
-//! Position
+//! Grob Core
 //!
-//! This crate provides types related to game representation and move generation.
+//! This crate provides the basic chess types.
 
-pub use primitives::{
-    BitBoard, Board, CastlingRights, Color, File, NegDiag, Piece, PosDiag, Promotion, Rank, Square,
-};
-pub use search::{
-    spawn_search_server, Score, SearchRequest, SearchResult, ServerCommand, ServerResponse,
-};
+pub mod bitboard;
+pub mod board;
+pub mod castling_rights;
+pub mod game;
+pub mod pieces;
+pub mod square;
 
-pub use game::{
-    ChessMove, ChessMoveHint, Game, GameEnding, GameTreeWalker, LanMove, MoveOrdering,
-    PackedChessMove, ParseFenError,
-};
-
-mod game;
-mod primitives;
-mod search;
+mod position;
 
 /*
     TO BENCHMARK:

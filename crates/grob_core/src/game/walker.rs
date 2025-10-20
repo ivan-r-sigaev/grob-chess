@@ -2,8 +2,9 @@ use either::Either;
 
 mod move_list;
 
-use crate::{ChessMove, Game};
 use move_list::MoveList;
+
+use crate::game::{movegen::ChessMove, Game};
 
 /// Possible ending for a chess game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,7 +62,7 @@ impl GameTreeWalker<'_> {
     /// if the position has no legal moves.
     pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
         let mut any_move = None;
-        let ending = self.for_each_legal_child_node(MoveOrdering::default(), |node, chess_move| {
+        let ending = self.for_each_legal_move(MoveOrdering::default(), |node, chess_move| {
             any_move = Some(chess_move);
             node.exhaust_moves();
         });
@@ -88,11 +89,7 @@ impl GameTreeWalker<'_> {
     /// Inspects all legal moves in position with a function.
     /// Returns `Some(game_ending: GameEnding)` if there are no legal moves.
     #[inline(always)]
-    pub fn for_each_legal_child_node<F>(
-        &mut self,
-        policy: MoveOrdering,
-        mut op: F,
-    ) -> Option<GameEnding>
+    pub fn for_each_legal_move<F>(&mut self, policy: MoveOrdering, mut op: F) -> Option<GameEnding>
     where
         F: FnMut(&mut Self, ChessMove),
     {
@@ -131,21 +128,24 @@ impl GameTreeWalker<'_> {
             }
         }
     }
+    /// Generates the move into the move list and orders them
+    /// according to the policy.
     fn generate_moves(&mut self, policy: MoveOrdering) {
         self.game.push_moves(&mut |chess_move| {
             self.move_list.push_move(chess_move);
         });
-        if policy == MoveOrdering::CapturesFirst {
-            return;
-        }
-
-        let moves = self.move_list.group_mut();
-        moves.sort_by_cached_key(|k| {
-            let piece = self.game.board().get_piece_at(k.get().dest_square());
-            match piece {
-                Some(piece) => piece as i32,
-                None => -1,
+        match policy {
+            MoveOrdering::CapturesFirst => {}
+            MoveOrdering::MvvLva => {
+                let moves = self.move_list.group_mut();
+                moves.sort_by_cached_key(|k| {
+                    let piece = self.game.board().get_piece_at(k.get().dest_square());
+                    match piece {
+                        Some(piece) => piece as i32,
+                        None => -1,
+                    }
+                });
             }
-        });
+        }
     }
 }

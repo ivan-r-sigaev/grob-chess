@@ -2,7 +2,9 @@ use std::{fmt, num::NonZeroU64};
 
 use parking_lot::RwLock;
 
-use crate::{search::transposition::table_base::TranspositionTableBase, ChessMove, Score};
+use crate::{ChessMove, score::Score, transposition::hashmap::HashTable};
+
+mod hashmap;
 
 /// A [transposition].
 ///
@@ -26,11 +28,11 @@ pub struct Transposition {
 /// it can safely be shared between threads.
 ///
 /// [transposition table]: https://www.chessprogramming.org/Transposition_Table
-pub struct TranspositionTable(RwLock<TranspositionTableBase<Transposition>>);
+pub struct TranspositionTable(RwLock<HashTable<Transposition>>);
 
 impl TranspositionTable {
     /// Size of a single [`Transposition`] within the [`TranspositionTable`] in bytes.
-    pub const ITEM_SIZE: usize = TranspositionTableBase::<Transposition>::ITEM_SIZE;
+    pub const ITEM_SIZE: usize = HashTable::<Transposition>::SLOT_SIZE;
 
     /// Constructs a [`TranspositionTable`] that can hold
     /// a specified number of transpositions.
@@ -38,7 +40,7 @@ impl TranspositionTable {
     /// # Panics
     /// - Panics if `capacity` is zero.
     pub fn new(capacity: usize) -> Self {
-        Self(RwLock::new(TranspositionTableBase::new(capacity)))
+        Self(RwLock::new(HashTable::new(capacity)))
     }
     // /// Returns the maximum number of [`Transposition`]s this
     // /// table can hold at the same time.
@@ -86,7 +88,7 @@ impl TranspositionTable {
     ///
     /// Calling this will also have the same effect as [`Self::clear`].
     pub fn resize(&self, new_capacity: usize) {
-        *self.0.write() = TranspositionTableBase::new(new_capacity);
+        *self.0.write() = HashTable::new(new_capacity);
     }
 }
 

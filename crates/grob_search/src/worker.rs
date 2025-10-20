@@ -2,14 +2,16 @@ use std::{sync::Arc, thread, time::Instant};
 
 use crossbeam::channel::{Receiver, Sender};
 use either::Either;
+use grob_core::{
+    game::walker::{GameEnding, GameTreeWalker, MoveOrdering},
+    pieces::Piece,
+};
 
 use crate::{
-    search::{
-        scheduler::SearchResult,
-        signals::{WorkerSignaler, WorkerSignalerMaster},
-        transposition::{Transposition, TranspositionTable},
-    },
-    GameEnding, GameTreeWalker, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
+    SearchRequest, SearchResult, ServerResponse,
+    score::Score,
+    signals::{WorkerSignaler, WorkerSignalerMaster},
+    transposition::{Transposition, TranspositionTable},
 };
 
 /// A search job to be computed by the [`Worker`].
@@ -194,32 +196,31 @@ impl Worker {
         let mut best_score = None;
         let mut nodes = 1;
         let mut is_canceled = false;
-        let maybe_ending =
-            node.for_each_legal_child_node(MoveOrdering::MvvLva, |node, chess_move| {
-                let result = self.search(node, depth - 1, constraints, alpha, beta);
-                nodes += result.nodes;
-                if best_score.is_none_or(|score| result.score.prev() > score) {
-                    best_score = Some(result.score);
-                    best_move = Some(chess_move);
-                }
+        let maybe_ending = node.for_each_legal_move(MoveOrdering::MvvLva, |node, chess_move| {
+            let result = self.search(node, depth - 1, constraints, alpha, beta);
+            nodes += result.nodes;
+            if best_score.is_none_or(|score| result.score.prev() > score) {
+                best_score = Some(result.score);
+                best_move = Some(chess_move);
+            }
 
-                if result.score > alpha {
-                    alpha = result.score;
-                }
+            if result.score > alpha {
+                alpha = result.score;
+            }
 
-                if result.score >= beta {
-                    node.exhaust_moves();
-                    return;
-                }
+            if result.score >= beta {
+                node.exhaust_moves();
+                return;
+            }
 
-                if constraints.nodes_fail(nodes)
-                    || constraints.time_fails()
-                    || self.signaler.should_stop()
-                {
-                    is_canceled = true;
-                    node.exhaust_moves();
-                }
-            });
+            if constraints.nodes_fail(nodes)
+                || constraints.time_fails()
+                || self.signaler.should_stop()
+            {
+                is_canceled = true;
+                node.exhaust_moves();
+            }
+        });
         let score = match maybe_ending {
             Some(ending) => Score::ending(ending),
             None => {
@@ -264,7 +265,7 @@ impl Worker {
                     score: Score::ending(ending),
                     nodes,
                     is_canceled,
-                }
+                };
             }
         };
 

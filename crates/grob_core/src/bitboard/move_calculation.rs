@@ -1,4 +1,9 @@
-use crate::{BitBoard, Color, File, PosDiag, Rank, Square};
+use crate::{
+    pieces::Color,
+    square::{File, PosDiag, Rank, Square},
+};
+
+use super::BitBoard;
 use strum::{EnumCount, VariantArray};
 
 impl BitBoard {
@@ -85,24 +90,28 @@ impl BitBoard {
         }
         .bitand(empty)
     }
+    /// Slides the bitboard up (white view) without wrappig.
     #[inline(always)]
     #[must_use]
-    const fn up(self) -> Self {
+    pub const fn up(self) -> Self {
         self.shl(File::COUNT as u8)
     }
+    /// Slides the bitboard down (white view) without wrappig.
     #[inline(always)]
     #[must_use]
-    const fn down(self) -> Self {
+    pub const fn down(self) -> Self {
         self.shr(File::COUNT as u8)
     }
+    /// Slides the bitboard right (white view) without wrappig.
     #[inline(always)]
     #[must_use]
-    const fn right(self) -> Self {
+    pub const fn right(self) -> Self {
         self.bitand(Self::from_file(File::H).not()).shl(1)
     }
+    /// Slides the bitboard left (white view) without wrappig.
     #[inline(always)]
     #[must_use]
-    const fn left(self) -> Self {
+    pub const fn left(self) -> Self {
         self.bitand(Self::from_file(File::A).not()).shr(1)
     }
     #[inline(always)]

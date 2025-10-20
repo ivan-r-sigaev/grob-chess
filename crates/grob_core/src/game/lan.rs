@@ -1,6 +1,10 @@
 use std::{fmt, str::FromStr};
 
-use crate::{game::Game, ChessMove, Piece, Promotion, Square};
+use crate::{
+    game::{movegen::ChessMove, Game},
+    pieces::{Piece, Promotion},
+    square::Square,
+};
 
 /// A chess move in a [LAN (Long Algebraic Notation)].
 ///
@@ -24,9 +28,13 @@ impl FromStr for LanMove {
         let (to_str, maybe_promotion_str) = rest.split_at_checked(2).ok_or(())?;
         let from = from_str.parse::<Square>().map_err(|_| ())?;
         let to = to_str.parse::<Square>().map_err(|_| ())?;
-        let promotion = match maybe_promotion_str {
+        let promotion = match maybe_promotion_str.to_ascii_lowercase().as_str() {
             "" => None,
-            promotion_str => Some(promotion_str.parse::<Promotion>().map_err(|_| ())?),
+            "n" => Some(Promotion::Knight),
+            "b" => Some(Promotion::Bishop),
+            "r" => Some(Promotion::Rook),
+            "q" => Some(Promotion::Queen),
+            _ => return Err(()),
         };
         Ok(LanMove {
             from,
@@ -40,7 +48,13 @@ impl fmt::Display for LanMove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.from, self.to)?;
         if let Some(promotion) = self.promotion {
-            write!(f, "{promotion}")?;
+            let ch = match promotion {
+                Promotion::Bishop => 'b',
+                Promotion::Knight => 'n',
+                Promotion::Rook => 'r',
+                Promotion::Queen => 'q',
+            };
+            write!(f, "{ch}")?;
         }
         Ok(())
     }

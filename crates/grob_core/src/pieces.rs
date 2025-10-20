@@ -1,31 +1,15 @@
-use crate::{Rank, Square};
 use std::ops::Not;
-use strum::{Display, EnumCount, EnumIter, EnumString, FromRepr, VariantArray};
+use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
+
+use crate::square::{Rank, Square};
 
 /// Color of a chess piece.
 #[repr(u8)]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    EnumCount,
-    EnumIter,
-    Display,
-    EnumString,
-    VariantArray,
-    FromRepr,
-    Hash,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Color {
     /// White pieces.
-    #[strum(serialize = "w")]
-    #[strum(ascii_case_insensitive)]
     White,
     /// Black pieces.
-    #[strum(serialize = "b")]
-    #[strum(ascii_case_insensitive)]
     Black,
 }
 
@@ -37,7 +21,6 @@ impl Color {
             Color::Black => square.mirrored(),
         }
     }
-
     /// Returns the same rank for white and mirrors the rank for black.
     pub fn mirror_rank(self, rank: Rank) -> Rank {
         match self {
@@ -54,7 +37,7 @@ impl Not for Color {
     ///
     /// # Examples
     /// ```rust
-    /// use grob_core::Color;
+    /// use grob_core::pieces::Color;
     ///
     /// assert_eq!(!Color::White, Color::Black);
     /// assert_eq!(!Color::Black, Color::White);
@@ -67,46 +50,19 @@ impl Not for Color {
 
 /// Chess piece type.
 #[repr(u8)]
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    EnumCount,
-    EnumIter,
-    Display,
-    EnumString,
-    VariantArray,
-    FromRepr,
-    Hash,
-)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Piece {
     /// Pawn pieces.
-    #[strum(serialize = "p")]
-    #[strum(ascii_case_insensitive)]
     Pawn,
     /// Knight pieces.
-    #[strum(serialize = "n")]
-    #[strum(ascii_case_insensitive)]
     Knight,
     /// Bishop pieces.
-    #[strum(serialize = "b")]
-    #[strum(ascii_case_insensitive)]
     Bishop,
     /// Rook pieces.
-    #[strum(serialize = "r")]
-    #[strum(ascii_case_insensitive)]
     Rook,
     /// Queen pieces.
-    #[strum(serialize = "q")]
-    #[strum(ascii_case_insensitive)]
     Queen,
     /// King pieces.
-    #[strum(serialize = "k")]
-    #[strum(ascii_case_insensitive)]
     King,
 }
 
@@ -124,38 +80,15 @@ impl Piece {
 }
 
 /// Chess piece type that pawns can promote to.
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    EnumCount,
-    EnumIter,
-    Display,
-    EnumString,
-    VariantArray,
-    FromRepr,
-    Hash,
-)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, EnumCount, EnumIter, VariantArray, FromRepr, Hash)]
 pub enum Promotion {
     /// Promotion to bishop.
-    #[strum(serialize = "b")]
-    #[strum(ascii_case_insensitive)]
     Bishop,
     /// Promotion to knight.
-    #[strum(serialize = "n")]
-    #[strum(ascii_case_insensitive)]
     Knight,
     /// Promotion to rook.
-    #[strum(serialize = "r")]
-    #[strum(ascii_case_insensitive)]
     Rook,
     /// Promotion to queen.
-    #[strum(serialize = "q")]
-    #[strum(ascii_case_insensitive)]
     Queen,
 }
 
@@ -168,5 +101,40 @@ impl Promotion {
             Promotion::Rook => Piece::Rook,
             Promotion::Queen => Piece::Queen,
         }
+    }
+}
+
+/// Converts the piece in FEN notation to color/piece kind combintion.
+pub fn piece_from_fen(ch: char) -> Option<(Color, Piece)> {
+    let piece = match ch.to_ascii_lowercase() {
+        'p' => Piece::Pawn,
+        'n' => Piece::Knight,
+        'b' => Piece::Bishop,
+        'r' => Piece::Rook,
+        'q' => Piece::Queen,
+        'k' => Piece::King,
+        _ => return None,
+    };
+    let color = match ch.is_ascii_lowercase() {
+        true => Color::Black,
+        false => Color::White,
+    };
+    Some((color, piece))
+}
+
+/// Converts the color and piece kind to FEN piece.
+pub fn piece_to_fen(color: Color, piece: Piece) -> char {
+    let letter = match piece {
+        Piece::Pawn => 'p',
+        Piece::Knight => 'k',
+        Piece::Bishop => 'b',
+        Piece::Rook => 'r',
+        Piece::Queen => 'q',
+        Piece::King => 'k',
+    };
+    if color == Color::White {
+        letter.to_ascii_uppercase()
+    } else {
+        letter
     }
 }

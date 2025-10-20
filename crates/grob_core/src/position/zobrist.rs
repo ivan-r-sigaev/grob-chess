@@ -1,7 +1,11 @@
-use crate::{CastlingRights, Color, File, Piece, Square};
-
 use const_random::const_random;
 use strum::EnumCount;
+
+use crate::{
+    castling_rights::CastlingRights,
+    pieces::{Color, Piece},
+    square::{File, Square},
+};
 
 /// Computes a [zobrist hash] for a chess piece.
 ///

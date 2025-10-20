@@ -1,10 +1,13 @@
-use std::fmt;
+use std::{fmt, num::NonZeroU16};
 
 use strum::{EnumCount, FromRepr, VariantArray};
 
 use crate::{
+    bitboard::BitBoard,
+    castling_rights::CastlingRights,
     game::{lan::LanMove, Game},
-    BitBoard, CastlingRights, Color, Piece, Promotion, Rank, Square,
+    pieces::{Color, Piece, Promotion},
+    square::{Rank, Square},
 };
 
 /// A hint specifying what kind of move to perform.
@@ -44,6 +47,10 @@ pub enum ChessMoveHint {
 }
 
 impl ChessMoveHint {
+    /// Value of the first gap/niche in this enum.
+    pub const NICHE1: u8 = 6;
+    /// Value of the second gap/niche in this enum.
+    pub const NICHE2: u8 = 7;
     /// Is this move a capture.
     #[inline(always)]
     #[must_use]
@@ -101,30 +108,29 @@ impl ChessMove {
 
 /// Compact version of a [`ChessMove`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PackedChessMove {
-    data: u16,
-}
+pub struct PackedChessMove(NonZeroU16);
 
 impl PackedChessMove {
     /// Converts [`ChessMove`] to it's compact form.
     #[inline(always)]
     #[must_use]
     pub fn new(chess_move: ChessMove) -> Self {
-        Self {
-            data: (((chess_move.hint as u16) & 0xf) << 12)
-                | (((chess_move.from as u16) & 0x3f) << 6)
-                | ((chess_move.to as u16) & 0x3f),
-        }
+        let data = (((chess_move.hint as u16) & 0xf) << 12)
+            | (((chess_move.from as u16) & 0x3f) << 6)
+            | ((chess_move.to as u16) & 0x3f);
+        Self(NonZeroU16::new(data ^ Self::IMPOSSIBLE_DATA).unwrap())
     }
     /// Unpacks the [`ChessMove`] from it's compact form.
     #[inline(always)]
     #[must_use]
     pub fn get(self) -> ChessMove {
-        let to = Square::from_repr((self.data & 0x3f) as u8).unwrap();
-        let from = Square::from_repr(((self.data >> 6) & 0x3f) as u8).unwrap();
-        let hint = ChessMoveHint::from_repr(((self.data >> 12) & 0x0f) as u8).unwrap();
+        let data = self.0.get() ^ Self::IMPOSSIBLE_DATA;
+        let to = Square::from_repr((data & 0x3f) as u8).unwrap();
+        let from = Square::from_repr(((data >> 6) & 0x3f) as u8).unwrap();
+        let hint = ChessMoveHint::from_repr(((data >> 12) & 0x0f) as u8).unwrap();
         ChessMove { to, from, hint }
     }
+    const IMPOSSIBLE_DATA: u16 = (ChessMoveHint::NICHE1 as u16) << 12;
 }
 
 impl Game {
@@ -185,7 +191,7 @@ impl Game {
     }
     /// Generate pseudo-legal bishop-like quiet moves from this position.
     pub fn push_bishop_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_bishop_sliders(self.turn()) {
             let attacks = BitBoard::bishop_attacks(occ, from);
@@ -194,7 +200,7 @@ impl Game {
     }
     /// Generate pseudo-legal bishop-like attacks from this position.
     pub fn push_bishop_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_bishop_sliders(self.turn()) {
             let attacks = BitBoard::bishop_attacks(occ, from);
@@ -203,7 +209,7 @@ impl Game {
     }
     /// Generate pseudo-legal rook-like quiet moves from this position.
     pub fn push_rook_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_rook_sliders(self.turn()) {
             let attacks = BitBoard::rook_attacks(occ, from);
@@ -212,7 +218,7 @@ impl Game {
     }
     /// Generate pseudo-legal rook-like attacks from this position.
     pub fn push_rook_attacks(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
 
         for from in self.board().get_color_rook_sliders(self.turn()) {
             let attacks = BitBoard::rook_attacks(occ, from);
@@ -221,7 +227,7 @@ impl Game {
     }
     /// Generate pseudo-legal quiet pawn moves from this position.
     pub fn push_pawn_quiets(&self, push_move: &mut impl FnMut(ChessMove)) {
-        let empty = !self.board().get_occupance();
+        let empty = !self.board().get_occupied();
 
         let single_pushes = BitBoard::pawn_pushes(
             self.board().get_color_piece(self.turn(), Piece::Pawn),
@@ -400,7 +406,7 @@ impl Game {
         hint: ChessMoveHint,
     ) {
         let board = self.board();
-        Self::push_for_each(push_move, attacks & !board.get_occupance(), from, hint);
+        Self::push_for_each(push_move, attacks & !board.get_occupied(), from, hint);
     }
     fn push_for_each(
         push_move: &mut impl FnMut(ChessMove),
@@ -446,7 +452,7 @@ impl Game {
             && !self.board().is_king_in_check(color)
             && !self
                 .board()
-                .get_occupance()
+                .get_occupied()
                 .has_square(color.mirror_square(Square::B1))
             && self
                 .board()
@@ -462,26 +468,21 @@ impl Game {
         let to = chess_move.to;
         let hint = chess_move.hint;
 
-        let piece = match self.board().get_piece_at(from) {
-            Some(piece) => piece,
-            None => return false,
-        };
-
-        let color = match self.board().get_color_at(from) {
-            Some(color) => color,
+        let (color, piece) = match self.board().get_color_piece_at(from) {
+            Some(res) => res,
             None => return false,
         };
         if color != self.turn() {
             return false;
         }
 
-        let occ = self.board().get_occupance();
+        let occ = self.board().get_occupied();
         let empty = self.board().get_empty();
-        let target = self.board().get_piece_at(to);
-        let target_color = self.board().get_color_at(to);
 
-        if let Some(tgt_color) = target_color {
-            if tgt_color == color {
+        let target = self.board().get_color_piece_at(to);
+
+        if let Some((target_color, _)) = target {
+            if target_color == color {
                 return false;
             }
         }
@@ -537,8 +538,7 @@ impl Game {
                 let target_sq = Square::new(from.rank(), to.file());
                 Square::new(color.mirror_rank(Rank::R6), file) == to
                     && !(BitBoard::pawn_attacks(from, color) & BitBoard::from(to)).is_empty()
-                    && self.board().get_piece_at(target_sq) == Some(Piece::Pawn)
-                    && self.board().get_color_at(target_sq) == Some(!color)
+                    && self.board().get_color_piece_at(target_sq) == Some((!color, Piece::Pawn))
             }
             ChessMoveHint::KnightPromotion
             | ChessMoveHint::BishopPromotion
@@ -568,7 +568,7 @@ impl fmt::Display for Game {
             concat!(
                 // TODO: this does not display history
                 "Chess position {{\n",
-                "  turn: {}\n",
+                "  turn: {:?}\n",
                 "  castling rights: {}\n",
                 "  available en passant: {}\n",
                 "  moves since last capture/pawn move: {}\n",
@@ -586,5 +586,16 @@ impl fmt::Display for Game {
             self.zobrist(),
             self.board(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::game::movegen::ChessMoveHint;
+
+    #[test]
+    fn test_chess_move_hint_niches() {
+        assert!(ChessMoveHint::from_repr(ChessMoveHint::NICHE1).is_none());
+        assert!(ChessMoveHint::from_repr(ChessMoveHint::NICHE2).is_none());
     }
 }

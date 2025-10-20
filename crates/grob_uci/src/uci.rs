@@ -1,5 +1,5 @@
 use crossbeam::channel::{Receiver, SendError, bounded};
-use grob_core::{Game, LanMove};
+use grob_core::game::{Game, lan::LanMove};
 use std::{
     io::{self, BufRead, BufReader, Read},
     result,
@@ -122,7 +122,7 @@ impl Cursor<'_> {
         };
 
         let maybe_position = match maybe_fen {
-            Some(fen) => Game::try_from_fen(&fen).ok(),
+            Some(fen) => Game::try_from_fen(&fen),
             None => Some(Game::initial_position()),
         };
 

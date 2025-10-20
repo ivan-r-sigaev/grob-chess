@@ -1,4 +1,3 @@
-use crate::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,
@@ -9,11 +8,15 @@ use std::{
 };
 use strum::EnumCount;
 
+use crate::square::{File, NegDiag, PosDiag, Rank, Square};
+
+mod move_calculation;
+
 /// A [bitboard]. Wraps u64 occupancy mask.
 ///
 /// [bitboard]: https://www.chessprogramming.org/Bitboard_Board-Definition
 #[derive(Debug, Clone, Copy)]
-pub struct BitBoard(pub u64);
+pub struct BitBoard(u64);
 
 impl BitBoard {
     /// Empty bitboard.

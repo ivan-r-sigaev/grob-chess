@@ -1,6 +1,6 @@
 use std::sync::{
-    atomic::{AtomicU8, Ordering},
     Arc, Barrier,
+    atomic::{AtomicU8, Ordering},
 };
 
 use crossbeam::utils::CachePadded;

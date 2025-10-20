@@ -8,8 +8,11 @@ use crossbeam::{
     select,
 };
 use grob_core::{
-    ChessMove, Color, Game, LanMove, MoveOrdering, Score, SearchRequest, ServerCommand,
-    ServerResponse, spawn_search_server,
+    game::{Game, lan::LanMove, movegen::ChessMove, walker::MoveOrdering},
+    pieces::Color,
+};
+use grob_search::{
+    SearchRequest, ServerCommand, ServerResponse, score::Score, spawn_search_server,
 };
 
 use crate::uci::Go;
@@ -64,7 +67,7 @@ struct SearchProgress {
     /// or a suggested ponder move).
     game: Game,
     /// Sorted vector of the searched moves.
-    moves: Vec<(ChessMove, Option<grob_core::SearchResult>)>,
+    moves: Vec<(ChessMove, Option<grob_search::SearchResult>)>,
     /// Limits of the search.
     limits: SearchLimits,
     /// Current iterative deepening depth.
@@ -142,7 +145,7 @@ impl UciServer {
             .unwrap_or({
                 let mut vec = Vec::new();
                 game.walk()
-                    .for_each_legal_child_node(MoveOrdering::MvvLva, |_, chess_move| {
+                    .for_each_legal_move(MoveOrdering::MvvLva, |_, chess_move| {
                         vec.push((chess_move, None));
                     });
                 vec

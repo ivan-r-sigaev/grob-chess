@@ -1,7 +1,7 @@
 use bitflags::bitflags;
-use std::{fmt, str::FromStr};
+use std::fmt;
 
-use crate::Color;
+use crate::pieces::Color;
 
 bitflags! {
     /// Castlight rights of a chess position.
@@ -29,7 +29,6 @@ impl CastlingRights {
             Self::BLACK_KING
         }
     }
-
     /// Returns the queenside castling rights for the given color.
     #[inline(always)]
     #[must_use]
@@ -40,13 +39,12 @@ impl CastlingRights {
             Self::BLACK_QUEEN
         }
     }
-
     /// Returns the full castling rights for the given color.
     ///
     /// # Examples
     /// ```rust
-    /// use grob_core::CastlingRights;
-    /// use grob_core::Color;
+    /// use grob_core::castling_rights::CastlingRights;
+    /// use grob_core::pieces::Color;
     ///
     /// let white = CastlingRights::both_sides(Color::White);
     /// let white_king = CastlingRights::WHITE_KING;
@@ -69,18 +67,14 @@ impl CastlingRights {
             Self::BLACK_QUEEN | Self::BLACK_KING
         }
     }
-}
-
-impl FromStr for CastlingRights {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    /// Constructs new castling rights from FEN notation segment.
+    pub fn from_fen_segment(fen: &str) -> Option<Self> {
         let mut res = Self::empty();
-        if s == "-" {
-            return Ok(res);
+        if fen == "-" {
+            return Some(res);
         }
 
-        let mut chars = s.chars().peekable();
+        let mut chars = fen.chars().peekable();
         if chars.peek() == Some(&'K') {
             res |= Self::WHITE_KING;
             chars.next();
@@ -98,42 +92,44 @@ impl FromStr for CastlingRights {
             chars.next();
         }
         if chars.peek().is_none() {
-            Ok(res)
+            Some(res)
         } else {
-            Err(())
+            None
         }
+    }
+    /// Constructs FEN notation segment for castling rights.
+    pub fn into_fen_segment(self) -> String {
+        if self.is_empty() {
+            return String::from("-");
+        }
+        format!(
+            "{}{}{}{}",
+            if self.contains(Self::WHITE_KING) {
+                "K"
+            } else {
+                ""
+            },
+            if self.contains(Self::WHITE_QUEEN) {
+                "Q"
+            } else {
+                ""
+            },
+            if self.contains(Self::BLACK_KING) {
+                "k"
+            } else {
+                ""
+            },
+            if self.contains(Self::BLACK_QUEEN) {
+                "q"
+            } else {
+                ""
+            },
+        )
     }
 }
 
 impl fmt::Display for CastlingRights {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.is_empty() {
-            write!(f, "-")
-        } else {
-            write!(
-                f,
-                "{}{}{}{}",
-                if self.contains(Self::WHITE_KING) {
-                    "K"
-                } else {
-                    ""
-                },
-                if self.contains(Self::WHITE_QUEEN) {
-                    "Q"
-                } else {
-                    ""
-                },
-                if self.contains(Self::BLACK_KING) {
-                    "k"
-                } else {
-                    ""
-                },
-                if self.contains(Self::WHITE_QUEEN) {
-                    "q"
-                } else {
-                    ""
-                }
-            )
-        }
+        write!(f, "{}", self.into_fen_segment())
     }
 }

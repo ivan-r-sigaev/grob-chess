@@ -1,6 +1,11 @@
 use crate::{
-    game::{base::PlyHistory, Game},
-    CastlingRights, ChessMove, ChessMoveHint, File, Piece, Square,
+    castling_rights::CastlingRights,
+    game::{
+        movegen::{ChessMove, ChessMoveHint},
+        Game, PlyHistory,
+    },
+    pieces::Piece,
+    square::{File, Square},
 };
 
 /// Data needed to rollback a move.
@@ -60,65 +65,88 @@ impl Game {
 
         match hint {
             ChessMoveHint::Quiet => {
-                self.move_color_piece(self.turn(), piece, from, to);
+                self.position.move_color_piece(self.turn(), piece, from, to);
             }
             ChessMoveHint::DoublePawn => {
-                self.move_color_piece(self.turn(), Piece::Pawn, from, to);
+                self.position
+                    .move_color_piece(self.turn(), Piece::Pawn, from, to);
             }
             ChessMoveHint::BishopPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Bishop, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Bishop, to);
             }
             ChessMoveHint::KnightPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Knight, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Knight, to);
             }
             ChessMoveHint::RookPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Rook, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position.add_color_piece(self.turn(), Piece::Rook, to);
             }
             ChessMoveHint::QueenPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.add_color_piece(self.turn(), Piece::Queen, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position.add_color_piece(self.turn(), Piece::Queen, to);
             }
             ChessMoveHint::Caputre => {
-                self.remove_color_piece(!self.turn(), capture.unwrap(), to);
-                self.move_color_piece(self.turn(), piece, from, to);
+                self.position
+                    .remove_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position.move_color_piece(self.turn(), piece, from, to);
             }
             ChessMoveHint::EnPassantCapture => {
                 let attacked_sq = Square::new(from.rank(), to.file());
-                self.remove_color_piece(!self.turn(), Piece::Pawn, attacked_sq);
-                self.move_color_piece(self.turn(), Piece::Pawn, from, to);
+                self.position
+                    .remove_color_piece(!self.turn(), Piece::Pawn, attacked_sq);
+                self.position
+                    .move_color_piece(self.turn(), Piece::Pawn, from, to);
             }
             ChessMoveHint::BishopPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Bishop, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Bishop, to);
             }
             ChessMoveHint::KnightPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Knight, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Knight, to);
             }
             ChessMoveHint::RookPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Rook, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position.add_color_piece(self.turn(), Piece::Rook, to);
             }
             ChessMoveHint::QueenPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Pawn, from);
-                self.remove_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Queen, to);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position.add_color_piece(self.turn(), Piece::Queen, to);
             }
             ChessMoveHint::KingCastle => {
                 let rook_to = self.turn().mirror_square(Square::F1);
                 let rook_from = self.turn().mirror_square(Square::H1);
-                self.move_color_piece(self.turn(), Piece::King, from, to);
-                self.move_color_piece(self.turn(), Piece::Rook, rook_from, rook_to);
+                self.position
+                    .move_color_piece(self.turn(), Piece::King, from, to);
+                self.position
+                    .move_color_piece(self.turn(), Piece::Rook, rook_from, rook_to);
             }
             ChessMoveHint::QueenCastle => {
-                self.move_color_piece(self.turn(), Piece::King, from, to);
-                self.move_color_piece(
+                self.position
+                    .move_color_piece(self.turn(), Piece::King, from, to);
+                self.position.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::A1),
@@ -169,14 +197,15 @@ impl Game {
             };
             from_castling_rights | to_castling_rights
         };
-        self.set_castling_rights(self.castling_rights() & !remove_castling_rights);
+        self.position
+            .set_castling_rights(self.castling_rights() & !remove_castling_rights);
 
-        self.set_en_passant(match hint {
+        self.position.set_en_passant(match hint {
             ChessMoveHint::DoublePawn => Some(from.file()),
             _ => None,
         });
 
-        self.swap_turn();
+        self.position.swap_turn();
 
         let halfmove_clock = self.next_move_index(reset_hm_clock);
 
@@ -188,9 +217,9 @@ impl Game {
             halfmove_clock,
         };
 
-        self.push_history(PlyHistory { hash, unmove });
+        self.history.push(PlyHistory { hash, unmove });
 
-        let is_legal = !self.was_check_ignored();
+        let is_legal = !self.can_capture_king();
         if !is_legal {
             self.unmake_move();
         }
@@ -208,13 +237,14 @@ impl Game {
     /// returns `false` if there are no moves to roll back.
     #[must_use]
     pub fn try_unmake_move(&mut self) -> bool {
-        let Some(ply_history) = self.pop_history() else {
+        let Some(ply_history) = self.history.pop() else {
             return false;
         };
         let chess_unmove = ply_history.unmove;
-        self.swap_turn();
-        self.set_castling_rights(chess_unmove.castling_rights);
-        self.set_en_passant(chess_unmove.en_passant);
+        self.position.swap_turn();
+        self.position
+            .set_castling_rights(chess_unmove.castling_rights);
+        self.position.set_en_passant(chess_unmove.en_passant);
         self.prev_move_index(chess_unmove.halfmove_clock);
 
         let from = chess_unmove.chess_move.orig_square();
@@ -226,62 +256,86 @@ impl Game {
 
         match hint {
             ChessMoveHint::Quiet => {
-                self.move_color_piece(self.turn(), piece, to, from);
+                self.position.move_color_piece(self.turn(), piece, to, from);
             }
             ChessMoveHint::DoublePawn => {
-                self.move_color_piece(self.turn(), Piece::Pawn, to, from);
+                self.position
+                    .move_color_piece(self.turn(), Piece::Pawn, to, from);
             }
             ChessMoveHint::KnightPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Knight, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Knight, to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::BishopPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Bishop, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Bishop, to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::RookPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Rook, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Rook, to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::QueenPromotion => {
-                self.remove_color_piece(self.turn(), Piece::Queen, to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Queen, to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::Caputre => {
-                self.move_color_piece(self.turn(), piece, to, from);
-                self.add_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position.move_color_piece(self.turn(), piece, to, from);
+                self.position
+                    .add_color_piece(!self.turn(), capture.unwrap(), to);
             }
             ChessMoveHint::EnPassantCapture => {
-                self.move_color_piece(self.turn(), Piece::Pawn, to, from);
-                self.add_color_piece(
+                self.position
+                    .move_color_piece(self.turn(), Piece::Pawn, to, from);
+                self.position.add_color_piece(
                     !self.turn(),
                     Piece::Pawn,
                     Square::new(from.rank(), to.file()),
                 );
             }
             ChessMoveHint::KnightPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Knight, to);
-                self.add_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Knight, to);
+                self.position
+                    .add_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::BishopPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Bishop, to);
-                self.add_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Bishop, to);
+                self.position
+                    .add_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::RookPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Rook, to);
-                self.add_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Rook, to);
+                self.position
+                    .add_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::QueenPromotionCapture => {
-                self.remove_color_piece(self.turn(), Piece::Queen, to);
-                self.add_color_piece(!self.turn(), capture.unwrap(), to);
-                self.add_color_piece(self.turn(), Piece::Pawn, from);
+                self.position
+                    .remove_color_piece(self.turn(), Piece::Queen, to);
+                self.position
+                    .add_color_piece(!self.turn(), capture.unwrap(), to);
+                self.position
+                    .add_color_piece(self.turn(), Piece::Pawn, from);
             }
             ChessMoveHint::KingCastle => {
-                self.move_color_piece(self.turn(), Piece::King, to, from);
-                self.move_color_piece(
+                self.position
+                    .move_color_piece(self.turn(), Piece::King, to, from);
+                self.position.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::F1),
@@ -289,8 +343,9 @@ impl Game {
                 );
             }
             ChessMoveHint::QueenCastle => {
-                self.move_color_piece(self.turn(), Piece::King, to, from);
-                self.move_color_piece(
+                self.position
+                    .move_color_piece(self.turn(), Piece::King, to, from);
+                self.position.move_color_piece(
                     self.turn(),
                     Piece::Rook,
                     self.turn().mirror_square(Square::D1),

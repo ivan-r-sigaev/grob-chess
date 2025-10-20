@@ -1,6 +1,6 @@
-//! Engine
+//! Grob UCI
 //!
-//! This crate is the driver code for the engine.
+//! This crate is the driver code for the UCI engine.
 
 use crate::server::Server;
 

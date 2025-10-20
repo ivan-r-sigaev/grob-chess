@@ -16,30 +16,15 @@ use strum::{Display, EnumCount, EnumIter, EnumString, FromRepr, VariantArray};
     FromRepr,
     Hash,
 )]
+#[strum(ascii_case_insensitive)]
 pub enum File {
-    /// The 'A' file.
-    #[strum(ascii_case_insensitive)]
     A,
-    /// The 'B' file.
-    #[strum(ascii_case_insensitive)]
     B,
-    /// The 'C' file.
-    #[strum(ascii_case_insensitive)]
     C,
-    /// The 'D' file.
-    #[strum(ascii_case_insensitive)]
     D,
-    /// The 'E' file.
-    #[strum(ascii_case_insensitive)]
     E,
-    /// The 'F' file.
-    #[strum(ascii_case_insensitive)]
     F,
-    /// The 'G' file.
-    #[strum(ascii_case_insensitive)]
     G,
-    /// The 'H' file.
-    #[strum(ascii_case_insensitive)]
     H,
 }
 
@@ -109,37 +94,23 @@ impl Rank {
     FromRepr,
     Hash,
 )]
+#[strum(ascii_case_insensitive)]
 pub enum PosDiag {
-    #[strum(ascii_case_insensitive)]
     H1H1 = -(Rank::COUNT as i8) + 1,
-    #[strum(ascii_case_insensitive)]
     G1H2,
-    #[strum(ascii_case_insensitive)]
     F1H3,
-    #[strum(ascii_case_insensitive)]
     E1H4,
-    #[strum(ascii_case_insensitive)]
     D1H5,
-    #[strum(ascii_case_insensitive)]
     C1H6,
-    #[strum(ascii_case_insensitive)]
     B1H7,
     /// The main diagonal.
-    #[strum(ascii_case_insensitive)]
     A1H8,
-    #[strum(ascii_case_insensitive)]
     A2G8,
-    #[strum(ascii_case_insensitive)]
     A3F8,
-    #[strum(ascii_case_insensitive)]
     A4E8,
-    #[strum(ascii_case_insensitive)]
     A5D8,
-    #[strum(ascii_case_insensitive)]
     A6C8,
-    #[strum(ascii_case_insensitive)]
     A7B8,
-    #[strum(ascii_case_insensitive)]
     A8A8,
 }
 
@@ -159,37 +130,23 @@ pub enum PosDiag {
     FromRepr,
     Hash,
 )]
+#[strum(ascii_case_insensitive)]
 pub enum NegDiag {
-    #[strum(ascii_case_insensitive)]
     A1A1 = -(Rank::COUNT as i8) + 1,
-    #[strum(ascii_case_insensitive)]
     A2B1,
-    #[strum(ascii_case_insensitive)]
     A3C1,
-    #[strum(ascii_case_insensitive)]
     A4D1,
-    #[strum(ascii_case_insensitive)]
     A5E1,
-    #[strum(ascii_case_insensitive)]
     A6F1,
-    #[strum(ascii_case_insensitive)]
     A7G1,
     /// The main antidiagonal.
-    #[strum(ascii_case_insensitive)]
     A8H1,
-    #[strum(ascii_case_insensitive)]
     B8H2,
-    #[strum(ascii_case_insensitive)]
     C8H3,
-    #[strum(ascii_case_insensitive)]
     D8H4,
-    #[strum(ascii_case_insensitive)]
     E8H5,
-    #[strum(ascii_case_insensitive)]
     F8H6,
-    #[strum(ascii_case_insensitive)]
     G8H7,
-    #[strum(ascii_case_insensitive)]
     H8H8,
 }
 
@@ -209,134 +166,71 @@ pub enum NegDiag {
     FromRepr,
     Hash,
 )]
+#[strum(ascii_case_insensitive)]
 pub enum Square {
-    #[strum(ascii_case_insensitive)]
     A1,
-    #[strum(ascii_case_insensitive)]
     B1,
-    #[strum(ascii_case_insensitive)]
     C1,
-    #[strum(ascii_case_insensitive)]
     D1,
-    #[strum(ascii_case_insensitive)]
     E1,
-    #[strum(ascii_case_insensitive)]
     F1,
-    #[strum(ascii_case_insensitive)]
     G1,
-    #[strum(ascii_case_insensitive)]
     H1,
-    #[strum(ascii_case_insensitive)]
     A2,
-    #[strum(ascii_case_insensitive)]
     B2,
-    #[strum(ascii_case_insensitive)]
     C2,
-    #[strum(ascii_case_insensitive)]
     D2,
-    #[strum(ascii_case_insensitive)]
     E2,
-    #[strum(ascii_case_insensitive)]
     F2,
-    #[strum(ascii_case_insensitive)]
     G2,
-    #[strum(ascii_case_insensitive)]
     H2,
-    #[strum(ascii_case_insensitive)]
     A3,
-    #[strum(ascii_case_insensitive)]
     B3,
-    #[strum(ascii_case_insensitive)]
     C3,
-    #[strum(ascii_case_insensitive)]
     D3,
-    #[strum(ascii_case_insensitive)]
     E3,
-    #[strum(ascii_case_insensitive)]
     F3,
-    #[strum(ascii_case_insensitive)]
     G3,
-    #[strum(ascii_case_insensitive)]
     H3,
-    #[strum(ascii_case_insensitive)]
     A4,
-    #[strum(ascii_case_insensitive)]
     B4,
-    #[strum(ascii_case_insensitive)]
     C4,
-    #[strum(ascii_case_insensitive)]
     D4,
-    #[strum(ascii_case_insensitive)]
     E4,
-    #[strum(ascii_case_insensitive)]
     F4,
-    #[strum(ascii_case_insensitive)]
     G4,
-    #[strum(ascii_case_insensitive)]
     H4,
-    #[strum(ascii_case_insensitive)]
     A5,
-    #[strum(ascii_case_insensitive)]
     B5,
-    #[strum(ascii_case_insensitive)]
     C5,
-    #[strum(ascii_case_insensitive)]
     D5,
-    #[strum(ascii_case_insensitive)]
     E5,
-    #[strum(ascii_case_insensitive)]
     F5,
-    #[strum(ascii_case_insensitive)]
     G5,
-    #[strum(ascii_case_insensitive)]
     H5,
-    #[strum(ascii_case_insensitive)]
     A6,
-    #[strum(ascii_case_insensitive)]
     B6,
-    #[strum(ascii_case_insensitive)]
     C6,
-    #[strum(ascii_case_insensitive)]
     D6,
-    #[strum(ascii_case_insensitive)]
     E6,
-    #[strum(ascii_case_insensitive)]
     F6,
-    #[strum(ascii_case_insensitive)]
     G6,
-    #[strum(ascii_case_insensitive)]
     H6,
-    #[strum(ascii_case_insensitive)]
     A7,
-    #[strum(ascii_case_insensitive)]
     B7,
-    #[strum(ascii_case_insensitive)]
     C7,
-    #[strum(ascii_case_insensitive)]
     D7,
-    #[strum(ascii_case_insensitive)]
     E7,
-    #[strum(ascii_case_insensitive)]
     F7,
-    #[strum(ascii_case_insensitive)]
     G7,
-    #[strum(ascii_case_insensitive)]
     H7,
-    #[strum(ascii_case_insensitive)]
     A8,
-    #[strum(ascii_case_insensitive)]
     B8,
-    #[strum(ascii_case_insensitive)]
     C8,
-    #[strum(ascii_case_insensitive)]
     D8,
-    #[strum(ascii_case_insensitive)]
     E8,
-    #[strum(ascii_case_insensitive)]
     F8,
-    #[strum(ascii_case_insensitive)]
     G8,
-    #[strum(ascii_case_insensitive)]
     H8,
 }
 
@@ -380,7 +274,7 @@ impl Square {
     ///
     /// # Examples
     /// ```rust
-    /// use grob_core::Square;
+    /// use grob_core::square::Square;
     ///
     /// assert_eq!(Square::A1.shifted(1), Square::B1);
     /// assert_eq!(Square::A1.shifted(-1), Square::H8);
