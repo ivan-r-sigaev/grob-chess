@@ -23,6 +23,8 @@ use crossbeam::{
 };
 use grob_core::game::{Game, movegen::ChessMove};
 
+pub const MAX_DEPTH: u8 = u8::MAX;
+
 /// A command for the parallel search server.
 #[derive(Debug, Clone)]
 pub enum ServerCommand {
@@ -80,7 +82,7 @@ pub struct SearchRequest {
     /// Game position to search.
     pub game: Game,
     /// Depth of the search.
-    pub depth: u64,
+    pub depth: u8,
     /// Searched nodes limit.
     pub nodes: Option<u64>,
     /// Search time limit.

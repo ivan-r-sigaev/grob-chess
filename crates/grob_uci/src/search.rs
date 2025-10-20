@@ -12,7 +12,7 @@ use grob_core::{
     pieces::Color,
 };
 use grob_search::{
-    SearchRequest, ServerCommand, ServerResponse, score::Score, spawn_search_server,
+    MAX_DEPTH, SearchRequest, ServerCommand, ServerResponse, score::Score, spawn_search_server,
 };
 
 use crate::uci::Go;
@@ -51,7 +51,7 @@ struct UciServer {
 #[derive(Debug, Clone, Copy)]
 struct SearchLimits {
     /// Search no further than this depth.
-    depth: Option<u64>,
+    depth: Option<u8>,
     /// Search no more than this many nodes.
     nodes: Option<u64>,
     /// Stop search if mate in less than this many turns is found.
@@ -71,7 +71,7 @@ struct SearchProgress {
     /// Limits of the search.
     limits: SearchLimits,
     /// Current iterative deepening depth.
-    running_depth: u64,
+    running_depth: u8,
     /// Number of remaining search results to recieve before
     /// increasing the current depth.
     pending_count: usize,
@@ -168,7 +168,10 @@ impl UciServer {
             .map(|d| Instant::now() + d);
         _ = go.movestogo;
         let nodes_max = go.nodes;
-        let depth_max = go.depth.map(|d| d - 1).filter(|_| !go.infinite);
+        let depth_max = go
+            .depth
+            .map(|d| (d - 1).min(MAX_DEPTH as u64) as u8)
+            .filter(|_| !go.infinite);
         let mate = go.mate;
         let ponder = go.ponder;
         self.progress = Some(SearchProgress {
@@ -300,7 +303,7 @@ impl UciServer {
             .limits
             .mate
             .is_some_and(|n| score >= Score::Mating(n) || score <= Score::Mated(n));
-        let depth_limited = progress.running_depth == u8::MAX as u64;
+        let depth_limited = progress.running_depth == u8::MAX;
         let should_stop =
             unfinished | time_fails | depth_fails | nodes_fail | mate_fail | depth_limited;
         let should_hold = should_stop & (progress.is_pondering | depth_limited);

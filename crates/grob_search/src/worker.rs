@@ -159,7 +159,7 @@ impl Worker {
     fn search(
         &mut self,
         node: &mut GameTreeWalker,
-        depth: u64,
+        depth: u8,
         constraints: SearchConstraints,
         mut alpha: Score,
         beta: Score,
