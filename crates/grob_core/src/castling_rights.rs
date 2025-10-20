@@ -1,7 +1,7 @@
 use bitflags::bitflags;
 use std::fmt;
 
-use crate::Color;
+use crate::pieces::Color;
 
 bitflags! {
     /// Castlight rights of a chess position.

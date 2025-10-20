@@ -3,8 +3,11 @@ use std::{fmt, num::NonZeroU16};
 use strum::{EnumCount, FromRepr, VariantArray};
 
 use crate::{
+    bitboard::BitBoard,
+    castling_rights::CastlingRights,
     game::{lan::LanMove, Game},
-    BitBoard, CastlingRights, Color, Piece, Promotion, Rank, Square,
+    pieces::{Color, Piece, Promotion},
+    square::{Rank, Square},
 };
 
 /// A hint specifying what kind of move to perform.

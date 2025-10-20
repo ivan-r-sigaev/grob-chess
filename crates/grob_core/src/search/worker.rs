@@ -4,12 +4,14 @@ use crossbeam::channel::{Receiver, Sender};
 use either::Either;
 
 use crate::{
+    pieces::Piece,
+    score::Score,
     search::{
         signals::{WorkerSignaler, WorkerSignalerMaster},
         transposition::{Transposition, TranspositionTable},
         SearchResult,
     },
-    GameEnding, GameTreeWalker, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
+    GameEnding, GameTreeWalker, MoveOrdering, SearchRequest, ServerResponse,
 };
 
 /// A search job to be computed by the [`Worker`].

@@ -1,6 +1,7 @@
-use crate::{Rank, Square};
 use std::ops::Not;
 use strum::{EnumCount, EnumIter, FromRepr, VariantArray};
+
+use crate::square::{Rank, Square};
 
 /// Color of a chess piece.
 #[repr(u8)]

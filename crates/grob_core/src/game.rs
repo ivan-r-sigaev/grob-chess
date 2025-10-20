@@ -1,10 +1,3 @@
-pub mod walker;
-
-mod lan;
-mod make;
-mod movegen;
-mod position;
-
 pub use lan::LanMove;
 pub use movegen::{ChessMove, ChessMoveHint, PackedChessMove};
 pub use walker::{GameEnding, GameTreeWalker, MoveOrdering};
@@ -12,10 +5,20 @@ pub use walker::{GameEnding, GameTreeWalker, MoveOrdering};
 use std::{collections::VecDeque, num::NonZeroU64};
 
 use crate::{
-    game::{make::ChessUnmove, position::Position},
-    primitives::piece_from_fen,
-    BitBoard, Board, CastlingRights, Color, File, Square,
+    bitboard::BitBoard,
+    board::Board,
+    castling_rights::CastlingRights,
+    game::make::ChessUnmove,
+    pieces::{piece_from_fen, Color},
+    position::Position,
+    square::{File, Square},
 };
+
+pub mod walker;
+
+mod lan;
+mod make;
+mod movegen;
 
 /// A chess position.
 #[derive(Debug, Clone)]

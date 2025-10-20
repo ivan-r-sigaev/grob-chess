@@ -1,6 +1,10 @@
 use std::{fmt, str::FromStr};
 
-use crate::{game::Game, ChessMove, Piece, Promotion, Square};
+use crate::{
+    pieces::{Piece, Promotion},
+    square::Square,
+    ChessMove, Game,
+};
 
 /// A chess move in a [LAN (Long Algebraic Notation)].
 ///

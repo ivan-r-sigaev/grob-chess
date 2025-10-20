@@ -1,7 +1,11 @@
 use std::fmt;
 use strum::{EnumCount, IntoEnumIterator};
 
-use crate::{primitives::pieces::piece_to_fen, BitBoard, Color, File, Piece, Rank, Square};
+use crate::{
+    bitboard::BitBoard,
+    pieces::{piece_to_fen, Color, Piece},
+    square::{File, Rank, Square},
+};
 
 /// Stores all the occupancy masks ([`BitBoard`]s) in chess position.
 ///

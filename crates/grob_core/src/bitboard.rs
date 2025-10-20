@@ -1,4 +1,3 @@
-use crate::{File, NegDiag, PosDiag, Rank, Square};
 use std::{
     fmt,
     hash::Hash,
@@ -8,6 +7,8 @@ use std::{
     },
 };
 use strum::EnumCount;
+
+use crate::square::{File, NegDiag, PosDiag, Rank, Square};
 
 mod move_calculation;
 

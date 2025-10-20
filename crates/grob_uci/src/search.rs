@@ -8,8 +8,8 @@ use crossbeam::{
     select,
 };
 use grob_core::{
-    ChessMove, Color, Game, LanMove, MoveOrdering, Score, SearchRequest, ServerCommand,
-    ServerResponse, spawn_search_server,
+    ChessMove, Game, LanMove, MoveOrdering, SearchRequest, ServerCommand, ServerResponse,
+    pieces::Color, score::Score, spawn_search_server,
 };
 
 use crate::uci::Go;

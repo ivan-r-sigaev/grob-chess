@@ -1,7 +1,3 @@
-pub use score::Score;
-
-pub mod score;
-
 #[allow(unused)]
 mod pv;
 mod signals;
@@ -16,6 +12,7 @@ use crossbeam::{
 };
 
 use crate::{
+    score::Score,
     search::{
         transposition::TranspositionTable,
         worker::{Job, WorkerGroup},

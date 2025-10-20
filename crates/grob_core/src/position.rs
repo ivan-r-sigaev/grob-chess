@@ -1,6 +1,12 @@
 use std::num::NonZeroU64;
 
-use crate::{BitBoard, Board, CastlingRights, Color, File, Piece, Rank, Square};
+use crate::{
+    bitboard::BitBoard,
+    board::Board,
+    castling_rights::CastlingRights,
+    pieces::{Color, Piece},
+    square::{File, Rank, Square},
+};
 
 mod zobrist;
 
