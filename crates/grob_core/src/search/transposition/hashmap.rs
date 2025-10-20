@@ -2,11 +2,11 @@ use std::{num::NonZeroU64, ops::Deref};
 
 /// The underlying type for the transposition table.
 #[derive(Debug, Clone)]
-pub struct TranspositionTableBase<T>(Box<[Option<Item<T>>]>);
+pub struct HashTable<T>(Box<[Option<Item<T>>]>);
 
 type Item<T> = (NonZeroU64, T);
 
-/// Immutable reference to [`Cache`]'s item.
+/// An immutable reference into the hashmap.
 #[derive(Debug, Clone)]
 pub struct Ref<'a, T> {
     key: NonZeroU64,
@@ -19,12 +19,12 @@ impl<T> Ref<'_, T> {
         self.item.0
     }
     /// Returns the key that was used to find the item.
-    pub fn search_key(&self) -> NonZeroU64 {
+    pub fn matched_key(&self) -> NonZeroU64 {
         self.key
     }
     /// Returns `true` if the key and the search key are the same.
     pub fn is_exact(&self) -> bool {
-        self.key() == self.search_key()
+        self.key() == self.matched_key()
     }
     /// Returns the reference to the item's value.
     pub fn get(&self) -> &T {
@@ -40,11 +40,11 @@ impl<T> Deref for Ref<'_, T> {
     }
 }
 
-impl<T> TranspositionTableBase<T> {
-    /// Size of a single item in bytes.
-    pub const ITEM_SIZE: usize = size_of::<Option<Item<T>>>();
+impl<T> HashTable<T> {
+    /// Size of a single item slot in bytes.
+    pub const SLOT_SIZE: usize = size_of::<Option<Item<T>>>();
 
-    /// Create a [`WeakHashMap`] that can hold a specified number of items.
+    /// Constructs a new hashmap that can hold no more than `capacity` number of items.
     ///
     /// # Panics
     /// Panics if `capacity` is zero.
@@ -54,33 +54,33 @@ impl<T> TranspositionTableBase<T> {
         vec.resize_with(capacity, || None);
         Self(vec.into_boxed_slice())
     }
-    /// Returns the maximum number of items this [`WeakHashMap`] can hold at the same time.
+    /// Returns the maximum nubmer of items this hashmap can hold.
     pub fn capacity(&self) -> usize {
         self.0.len()
     }
-    /// Returns a reference to the [`Cache`]'s item.
+    /// Returns the reference the item of the hashmap.
     pub fn get(&self, key: NonZeroU64) -> Option<Ref<'_, T>> {
         self.item(key).as_ref().map(|item| Ref { key, item })
     }
-    /// Inserts the item into the [`Cache`] and returns the old value if there was one.
+    /// Inserts the item into the hashmap.
+    ///
+    /// This will overwrite the item with the matching key.
     pub fn insert(&mut self, key: NonZeroU64, value: T) -> Option<T> {
         self.item_mut(key).replace((key, value)).map(|(_, v)| v)
     }
-    /// Removes all items from the [`Cache`].
+    /// Removes all items from the hashmap.
     pub fn clear(&mut self) {
-        for maybe_item in &mut self.0 {
-            *maybe_item = None;
-        }
+        self.0.fill_with(|| None);
     }
-    /// Returns a reference to the item.
+    /// Returns a raw reference to the hashmap's item.
     fn item(&self, key: NonZeroU64) -> &Option<Item<T>> {
         &self.0[self.key_index(key)]
     }
-    /// Returns a mutable reference to the item.
+    /// Returns a raw mutable reference to the hashmap's item.
     fn item_mut(&mut self, key: NonZeroU64) -> &mut Option<Item<T>> {
         &mut self.0[self.key_index(key)]
     }
-    /// Returns the array index for the specified key.
+    /// Returns the internal array index for the specified key.
     fn key_index(&self, key: NonZeroU64) -> usize {
         (key.get() % self.capacity() as u64) as usize
     }
