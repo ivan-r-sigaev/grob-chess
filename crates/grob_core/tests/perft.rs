@@ -32,7 +32,7 @@ mod collect {
     }
 
     fn collect_detailed(result: &mut PerftResult, node: &mut GameTreeWalker, depth: u8) {
-        _ = node.for_each_legal_child_node(MoveOrdering::default(), |node, chess_move| {
+        _ = node.for_each_legal_move(MoveOrdering::default(), |node, chess_move| {
             if depth != 0 {
                 collect_detailed(result, node, depth - 1);
                 return;
@@ -52,7 +52,7 @@ mod collect {
     }
 
     fn collect(result: &mut u64, node: &mut GameTreeWalker, depth: u8) {
-        _ = node.for_each_legal_child_node(MoveOrdering::default(), |node, _| {
+        _ = node.for_each_legal_move(MoveOrdering::default(), |node, _| {
             if depth != 0 {
                 collect(result, node, depth - 1);
                 return;

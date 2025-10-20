@@ -62,7 +62,7 @@ impl GameTreeWalker<'_> {
     /// if the position has no legal moves.
     pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
         let mut any_move = None;
-        let ending = self.for_each_legal_child_node(MoveOrdering::default(), |node, chess_move| {
+        let ending = self.for_each_legal_move(MoveOrdering::default(), |node, chess_move| {
             any_move = Some(chess_move);
             node.exhaust_moves();
         });
@@ -89,11 +89,7 @@ impl GameTreeWalker<'_> {
     /// Inspects all legal moves in position with a function.
     /// Returns `Some(game_ending: GameEnding)` if there are no legal moves.
     #[inline(always)]
-    pub fn for_each_legal_child_node<F>(
-        &mut self,
-        policy: MoveOrdering,
-        mut op: F,
-    ) -> Option<GameEnding>
+    pub fn for_each_legal_move<F>(&mut self, policy: MoveOrdering, mut op: F) -> Option<GameEnding>
     where
         F: FnMut(&mut Self, ChessMove),
     {

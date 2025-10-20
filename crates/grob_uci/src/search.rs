@@ -145,7 +145,7 @@ impl UciServer {
             .unwrap_or({
                 let mut vec = Vec::new();
                 game.walk()
-                    .for_each_legal_child_node(MoveOrdering::MvvLva, |_, chess_move| {
+                    .for_each_legal_move(MoveOrdering::MvvLva, |_, chess_move| {
                         vec.push((chess_move, None));
                     });
                 vec
