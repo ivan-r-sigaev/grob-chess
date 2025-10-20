@@ -274,7 +274,7 @@ impl Square {
     ///
     /// # Examples
     /// ```rust
-    /// use grob_core::Square;
+    /// use grob_core::square::Square;
     ///
     /// assert_eq!(Square::A1.shifted(1), Square::B1);
     /// assert_eq!(Square::A1.shifted(-1), Square::H8);

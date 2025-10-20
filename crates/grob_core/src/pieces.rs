@@ -37,7 +37,7 @@ impl Not for Color {
     ///
     /// # Examples
     /// ```rust
-    /// use grob_core::Color;
+    /// use grob_core::pieces::Color;
     ///
     /// assert_eq!(!Color::White, Color::Black);
     /// assert_eq!(!Color::Black, Color::White);

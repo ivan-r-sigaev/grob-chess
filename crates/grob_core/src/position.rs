@@ -89,7 +89,7 @@ impl Position {
     }
     /// Sets (or resets) the en passant file.
     ///
-    /// #Preconditions
+    /// # Preconditions
     /// If the en passant is set it should be logically possible.
     pub fn set_en_passant(&mut self, en_passant: Option<File>) {
         self.zobrist ^= zobrist::get_en_passant_zobrist(self.en_passant);
@@ -98,7 +98,7 @@ impl Position {
     }
     /// Sets the castling rights.
     ///
-    /// #Preconditions
+    /// # Preconditions
     /// Any set castling rights should be at least hypothetically possible to perform.
     pub fn set_castling_rights(&mut self, castling_rights: CastlingRights) {
         self.zobrist ^= zobrist::get_castling_zobrist(self.castling);
