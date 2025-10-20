@@ -102,3 +102,38 @@ impl Promotion {
         }
     }
 }
+
+/// Converts the piece in FEN notation to color/piece kind combintion.
+pub fn piece_from_fen(ch: char) -> Option<(Color, Piece)> {
+    let piece = match ch.to_ascii_lowercase() {
+        'p' => Piece::Pawn,
+        'n' => Piece::Knight,
+        'b' => Piece::Bishop,
+        'r' => Piece::Rook,
+        'q' => Piece::Queen,
+        'k' => Piece::King,
+        _ => return None,
+    };
+    let color = match ch.is_ascii_lowercase() {
+        true => Color::Black,
+        false => Color::White,
+    };
+    Some((color, piece))
+}
+
+/// Converts the color and piece kind to FEN piece.
+pub fn piece_to_fen(color: Color, piece: Piece) -> char {
+    let letter = match piece {
+        Piece::Pawn => 'p',
+        Piece::Knight => 'k',
+        Piece::Bishop => 'b',
+        Piece::Rook => 'r',
+        Piece::Queen => 'q',
+        Piece::King => 'k',
+    };
+    if color == Color::White {
+        letter.to_ascii_uppercase()
+    } else {
+        letter
+    }
+}

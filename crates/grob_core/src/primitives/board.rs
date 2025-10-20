@@ -1,7 +1,7 @@
 use std::fmt;
 use strum::{EnumCount, IntoEnumIterator};
 
-use crate::{BitBoard, Color, File, Piece, Rank, Square};
+use crate::{primitives::pieces::piece_to_fen, BitBoard, Color, File, Piece, Rank, Square};
 
 /// Stores all the occupancy masks ([`BitBoard`]s) in chess position.
 ///
@@ -23,47 +23,6 @@ impl Board {
             colors: [BitBoard::EMPTY; Color::COUNT],
             pieces: [BitBoard::EMPTY; Piece::COUNT],
         }
-    }
-    /// Constructs the board from FEN segment.
-    ///
-    /// FEN must contain a valid chess board.
-    pub fn from_fen_segment(fen: &str) -> Option<Self> {
-        let rows = fen.split('/').collect::<Vec<_>>();
-        if rows.len() != 8 {
-            return None;
-        }
-
-        let mut board = Board::empty();
-        let mut sq: Square = Square::A1;
-        for y in (0..8).rev() {
-            let mut row_len = 0;
-            for ch in rows[y].chars() {
-                if matches!(ch, '1'..='8') {
-                    let inc = ch.to_digit(10).unwrap() - 1;
-                    row_len += inc;
-                    sq = sq.shifted(inc as i8);
-                } else {
-                    let (color, piece) = piece_from_fen(ch)?;
-                    board.mask_or(color, piece, BitBoard::from(sq));
-                }
-                sq = sq.shifted(1);
-                row_len += 1;
-                if row_len > 8 {
-                    return None;
-                }
-            }
-            if row_len < 8 {
-                return None;
-            }
-        }
-        if board.get_color_piece(Color::White, Piece::King).count() != 1 {
-            return None;
-        }
-        if board.get_color_piece(Color::Black, Piece::King).count() != 1 {
-            return None;
-        }
-
-        Some(board)
     }
     /// Returns all pieces of specified color.
     #[inline(always)]
@@ -286,41 +245,6 @@ impl Board {
             img += "\n"
         }
         img
-    }
-}
-
-/// Converts the piece in FEN notation to color/piece kind combintion.
-fn piece_from_fen(ch: char) -> Option<(Color, Piece)> {
-    let piece = match ch.to_ascii_lowercase() {
-        'p' => Piece::Pawn,
-        'n' => Piece::Knight,
-        'b' => Piece::Bishop,
-        'r' => Piece::Rook,
-        'q' => Piece::Queen,
-        'k' => Piece::King,
-        _ => return None,
-    };
-    let color = match ch.is_ascii_lowercase() {
-        true => Color::Black,
-        false => Color::White,
-    };
-    Some((color, piece))
-}
-
-/// Converts the color and piece kind to FEN piece.
-fn piece_to_fen(color: Color, piece: Piece) -> char {
-    let letter = match piece {
-        Piece::Pawn => 'p',
-        Piece::Knight => 'k',
-        Piece::Bishop => 'b',
-        Piece::Rook => 'r',
-        Piece::Queen => 'q',
-        Piece::King => 'k',
-    };
-    if color == Color::White {
-        letter.to_ascii_uppercase()
-    } else {
-        letter
     }
 }
 

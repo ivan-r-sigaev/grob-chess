@@ -11,7 +11,7 @@ pub use search::{
 
 pub use game::{
     ChessMove, ChessMoveHint, Game, GameEnding, GameTreeWalker, LanMove, MoveOrdering,
-    PackedChessMove, ParseFenError,
+    PackedChessMove,
 };
 
 mod game;

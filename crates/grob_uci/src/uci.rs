@@ -122,7 +122,7 @@ impl Cursor<'_> {
         };
 
         let maybe_position = match maybe_fen {
-            Some(fen) => Game::try_from_fen(&fen).ok(),
+            Some(fen) => Game::try_from_fen(&fen),
             None => Some(Game::initial_position()),
         };
 
