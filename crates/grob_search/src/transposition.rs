@@ -2,9 +2,9 @@ use std::{fmt, num::NonZeroU64};
 
 use parking_lot::RwLock;
 
-use crate::{ChessMove, score::Score, transposition::hashmap::HashTable};
+use crate::{ChessMove, score::Score, transposition::hash_table::HashTable};
 
-mod hashmap;
+mod hash_table;
 
 /// A [transposition].
 ///
