@@ -591,7 +591,7 @@ impl fmt::Display for Game {
 
 #[cfg(test)]
 mod tests {
-    use crate::ChessMoveHint;
+    use crate::game::movegen::ChessMoveHint;
 
     #[test]
     fn test_chess_move_hint_niches() {

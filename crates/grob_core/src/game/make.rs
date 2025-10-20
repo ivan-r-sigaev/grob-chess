@@ -1,9 +1,11 @@
 use crate::{
     castling_rights::CastlingRights,
-    game::PlyHistory,
+    game::{
+        movegen::{ChessMove, ChessMoveHint},
+        Game, PlyHistory,
+    },
     pieces::Piece,
     square::{File, Square},
-    ChessMove, ChessMoveHint, Game,
 };
 
 /// Data needed to rollback a move.

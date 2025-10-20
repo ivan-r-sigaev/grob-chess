@@ -1,9 +1,9 @@
 use std::{fmt, str::FromStr};
 
 use crate::{
+    game::{movegen::ChessMove, Game},
     pieces::{Piece, Promotion},
     square::Square,
-    ChessMove, Game,
 };
 
 /// A chess move in a [LAN (Long Algebraic Notation)].

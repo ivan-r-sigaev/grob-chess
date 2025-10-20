@@ -2,11 +2,6 @@
 //!
 //! This crate provides the basic chess types.
 
-pub use game::{
-    ChessMove, ChessMoveHint, Game, GameEnding, GameTreeWalker, LanMove, MoveOrdering,
-    PackedChessMove,
-};
-
 pub mod bitboard;
 pub mod board;
 pub mod castling_rights;

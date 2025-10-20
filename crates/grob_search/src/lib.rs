@@ -12,17 +12,16 @@ mod worker;
 
 use std::{sync::Arc, thread, time::Instant};
 
-use crossbeam::{
-    channel::{Receiver, RecvError, SendError, Sender, bounded, unbounded},
-    select,
-};
-use grob_core::{ChessMove, Game};
-
 use crate::{
     score::Score,
     transposition::TranspositionTable,
     worker::{Job, WorkerGroup},
 };
+use crossbeam::{
+    channel::{Receiver, RecvError, SendError, Sender, bounded, unbounded},
+    select,
+};
+use grob_core::game::{Game, movegen::ChessMove};
 
 /// A command for the parallel search server.
 #[derive(Debug, Clone)]

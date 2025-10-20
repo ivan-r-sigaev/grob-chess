@@ -2,7 +2,10 @@ use std::{sync::Arc, thread, time::Instant};
 
 use crossbeam::channel::{Receiver, Sender};
 use either::Either;
-use grob_core::{GameEnding, GameTreeWalker, MoveOrdering, pieces::Piece};
+use grob_core::{
+    game::walker::{GameEnding, GameTreeWalker, MoveOrdering},
+    pieces::Piece,
+};
 
 use crate::{
     SearchRequest, SearchResult, ServerResponse,

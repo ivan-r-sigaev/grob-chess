@@ -2,7 +2,7 @@ use crossbeam::{
     channel::{Receiver, Sender},
     select,
 };
-use grob_core::Game;
+use grob_core::game::Game;
 use std::{
     collections::VecDeque,
     fmt::Write,

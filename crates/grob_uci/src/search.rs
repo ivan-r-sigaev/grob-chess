@@ -7,7 +7,10 @@ use crossbeam::{
     channel::{Receiver, RecvError, SendError, Sender, unbounded},
     select,
 };
-use grob_core::{ChessMove, Game, LanMove, MoveOrdering, pieces::Color};
+use grob_core::{
+    game::{Game, lan::LanMove, movegen::ChessMove, walker::MoveOrdering},
+    pieces::Color,
+};
 use grob_search::{
     SearchRequest, ServerCommand, ServerResponse, score::Score, spawn_search_server,
 };

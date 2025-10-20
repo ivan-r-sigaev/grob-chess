@@ -1,4 +1,4 @@
-use grob_core::PackedChessMove;
+use grob_core::game::movegen::PackedChessMove;
 
 use crate::ChessMove;
 

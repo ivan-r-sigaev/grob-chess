@@ -1,5 +1,9 @@
 mod collect {
-    use grob_core::{ChessMoveHint, Game, GameTreeWalker, MoveOrdering};
+    use grob_core::game::{
+        movegen::ChessMoveHint,
+        walker::{GameTreeWalker, MoveOrdering},
+        Game,
+    };
 
     /// Number of leaf nodes visited by the perft.
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]

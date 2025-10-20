@@ -2,8 +2,9 @@ use either::Either;
 
 mod move_list;
 
-use crate::{ChessMove, Game};
 use move_list::MoveList;
+
+use crate::game::{movegen::ChessMove, Game};
 
 /// Possible ending for a chess game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

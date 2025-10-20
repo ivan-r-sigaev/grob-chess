@@ -1,7 +1,3 @@
-pub use lan::LanMove;
-pub use movegen::{ChessMove, ChessMoveHint, PackedChessMove};
-pub use walker::{GameEnding, GameTreeWalker, MoveOrdering};
-
 use std::{collections::VecDeque, num::NonZeroU64};
 
 use crate::{
@@ -16,9 +12,9 @@ use crate::{
 
 pub mod walker;
 
-mod lan;
-mod make;
-mod movegen;
+pub mod lan;
+pub mod make;
+pub mod movegen;
 
 /// A chess position.
 #[derive(Debug, Clone)]
