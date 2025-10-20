@@ -5,9 +5,9 @@ use either::Either;
 
 use crate::{
     search::{
-        scheduler::SearchResult,
         signals::{WorkerSignaler, WorkerSignalerMaster},
         transposition::{Transposition, TranspositionTable},
+        SearchResult,
     },
     GameEnding, GameTreeWalker, MoveOrdering, Piece, Score, SearchRequest, ServerResponse,
 };
