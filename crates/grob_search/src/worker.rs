@@ -131,7 +131,7 @@ impl Worker {
 
             while let Ok(job) = self.job_recv.try_recv() {
                 let mut game = job.request.game;
-                let worst_score = Score::ending(GameEnding::Checkmate);
+                let worst_score = Score::from_ending(GameEnding::Checkmate);
                 let result = self.search(
                     &mut game.walk(),
                     job.request.depth,
@@ -222,7 +222,7 @@ impl Worker {
             }
         });
         let score = match maybe_ending {
-            Some(ending) => Score::ending(ending),
+            Some(ending) => Score::from_ending(ending),
             None => {
                 let best_move = best_move.unwrap();
                 let score = best_score.unwrap();
@@ -262,7 +262,7 @@ impl Worker {
             Either::Right(ending) => {
                 return SearchResult {
                     best_move: None,
-                    score: Score::ending(ending),
+                    score: Score::from_ending(ending),
                     nodes,
                     is_canceled,
                 };
@@ -283,7 +283,7 @@ impl Worker {
         let n_score = (knights & player).count() as i32 - (knights & !player).count() as i32;
         let p_score = (pawns & player).count() as i32 - (pawns & !player).count() as i32;
         let p = p_score + (n_score + b_score) * 3 + r_score * 5 + q_score * 9;
-        let score = Score::Cp(p * 100);
+        let score = Score::from_centipawns(p * 100);
 
         SearchResult {
             best_move: Some(any_move),

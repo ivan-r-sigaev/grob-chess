@@ -55,7 +55,7 @@ struct SearchLimits {
     /// Search no more than this many nodes.
     nodes: Option<u64>,
     /// Stop search if mate in less than this many turns is found.
-    mate: Option<u64>,
+    mate: Option<u8>,
     /// Stop search when reaching the deadline.
     deadline: Option<Instant>,
 }
@@ -172,7 +172,7 @@ impl UciServer {
             .depth
             .map(|d| (d - 1).min(MAX_DEPTH as u64) as u8)
             .filter(|_| !go.infinite);
-        let mate = go.mate;
+        let mate = go.mate.map(|d| d.min(u8::MAX as u64) as u8);
         let ponder = go.ponder;
         self.progress = Some(SearchProgress {
             game,
@@ -302,7 +302,7 @@ impl UciServer {
         let mate_fail = progress
             .limits
             .mate
-            .is_some_and(|n| score >= Score::Mating(n) || score <= Score::Mated(n));
+            .is_some_and(|n| score >= Score::from_mating(n) || score <= Score::from_mated(n));
         let depth_limited = progress.running_depth == u8::MAX;
         let should_stop =
             unfinished | time_fails | depth_fails | nodes_fail | mate_fail | depth_limited;
