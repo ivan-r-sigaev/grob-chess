@@ -1,4 +1,4 @@
-use crate::GameEnding;
+use grob_core::GameEnding;
 
 /// How advantageous is a chess position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -2,16 +2,13 @@ use std::{sync::Arc, thread, time::Instant};
 
 use crossbeam::channel::{Receiver, Sender};
 use either::Either;
+use grob_core::{GameEnding, GameTreeWalker, MoveOrdering, pieces::Piece};
 
 use crate::{
-    pieces::Piece,
+    SearchRequest, SearchResult, ServerResponse,
     score::Score,
-    search::{
-        signals::{WorkerSignaler, WorkerSignalerMaster},
-        transposition::{Transposition, TranspositionTable},
-        SearchResult,
-    },
-    GameEnding, GameTreeWalker, MoveOrdering, SearchRequest, ServerResponse,
+    signals::{WorkerSignaler, WorkerSignalerMaster},
+    transposition::{Transposition, TranspositionTable},
 };
 
 /// A search job to be computed by the [`Worker`].
@@ -266,7 +263,7 @@ impl Worker {
                     score: Score::ending(ending),
                     nodes,
                     is_canceled,
-                }
+                };
             }
         };
 

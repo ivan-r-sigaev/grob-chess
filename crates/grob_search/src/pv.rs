@@ -1,4 +1,6 @@
-use crate::{ChessMove, PackedChessMove};
+use grob_core::PackedChessMove;
+
+use crate::ChessMove;
 
 /// Table that is used to collect the [Principal Variation] during the search.
 ///

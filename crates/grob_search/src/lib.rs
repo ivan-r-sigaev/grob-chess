@@ -1,3 +1,9 @@
+//! Grob Search
+//!
+//! This crate implements the search engine.
+
+pub mod score;
+
 #[allow(unused)]
 mod pv;
 mod signals;
@@ -7,17 +13,15 @@ mod worker;
 use std::{sync::Arc, thread, time::Instant};
 
 use crossbeam::{
-    channel::{bounded, unbounded, Receiver, RecvError, SendError, Sender},
+    channel::{Receiver, RecvError, SendError, Sender, bounded, unbounded},
     select,
 };
+use grob_core::{ChessMove, Game};
 
 use crate::{
     score::Score,
-    search::{
-        transposition::TranspositionTable,
-        worker::{Job, WorkerGroup},
-    },
-    ChessMove, Game,
+    transposition::TranspositionTable,
+    worker::{Job, WorkerGroup},
 };
 
 /// A command for the parallel search server.

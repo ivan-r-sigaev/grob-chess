@@ -1,0 +1,10 @@
+[package]
+name = "grob_search"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+grob_core = { path = "../grob_core" }
+crossbeam = "0.8.4"
+parking_lot = "0.12.5"
+either = "1.15.0"
