@@ -5,138 +5,129 @@ use std::sync::{
 
 use crossbeam::utils::CachePadded;
 
-const SIGNAL_GO: u8 = 0;
+const SIGNAL_QUIT: u8 = 0;
 const SIGNAL_STOP: u8 = 1;
-const SIGNAL_QUIT: u8 = 2;
+const SIGNAL_GO: u8 = 2;
 
-/// Signaler that can crate and control [`WorkerSignaler`]s.
+/// Tells the worker threads when to start and when to stop doing work.
 #[derive(Debug)]
-pub struct WorkerSignalerMaster {
-    signal: Arc<CachePadded<AtomicU8>>,
-    wakeup: Arc<Barrier>,
-    sleep: Arc<Barrier>,
-    worker_count: usize,
-    clone_count: usize,
+pub struct SignalSender {
+    channel: Arc<SignalChannel>,
 }
 
-impl WorkerSignalerMaster {
-    /// Construct a new [`WorkerSignalerMaster`] able to control
-    /// the specified number of workers.
-    pub fn new(worker_count: usize) -> Self {
-        Self {
-            signal: Arc::new(CachePadded::new(AtomicU8::new(SIGNAL_STOP))),
-            wakeup: Arc::new(Barrier::new(worker_count + 1)),
-            sleep: Arc::new(Barrier::new(worker_count + 1)),
-            worker_count,
-            clone_count: 0,
-        }
+impl SignalSender {
+    /// Returns a sender - receivers connection for the specified
+    /// number of receivers.
+    pub fn new(receiver_count: usize) -> (SignalSender, Vec<SignalReceiver>) {
+        let channel = Arc::new(SignalChannel {
+            signal: CachePadded::new(AtomicU8::new(SIGNAL_STOP)),
+            wakeup: Barrier::new(receiver_count + 1),
+            sleep: Barrier::new(receiver_count + 1),
+        });
+        let receivers = (0..receiver_count)
+            .map(|_| SignalReceiver {
+                channel: channel.clone(),
+            })
+            .collect();
+        let sender = SignalSender { channel };
+        (sender, receivers)
     }
-    /// Construct a child [`WorkerSignaler`].
-    ///
-    /// # Panics
-    /// Panics when trying to create more than [`Self::worker_count`]
-    /// signalers.
-    pub fn create_signaler(&mut self) -> WorkerSignaler {
-        self.clone_count += 1;
-        assert!(
-            self.clone_count <= self.worker_count,
-            "Trying to create too many workers!"
-        );
-        WorkerSignaler {
-            signal: self.signal.clone(),
-            wakeup: self.wakeup.clone(),
-            sleep: self.sleep.clone(),
-        }
-    }
-    /// Returns `true` if since the last call to [`Self::go`]
-    /// there were no calls to [`Self::stop`].
-    ///
-    /// This will return `false` if the [`Self::go`] was
-    /// never called yet.
+    /// Returns `true` if worker threads are currently awake.
     pub fn is_running(&self) -> bool {
-        self.signal.load(Ordering::Relaxed) == SIGNAL_GO
+        self.channel.load_signal() == SIGNAL_GO
     }
-    /// Returns the exact amount of workers supported
-    /// (and also minimally required) by the signaler.
-    pub fn worker_count(&self) -> usize {
-        self.worker_count
+    /// Returns `true` if worker threads are currently sleeping.
+    pub fn is_stopped(&self) -> bool {
+        self.channel.load_signal() == SIGNAL_STOP
     }
-    /// Tells the workers to start doing their jobs.
-    ///
-    /// This does nothing if workers are already awake.
-    ///
-    /// # Panics
-    /// Panics the number of created [`WorkerSignaler`]s
-    /// is not exactly equal to [`Self::worker_count`].
+    /// Wakes up the worker threads unless they are already awake.
     pub fn go(&self) {
-        self.check_workers();
         if self.is_running() {
             return;
         }
 
-        self.signal.store(SIGNAL_GO, Ordering::Relaxed);
-        self.wakeup.wait();
+        self.channel.store_signal(SIGNAL_GO);
+        self.channel.wakeup();
     }
-    /// Tells the workers to stop doing their jobs and go to sleep.
+    /// Tells the worker threads to go to sleep unless they are already sleeping.
+    pub fn stop(&self) {
+        if self.is_stopped() {
+            return;
+        }
+
+        self.channel.store_signal(SIGNAL_STOP);
+        self.channel.sleep();
+    }
+    /// Terminates the worker threads and consumes the sender.
     ///
-    /// This does nothing if workers are already sleeping (except for
-    /// setting [`Self::is_running`] to `false`).
+    /// If the workers are awake, [`SignalSender::stop`] will be called first.
+    ///
+    /// This function must be called manually and will **NOT**
+    /// be automatically called on [`Drop`].
+    pub fn quit(self) {
+        self.stop();
+        self.channel.store_signal(SIGNAL_QUIT);
+        self.channel.wakeup();
+    }
+}
+
+/// Recieves the messages when the worker must start or stop doing work.
+#[derive(Debug)]
+pub struct SignalReceiver {
+    channel: Arc<SignalChannel>,
+}
+
+impl SignalReceiver {
+    /// Returns `true` if search should be aborted.
+    pub fn should_stop(&self) -> bool {
+        self.channel.load_signal() == SIGNAL_STOP
+    }
+    /// Must be called at the start of worker loop.
+    ///
+    /// Returns `false` if the worker thread must quit.
+    #[must_use]
+    pub fn go(&self) -> bool {
+        self.channel.wakeup();
+        self.channel.load_signal() == SIGNAL_QUIT
+    }
+    /// Must be called at the end of worker loop.
     ///
     /// # Panics
-    /// Panics the number of created [`WorkerSignaler`]s
-    /// is not exactly equal to [`Self::worker_count`].
+    /// Panics if [`Self::go`] previously returned `false`.
     pub fn stop(&self) {
-        self.check_workers();
-        if !self.is_running() {
-            return;
-        }
-
-        self.signal.store(SIGNAL_STOP, Ordering::Relaxed);
-        self.sleep.wait();
-    }
-    /// [`Drop`]s the master and tells all of its children to quit.
-    ///
-    /// [`WorkerSignalerMaster`] will **NOT** automatically tell
-    /// the workers to quit on [`Drop`].
-    pub fn quit(self) {
-        self.check_workers();
-        if self.is_running() {
-            self.stop();
-        }
-
-        self.signal.store(SIGNAL_QUIT, Ordering::Relaxed);
-        self.wakeup.wait();
-    }
-    fn check_workers(&self) {
-        assert!(self.clone_count == self.worker_count, "Not enough workers!");
+        assert!(
+            self.channel.load_signal() != SIGNAL_QUIT,
+            "Worker ignored termination request!"
+        );
+        self.channel.sleep();
     }
 }
 
-/// A child of the [`WorkerSignalerMaster`].
-///
-/// This struct is used to coordinate workers during search.
+/// Underlying type for the signal channels.
 #[derive(Debug)]
-pub struct WorkerSignaler {
-    signal: Arc<CachePadded<AtomicU8>>,
-    wakeup: Arc<Barrier>,
-    sleep: Arc<Barrier>,
+struct SignalChannel {
+    signal: CachePadded<AtomicU8>,
+    wakeup: Barrier,
+    sleep: Barrier,
 }
 
-impl WorkerSignaler {
-    /// Returns whether the master is commanding to stop.
-    pub fn should_stop(&self) -> bool {
-        self.signal.load(Ordering::Relaxed) != SIGNAL_GO
+impl SignalChannel {
+    /// Gets the current signal value.
+    fn load_signal(&self) -> u8 {
+        // Channels are syncronized with barriers, so it's OK to use [`Ordering::Relaxed.`]
+        self.signal.load(Ordering::Relaxed)
     }
-    /// Returns whether the master is commanding to quit.
-    pub fn should_quit(&self) -> bool {
-        self.signal.load(Ordering::Relaxed) == SIGNAL_QUIT
+    /// Sets the current signal value.
+    fn store_signal(&self, signal: u8) {
+        // Channels are syncronized with barriers, so it's OK to use [`Ordering::Relaxed.`]
+        self.signal.store(signal, Ordering::Relaxed)
     }
-    /// Call this in the beginning of the worker loop.
-    pub fn wakeup(&self) {
-        self.wakeup.wait();
+    /// Waits until all workers go to sleep.
+    fn sleep(&self) {
+        _ = self.sleep.wait();
     }
-    /// Call this at the end of the worker loop.
-    pub fn sleep(&self) {
-        self.sleep.wait();
+    /// Waits until all workers wake up from sleep.
+    fn wakeup(&self) {
+        _ = self.wakeup.wait();
     }
 }

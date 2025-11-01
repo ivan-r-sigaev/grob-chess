@@ -10,7 +10,7 @@ use grob_core::{
 use crate::{
     SearchRequest, SearchResult, ServerResponse,
     score::Score,
-    signals::{WorkerSignaler, WorkerSignalerMaster},
+    signals::{SignalReceiver, SignalSender},
     transposition::{Transposition, TranspositionTable},
 };
 
@@ -24,12 +24,12 @@ pub struct Job {
     pub batch_index: usize,
 }
 
-/// Manages a group of worker threads coordinated by signaler.
+/// Manages a group of worker threads.
 ///
 /// [`WorkerGroup`] will release all of its worker threads on [`Drop`].
 #[derive(Debug)]
 pub struct WorkerGroup {
-    signaler: Option<WorkerSignalerMaster>,
+    signal: Option<SignalSender>,
     job_recv: Receiver<Job>,
     res_send: Sender<ServerResponse>,
     tt: Arc<TranspositionTable>,
@@ -44,7 +44,7 @@ impl WorkerGroup {
         tt: Arc<TranspositionTable>,
     ) -> Self {
         let mut res = Self {
-            signaler: None,
+            signal: None,
             job_recv,
             res_send,
             tt,
@@ -52,37 +52,32 @@ impl WorkerGroup {
         res.spawn_workers(worker_count);
         res
     }
-    /// Returns a signaler for the worker threads.
-    pub fn signaler(&self) -> &WorkerSignalerMaster {
-        self.signaler.as_ref().unwrap()
+    /// Returns a signal controller for the whole group.
+    pub fn signal(&self) -> &SignalSender {
+        self.signal.as_ref().unwrap()
     }
     /// Tells all of the current worker threads to quit, then
     /// spawns a specified number of new threads.
     pub fn resize(&mut self, new_worker_count: usize) {
-        if new_worker_count == self.signaler().worker_count() {
-            return;
-        }
-
         self.clear();
         self.spawn_workers(new_worker_count);
     }
     fn clear(&mut self) {
-        if let Some(signaler) = self.signaler.take() {
-            signaler.quit();
+        if let Some(signal) = self.signal.take() {
+            signal.quit();
         }
     }
     fn spawn_workers(&mut self, worker_count: usize) {
-        assert!(self.signaler.is_none());
-        let mut master = WorkerSignalerMaster::new(worker_count);
+        assert!(self.signal.is_none());
+        let (sender, receivers) = SignalSender::new(worker_count);
 
-        for _ in 0..worker_count {
-            let signaler = master.create_signaler();
+        for receiver in receivers {
             let job_recv = self.job_recv.clone();
             let res_send = self.res_send.clone();
             let tt = self.tt.clone();
             thread::spawn(|| {
                 Worker {
-                    signaler,
+                    signal: receiver,
                     job_recv,
                     res_send,
                     tt,
@@ -91,7 +86,7 @@ impl WorkerGroup {
             });
         }
 
-        self.signaler = Some(master);
+        self.signal = Some(sender);
     }
 }
 
@@ -118,7 +113,7 @@ impl SearchConstraints {
 
 #[derive(Debug)]
 struct Worker {
-    signaler: WorkerSignaler,
+    signal: SignalReceiver,
     job_recv: Receiver<Job>,
     res_send: Sender<ServerResponse>,
     tt: Arc<TranspositionTable>,
@@ -127,7 +122,9 @@ struct Worker {
 impl Worker {
     fn run(&mut self) {
         loop {
-            self.signaler.wakeup();
+            if !self.signal.go() {
+                break;
+            }
 
             while let Ok(job) = self.job_recv.try_recv() {
                 let mut game = job.request.game;
@@ -149,11 +146,7 @@ impl Worker {
                 self.res_send.send(result).unwrap();
             }
 
-            if self.signaler.should_quit() {
-                break;
-            }
-
-            self.signaler.sleep();
+            self.signal.stop();
         }
     }
     fn search(
@@ -164,7 +157,7 @@ impl Worker {
         mut alpha: Score,
         beta: Score,
     ) -> SearchResult {
-        if self.signaler.should_stop() || constraints.time_fails() {
+        if self.signal.should_stop() || constraints.time_fails() {
             return self.evaluate(node, true);
         }
 
@@ -215,7 +208,7 @@ impl Worker {
 
             if constraints.nodes_fail(nodes)
                 || constraints.time_fails()
-                || self.signaler.should_stop()
+                || self.signal.should_stop()
             {
                 is_canceled = true;
                 node.exhaust_moves();
@@ -246,7 +239,7 @@ impl Worker {
         }
     }
     fn quiescence(&mut self, node: &mut GameTreeWalker, alpha: Score, beta: Score) -> SearchResult {
-        if self.signaler.should_stop() {
+        if self.signal.should_stop() {
             return self.evaluate(node, true);
         }
 

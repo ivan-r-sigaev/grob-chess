@@ -222,7 +222,7 @@ impl SearchScheduler {
     }
     /// Execute [`ServerCommand::ProcessBatch`].
     fn process_batch(&mut self, batch: Vec<SearchRequest>) -> Result {
-        if self.workers.signaler().is_running() {
+        if self.workers.signal().is_running() {
             self.cancel()?;
         }
 
@@ -234,12 +234,12 @@ impl SearchScheduler {
             };
             self.job_send.send(job).unwrap();
         }
-        self.workers.signaler().go();
+        self.workers.signal().go();
         Ok(())
     }
     /// Execute [`ServerCommand::Cancel`].
     fn cancel(&mut self) -> Result {
-        self.workers.signaler().stop();
+        self.workers.signal().stop();
         while self.pending_count != 0 {
             let rsp = self.res_recv.recv().map_err(|RecvError| ShouldQuit)?;
             self.forward_response(rsp)?;
