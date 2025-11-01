@@ -125,7 +125,7 @@ pub struct WorkerSignaler {
 impl WorkerSignaler {
     /// Returns whether the master is commanding to stop.
     pub fn should_stop(&self) -> bool {
-        self.signal.load(Ordering::Relaxed) == SIGNAL_STOP
+        self.signal.load(Ordering::Relaxed) != SIGNAL_GO
     }
     /// Returns whether the master is commanding to quit.
     pub fn should_quit(&self) -> bool {
