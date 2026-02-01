@@ -62,7 +62,7 @@ impl GameTreeWalker<'_> {
     /// if the position has no legal moves.
     pub fn check_ending(&mut self) -> Either<ChessMove, GameEnding> {
         let mut any_move = None;
-        let ending = self.for_each_legal_move(MoveOrdering::default(), |node, chess_move| {
+        let ending = self.for_each_legal_move(MoveOrdering::default(), None, |node, chess_move| {
             any_move = Some(chess_move);
             node.exhaust_moves();
         });
@@ -89,12 +89,12 @@ impl GameTreeWalker<'_> {
     /// Inspects all legal moves in position with a function.
     /// Returns `Some(game_ending: GameEnding)` if there are no legal moves.
     #[inline(always)]
-    pub fn for_each_legal_move<F>(&mut self, policy: MoveOrdering, mut op: F) -> Option<GameEnding>
+    pub fn for_each_legal_move<F>(&mut self, policy: MoveOrdering, hash_move: Option<ChessMove>, mut op: F) -> Option<GameEnding>
     where
         F: FnMut(&mut Self, ChessMove),
     {
         self.move_list.push_group();
-        self.generate_moves(policy);
+        self.generate_moves(policy, hash_move);
 
         let mut has_moves = false;
         while let Some(chess_move) = self.move_list.pop_move() {
@@ -130,8 +130,20 @@ impl GameTreeWalker<'_> {
     }
     /// Generates the move into the move list and orders them
     /// according to the policy.
-    fn generate_moves(&mut self, policy: MoveOrdering) {
+    /// 
+    /// If hash move is specified it will be sorted to be the first move.
+    /// 
+    /// # Panics
+    /// Panics if the hash move is illegal.
+    fn generate_moves(&mut self, policy: MoveOrdering, hash_move: Option<ChessMove>) {
+        if let Some(m) = hash_move {
+            assert!(self.game.is_move_pseudo_legal(m), "Hash move is illegal!");
+            self.move_list.push_move(m);
+        }
         self.game.push_moves(&mut |chess_move| {
+            if hash_move.is_some_and(|m| chess_move == m) {
+                return;
+            }
             self.move_list.push_move(chess_move);
         });
         match policy {

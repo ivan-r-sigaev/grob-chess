@@ -81,6 +81,10 @@ impl Game {
     pub fn is_check(&self) -> bool {
         self.board().is_king_in_check(self.turn())
     }
+    /// Returns `true` if the positions are the same (50 move rule, move index, and history are ignored).
+    pub fn is_same_position(&self, other: &Self) -> bool {
+        self.position == other.position
+    }
     /// Returns `true` if the king of the opponent player is currently in check.
     fn can_capture_king(&self) -> bool {
         self.board().is_king_in_check(!self.turn())
@@ -98,5 +102,11 @@ impl Game {
     fn prev_move_index(&mut self, hm_clock_state: u32) {
         self.move_index = self.move_index.strict_sub(1);
         self.move_index_rule_50 = self.move_index.strict_sub(hm_clock_state);
+    }
+}
+
+impl Default for Game {
+    fn default() -> Self {
+        Self::initial_position()
     }
 }

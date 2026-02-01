@@ -6,16 +6,17 @@ pub mod score;
 
 #[allow(unused)]
 mod pv;
-mod signals;
 mod transposition;
 mod worker;
+mod executor;
+mod task_pool;
 
 use std::{sync::Arc, thread, time::Instant};
 
 use crate::{
     score::Score,
     transposition::TranspositionTable,
-    worker::{Job, WorkerGroup},
+    worker::{SearchJob, WorkerGroup},
 };
 use crossbeam::{
     channel::{Receiver, RecvError, SendError, Sender, bounded, unbounded},
@@ -76,30 +77,6 @@ pub enum ServerCommand {
     SetWorkerCount(usize),
 }
 
-/// Request to search a position.
-#[derive(Debug, Clone)]
-pub struct SearchRequest {
-    /// Game position to search.
-    pub game: Game,
-    /// Depth of the search.
-    pub depth: u8,
-    /// Searched nodes limit.
-    pub nodes: Option<u64>,
-    /// Search time limit.
-    pub deadline: Option<Instant>,
-}
-
-/// Processing results for a [`SearchRequest`] originating from
-/// [`ServerCommand::ProcessBatch`].
-#[derive(Debug, Clone, Copy)]
-pub struct ServerResponse {
-    /// Index of the corresponding [`SearchRequest`] inside of
-    /// [`ServerCommand::ProcessBatch`].
-    pub batch_index: usize,
-    /// Result of the search.
-    pub result: SearchResult,
-}
-
 /// Result of searching a position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SearchResult {
@@ -137,7 +114,7 @@ struct SearchScheduler {
     workers: WorkerGroup,
     rsp_send: Sender<ServerResponse>,
     cmd_recv: Receiver<ServerCommand>,
-    job_send: Sender<Job>,
+    job_send: Sender<SearchJob>,
     res_recv: Receiver<ServerResponse>,
     pending_count: usize,
     worker_count: usize,
@@ -228,9 +205,9 @@ impl SearchScheduler {
 
         self.pending_count = batch.len();
         for (batch_index, request) in batch.into_iter().enumerate() {
-            let job = Job {
-                request,
-                batch_index,
+            let job = SearchJob {
+                data: request,
+                id: batch_index,
             };
             self.job_send.send(job).unwrap();
         }

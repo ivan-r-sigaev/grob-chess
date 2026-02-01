@@ -3,7 +3,7 @@ use grob_core::game::walker::GameEnding;
 use crate::MAX_DEPTH;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Score(i32);
+pub struct Score(pub i32);
 
 impl Score {
     /// The maximum representable score in centipawns.

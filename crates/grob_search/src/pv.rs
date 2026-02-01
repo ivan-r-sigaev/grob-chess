@@ -6,64 +6,91 @@ use crate::ChessMove;
 ///
 /// [Principal Variation]: https://www.chessprogramming.org/Principal_Variation
 #[derive(Debug, Clone)]
-pub struct PVTable {
-    pv_capacity: usize,
-    pv_len: usize,
+pub struct PvTable {
+    ply_capacity: usize,
+    ply_len: usize,
     data: Box<[Option<PackedChessMove>]>,
 }
 
-impl PVTable {
+impl PvTable {
     /// Creates a new table that can hold a PV up to a specified number of plies (moves).
-    pub fn new(pv_capacity: usize) -> Self {
-        let pv_len = 0;
-        let data = vec![None; trnum(pv_capacity)].into_boxed_slice();
+    pub fn new(ply_capacity: usize) -> Self {
+        let ply_len = 0;
+        let data = vec![None; trnum(ply_capacity)].into_boxed_slice();
         Self {
-            pv_capacity,
-            pv_len,
+            ply_capacity,
+            ply_len,
             data,
         }
     }
     /// Return the maximum PV length (in plies), that this table can hold.
     pub fn pv_capacity(&self) -> usize {
-        self.pv_capacity
+        self.ply_capacity
     }
     /// Returns the current length (in plies) of the PV stored in the table.
     pub fn pv_len(&self) -> usize {
-        self.pv_len
+        self.ply_len
     }
-    /// Stores the PV move for the specified depth.
+    /// Copies the other PV table at the specified ply.
+    /// 
+    /// # Panics
+    /// - Panics if the table's length is smaller than the specified ply.
+    /// - Panics if the table's lengths are not the same.
+    pub fn copy_ply(&mut self, other: &Self, ply: usize) {
+        assert!(self.ply_capacity == other.ply_capacity, "The tables should have the same length!");
+        assert!(ply < other.ply_len, "The other PV table is too small!");
+        let depth = (self.ply_capacity - 1) - ply;
+        let start = trnum(depth);
+        for i in 0..(depth - (self.ply_capacity - self.ply_len) + 1) {
+            self.data[start + i] = other.data[start + i];
+        }
+    }
+    /// Stores the PV move for the specified ply.
     ///
     /// # Panics
-    /// - Panics if `depth` is not strictly less than the PV capacity.
-    /// - Panics if `depth` is greater than the current PV length.
-    pub fn store(&mut self, chess_move: ChessMove, depth: usize) {
+    /// - Panics if `ply` is not strictly less than the PV capacity.
+    /// - Panics if `ply` is greater than the current PV length.
+    pub fn store(&mut self, chess_move: ChessMove, ply: usize) {
         assert!(
-            depth < self.pv_capacity,
-            "The PV table is not big enough to store the PV at the specified depth!"
+            ply < self.ply_capacity,
+            "The PV table is not big enough to store the PV at the specified ply!"
         );
         assert!(
-            depth <= self.pv_len,
-            "To store the PV move at depth N != 0, one must first store the PV move at depth N-1!"
+            ply <= self.ply_len,
+            "To store the PV move at ply N != 0, one must first store the PV move at ply N-1!"
         );
-        if depth == self.pv_len {
-            self.pv_len += 1;
+        if ply == self.ply_len {
+            self.ply_len += 1;
         }
+        let depth = (self.ply_capacity - 1) - ply;
         let start = trnum(depth);
         self.data[start] = Some(PackedChessMove::new(chess_move));
-        for i in 0..depth {
+        for i in 0..(depth - (self.ply_capacity - self.ply_len)) {
             self.data[start + 1 + i] = self.data[start - depth + i];
         }
     }
     /// Returns an iterator to the largest PV that is currently stored in the table.
     pub fn pv(&self) -> PVIter<'_> {
-        let start = trnum(self.pv_len.saturating_sub(1));
-        let end = start + self.pv_len;
+        let start = trnum(self.ply_len.saturating_sub(1));
+        let end = start + self.ply_len;
         let inner = self.data[start..end].iter();
         PVIter { inner }
     }
-    /// Forgets all PVs that are currently stored in the table and sets the PV length to zero.
-    pub fn clear(&mut self) {
-        self.pv_len = 0;
+    /// Forgets PVs that are stored in the table with the ply index
+    /// greater than or equal to the specified one.
+    pub fn clear(&mut self, ply: usize) {
+        self.ply_len = ply;
+    }
+    /// Makes one step "into" the PV, reducing the overall ply length by one.
+    pub fn apply_pv_move(&mut self) {
+        for ply in 0..self.ply_len {
+            let start = trnum(ply);
+            let len = self.ply_len - ply;
+            for i in 0..(len - 1) {
+                self.data[start + i] = self.data[start + i + 1];
+            }
+        }
+        self.ply_len = self.ply_len.saturating_sub(1);
     }
 }
 
